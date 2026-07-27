@@ -6,3 +6,5 @@ export function OpenToolsPalette():Promise<void>;
 export function ResizeToPalette():Promise<void>;
 
 export function ResizeToStudio():Promise<void>;
+
+export function TakeScreenshot():Promise<void>;

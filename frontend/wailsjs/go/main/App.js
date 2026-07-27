@@ -13,3 +13,7 @@ export function ResizeToPalette() {
 export function ResizeToStudio() {
   return window['go']['main']['App']['ResizeToStudio']();
 }
+
+export function TakeScreenshot() {
+  return window['go']['main']['App']['TakeScreenshot']();
+}
