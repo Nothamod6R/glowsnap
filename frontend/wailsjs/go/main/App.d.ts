@@ -7,4 +7,6 @@ export function ResizeToPalette():Promise<void>;
 
 export function ResizeToStudio():Promise<void>;
 
+export function TakeAreaScreenshot():Promise<void>;
+
 export function TakeScreenshot():Promise<void>;

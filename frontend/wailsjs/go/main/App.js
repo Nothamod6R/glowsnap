@@ -14,6 +14,10 @@ export function ResizeToStudio() {
   return window['go']['main']['App']['ResizeToStudio']();
 }
 
+export function TakeAreaScreenshot() {
+  return window['go']['main']['App']['TakeAreaScreenshot']();
+}
+
 export function TakeScreenshot() {
   return window['go']['main']['App']['TakeScreenshot']();
 }

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { EventsOn } from '../wailsjs/runtime/runtime';
-import { ResizeToPalette, ResizeToStudio, TakeScreenshot } from '../wailsjs/go/main/App'; 
+import { ResizeToPalette, ResizeToStudio, TakeScreenshot , TakeAreaScreenshot } from '../wailsjs/go/main/App'; 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Camera, Crop, Type, EyeOff, Sparkles, X, ArrowLeft, Image as ImageIcon, Sliders, Download
@@ -28,6 +28,14 @@ export default function App() {
     } catch (err) {
       console.error('Screenshot failed:', err);
     }
+  };
+
+  const handleTakeAreaScreenshot = async () => {
+      try {
+        await TakeAreaScreenshot();
+      } catch (err) {
+        console.error('Area screenshot failed:', err);
+      }
   };
 
   useEffect(() => {
@@ -62,7 +70,7 @@ export default function App() {
             className="flex items-center gap-2  p-2 rounded-2xl backdrop-blur-2xl  bg-black shadow-2xl text-white"
           >
             <ToolButton icon={<Camera size={18} />} label="Full Screen" onClick={handleTakeScreenshot} />
-            <ToolButton icon={<Crop size={18} />} label="Select Area" />
+            <ToolButton icon={<Crop size={18} />} label="Select Area" onClick={handleTakeAreaScreenshot} />
             <ToolButton icon={<Type size={18} />} label="OCR Text" />
             <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" />
 

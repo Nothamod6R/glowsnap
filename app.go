@@ -68,3 +68,18 @@ func (a *App) TakeScreenshot() {
 
 	runtime.LogInfo(a.ctx, "Screenshot saved: "+path)
 }
+
+func (a *App) TakeAreaScreenshot() {
+	if a.screenshotService == nil {
+		runtime.LogError(a.ctx, "Screenshot service not initialized")
+		return
+	}
+
+	path, err := a.screenshotService.CaptureArea()
+	if err != nil {
+		runtime.LogError(a.ctx, "Area screenshot failed: "+err.Error())
+		return
+	}
+
+	runtime.LogInfo(a.ctx, "Area screenshot saved: "+path)
+}
