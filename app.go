@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"os/exec"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	
-	"glowsnap/services/screenshot" 
+	"glowsnap/services/screenshot"
+	"glowsnap/services/screencast"
 )
 
 type App struct {
 	ctx               context.Context
 	dbusConn          *dbus.Conn
 	screenshotService *screenshot.Service
+	screenCastService *screencast.ScreenCastService
 }
 
 func NewApp() *App {
@@ -31,6 +34,7 @@ func (a *App) startup(ctx context.Context) {
 	a.dbusConn = conn
 
 	a.screenshotService = screenshot.NewService(conn)
+	a.screenCastService = screencast.NewScreenCastService(conn)
 }
 
 func (a *App) shutdown(ctx context.Context) {
@@ -59,13 +63,11 @@ func (a *App) TakeScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-
 	path, err := a.screenshotService.CaptureFullScreen()
 	if err != nil {
 		runtime.LogError(a.ctx, "Screenshot failed: "+err.Error())
 		return
 	}
-
 	runtime.LogInfo(a.ctx, "Screenshot saved: "+path)
 }
 
@@ -74,12 +76,43 @@ func (a *App) TakeAreaScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-
 	path, err := a.screenshotService.CaptureArea()
 	if err != nil {
 		runtime.LogError(a.ctx, "Area screenshot failed: "+err.Error())
 		return
 	}
-
 	runtime.LogInfo(a.ctx, "Area screenshot saved: "+path)
+}
+
+func (a *App) StartRecording(outputPath string, captureMic bool, captureSystemAudio bool) error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.StartRecording(outputPath, captureMic, captureSystemAudio)
+}
+
+func (a *App) PauseRecording() error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.PauseRecording()
+}
+
+func (a *App) ResumeRecording() error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.ResumeRecording()
+}
+
+func (a *App) StopRecording() (string, error) {
+	if a.screenCastService == nil {
+		return "", fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.StopRecording()
+}
+
+func (a *App) GetHomeDir() string {
+	home, _ := os.UserHomeDir()
+	return home
 }

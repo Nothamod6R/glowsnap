@@ -1,7 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ToolButtonProps } from '@/types/types';
 
+interface ToolButtonProps {
+  icon: React.ReactNode;
+  label: string;
+  onClick?: () => void;
+}
 
 export default function ToolButton({ icon, label, onClick }: ToolButtonProps) {
   return (

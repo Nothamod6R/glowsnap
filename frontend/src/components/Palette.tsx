@@ -1,12 +1,10 @@
 import { motion } from 'framer-motion';
-import { Camera, Crop, Type, EyeOff, Sparkles, X } from 'lucide-react';
+import { Camera, Crop, Type, EyeOff, Video, X } from 'lucide-react';
 import { Button } from './ui/button';
 import ToolButton from './ToolButton';
 import { PaletteProps } from '@/types/types';
 
-
-
-export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose }: PaletteProps) {
+export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording }: any) {
   return (
     <motion.div
       key="palette"
@@ -17,6 +15,7 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
     >
       <ToolButton icon={<Camera size={18} />} label="Full Screen" onClick={onTakeScreenshot} />
       <ToolButton icon={<Crop size={18} />} label="Select Area" onClick={onTakeAreaScreenshot} />
+      <ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
       <ToolButton icon={<Type size={18} />} label="OCR Text" />
       <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" />
 

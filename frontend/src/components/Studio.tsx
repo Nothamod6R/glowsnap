@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Image as ImageIcon, Sliders, Download } from 'lucide-react';
 import { StudioProps } from '@/types/types';
 
-
 export default function Studio({ onBackToPalette }: StudioProps) {
   return (
     <motion.div
@@ -11,7 +10,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      className="w-full h-full flex flex-col rounded-3xl backdrop-blur-3xl border border-white/10 shadow-2xl overflow-hidden text-white"
+      className="w-full h-full flex flex-col rounded-3xl backdrop-blur-3xl border border-white/10 shadow-2xl overflow-hidden text-white bg-black"
     >
       <header className="flex items-center justify-between px-6 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
