@@ -2,7 +2,7 @@
 
 @custom-variant dark (&:is(.dark *));
 
-:root {
+.dark {
   --background: #fcfcfc;
   --foreground: #000000;
   --card: #ffffff;
@@ -57,7 +57,7 @@
   --spacing: 0.25rem;
 }
 
-.dark {
+:root {
   --background: #000000;
   --foreground: #ffffff;
   --card: #090909;
@@ -163,11 +163,27 @@
   --shadow-2xl: var(--shadow-2xl);
 }
 
+html, body, #root {
+  background-color: transparent !important;
+  background: transparent !important;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground; 
   }
+}
+
+.wails-drag {
+  --wails-draggable: drag;
+}
+
+.wails-no-drag {
+  --wails-draggable: no-drag;
 }

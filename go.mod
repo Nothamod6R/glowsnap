@@ -1,8 +1,11 @@
 module glowsnap
 
-go 1.23.0
+go 1.24
 
-require github.com/wailsapp/wails/v2 v2.12.0
+require (
+	github.com/wailsapp/wails/v2 v2.12.0
+	golang.design/x/hotkey v0.6.1
+)
 
 require (
 	git.sr.ht/~jackmordaunt/go-toast/v2 v2.0.3 // indirect
