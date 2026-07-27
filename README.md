@@ -1,0 +1,1 @@
+GlowSnap is an open-source Linux tool designed to transform raw screenshots into studio-grade visuals with customizable gradient backgrounds and sleek shadows.
