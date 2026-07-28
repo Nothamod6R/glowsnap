@@ -20,7 +20,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
       const files = await ListScreenshots();
       const url = await GetScreenshotsBaseURL();
       setBaseUrl(url);
-      setImages(files);
+      setImages(files.reverse());
     } catch (err) {
       console.error('Failed to load screenshots:', err);
     } finally {
