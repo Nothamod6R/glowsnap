@@ -3,6 +3,7 @@ import { ArrowLeft, Image as ImageIcon, Sliders, Download, RefreshCw, X } from '
 import { StudioProps } from '@/types/types';
 import { ListScreenshots, GetScreenshotsBaseURL } from '../../wailsjs/go/main/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Editor from './editor';
 
 export default function Studio({ onBackToPalette }: StudioProps) {
   const [images, setImages] = useState<string[]>([]);
@@ -53,31 +54,9 @@ export default function Studio({ onBackToPalette }: StudioProps) {
 
   if (selectedImage) {
     const imageUrl = `${baseUrl}/${encodeURIComponent(selectedImage)}`;
-    return (
-      <div className="w-full h-full flex flex-col items-center justify-center bg-black/95 rounded-3xl border border-white/10 backdrop-blur-3xl shadow-2xl overflow-hidden text-white relative">
-        <button
-          onClick={handleBackToGallery}
-          className="absolute top-4 left-4 z-10 flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-sm border border-white/10 transition-all"
-        >
-          <X size={16} />
-          <span>Back to Gallery</span>
-        </button>
-
-        <div className="absolute top-4 right-4 text-xs text-white/60 bg-black/50 px-3 py-1 rounded-full">
-          {selectedImage}
-        </div>
-
-        <div className="w-full h-full p-8 flex items-center justify-center">
-          <img
-            src={imageUrl}
-            alt={selectedImage}
-            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-          />
-        </div>
-      </div>
-    );
+    console.log(imageUrl)
+    return <Editor imageUrl={imageUrl} onBack={handleBackToGallery} />;
   }
-
   return (
     <div className="w-full h-full flex flex-col justify-start items-center rounded-3xl backdrop-blur-3xl border border-white/10 shadow-2xl overflow-hidden text-white bg-black">
       <header className="flex items-center z-50 backdrop-blur-lg w-1/2 m-4 rounded-lg  justify-between px-6 py-4 border-b border-white/10 shrink-0 fixed">

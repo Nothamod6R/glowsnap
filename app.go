@@ -53,8 +53,12 @@ func (a *App) startup(ctx context.Context) {
         os.MkdirAll(screenshotsDir, 0755)
     }
 
+    fs := http.FileServer(http.Dir(screenshotsDir))
     mux := http.NewServeMux()
-    mux.Handle("/", http.FileServer(http.Dir(screenshotsDir)))
+    mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Access-Control-Allow-Origin", "*")
+        fs.ServeHTTP(w, r)
+    }))
 
     listener, err := net.Listen("tcp", "127.0.0.1:0")
     if err != nil {
