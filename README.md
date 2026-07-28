@@ -42,7 +42,7 @@ Built with simplicity and performance in mind, GlowSnap aims to bring a premium 
 -  Number annotations
 -  Text editing
 -  Custom colors and opacity
-- ✂️ Crop tools
+-  Crop tools
 
 ### Recording
 -  Screen recording support
