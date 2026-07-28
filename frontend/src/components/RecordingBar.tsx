@@ -55,11 +55,11 @@ export default function RecordingBar({ onStop, onPause, onResume, isPaused }: Re
       <div className="h-6 w-px bg-white/20" />
 
       <div className="flex items-center gap-1.5 text-xs text-white/70">
-        <Mic size={14} className="text-green-400" />
+        <Mic size={14}  />
         <span>Mic</span>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-white/70">
-        <Volume2 size={14} className="text-blue-400" />
+        <Volume2 size={14}  />
         <span>System</span>
       </div>
     </motion.div>

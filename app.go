@@ -3,44 +3,86 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"sync"
+	"time"
+
+	"glowsnap/services/screencast"
+	"glowsnap/services/screenshot"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
-	"glowsnap/services/screenshot"
-	"glowsnap/services/screencast"
 )
 
 type App struct {
-	ctx               context.Context
-	dbusConn          *dbus.Conn
-	screenshotService *screenshot.Service
-	screenCastService *screencast.ScreenCastService
+    ctx               context.Context
+    dbusConn          *dbus.Conn
+    screenshotService *screenshot.Service
+    screenCastService *screencast.ScreenCastService
+    httpServer        *http.Server
+    screenshotsURL    string
+    serverMu          sync.Mutex
 }
+
 
 func NewApp() *App {
 	return &App{}
 }
 
 func (a *App) startup(ctx context.Context) {
-	a.ctx = ctx
+    a.ctx = ctx
 
-	conn, err := dbus.SessionBus()
-	if err != nil {
-		runtime.LogError(ctx, "Failed to connect to D-Bus: "+err.Error())
-		return
-	}
-	a.dbusConn = conn
+    conn, err := dbus.SessionBus()
+    if err != nil {
+        runtime.LogError(ctx, "Failed to connect to D-Bus: "+err.Error())
+        return
+    }
+    a.dbusConn = conn
 
-	a.screenshotService = screenshot.NewService(conn)
-	a.screenCastService = screencast.NewScreenCastService(conn)
+    a.screenshotService = screenshot.NewService(conn)
+    a.screenCastService = screencast.NewScreenCastService(conn)
+
+    home, _ := os.UserHomeDir()
+    screenshotsDir := filepath.Join(home, "Pictures", "Screenshots")
+    if _, err := os.Stat(screenshotsDir); os.IsNotExist(err) {
+        runtime.LogWarning(ctx, "Screenshots directory not found, creating it.")
+        os.MkdirAll(screenshotsDir, 0755)
+    }
+
+    mux := http.NewServeMux()
+    mux.Handle("/", http.FileServer(http.Dir(screenshotsDir)))
+
+    listener, err := net.Listen("tcp", "127.0.0.1:0")
+    if err != nil {
+        runtime.LogError(ctx, "Failed to start HTTP server: "+err.Error())
+        return
+    }
+    port := listener.Addr().(*net.TCPAddr).Port
+    a.screenshotsURL = fmt.Sprintf("http://127.0.0.1:%d", port)
+
+    a.httpServer = &http.Server{Handler: mux}
+    go func() {
+        if err := a.httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
+            runtime.LogError(ctx, "HTTP server error: "+err.Error())
+        }
+    }()
+
+    runtime.LogInfo(ctx, "Screenshots server started at "+a.screenshotsURL)
 }
 
 func (a *App) shutdown(ctx context.Context) {
-	if a.dbusConn != nil {
-		a.dbusConn.Close()
-	}
+    if a.httpServer != nil {
+        shutdownCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+        defer cancel()
+        a.httpServer.Shutdown(shutdownCtx)
+    }
+    if a.dbusConn != nil {
+        a.dbusConn.Close()
+    }
 }
 
 func (a *App) OpenToolsPalette() {
@@ -115,4 +157,35 @@ func (a *App) StopRecording() (string, error) {
 func (a *App) GetHomeDir() string {
 	home, _ := os.UserHomeDir()
 	return home
+}
+
+
+
+func (a *App) ListScreenshots() ([]string, error) {
+    home, err := os.UserHomeDir()
+    if err != nil {
+        return nil, err
+    }
+    dir := filepath.Join(home, "Pictures", "Screenshots")
+    entries, err := os.ReadDir(dir)
+    if err != nil {
+        return nil, err
+    }
+
+    var files []string
+    for _, entry := range entries {
+        if entry.IsDir() {
+            continue
+        }
+        ext := filepath.Ext(entry.Name())
+        switch ext {
+        case ".png", ".jpg", ".jpeg", ".webp", ".bmp":
+            files = append(files, entry.Name())
+        }
+    }
+    return files, nil
+}
+
+func (a *App) GetScreenshotsBaseURL() string {
+    return a.screenshotsURL
 }

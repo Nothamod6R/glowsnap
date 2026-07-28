@@ -6,6 +6,14 @@ export function GetHomeDir() {
   return window['go']['main']['App']['GetHomeDir']();
 }
 
+export function GetScreenshotsBaseURL() {
+  return window['go']['main']['App']['GetScreenshotsBaseURL']();
+}
+
+export function ListScreenshots() {
+  return window['go']['main']['App']['ListScreenshots']();
+}
+
 export function OpenToolsPalette() {
   return window['go']['main']['App']['OpenToolsPalette']();
 }

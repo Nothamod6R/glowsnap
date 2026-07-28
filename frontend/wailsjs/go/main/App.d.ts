@@ -3,6 +3,10 @@
 
 export function GetHomeDir():Promise<string>;
 
+export function GetScreenshotsBaseURL():Promise<string>;
+
+export function ListScreenshots():Promise<Array<string>>;
+
 export function OpenToolsPalette():Promise<void>;
 
 export function PauseRecording():Promise<void>;
