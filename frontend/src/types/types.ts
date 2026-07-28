@@ -1,3 +1,5 @@
+import Konva from 'konva';
+
 
 export interface PaletteProps {
   onTakeScreenshot: () => void;
@@ -35,4 +37,32 @@ export interface RecordingBarProps {
   onPause: () => void;
   onResume: () => void;
   isPaused: boolean;
+}
+
+
+
+export type Tool = 'select' | 'crop' | 'arrow' | 'text' | 'number' | 'pen' | 'rectangle' | 'circle';
+
+export interface ShapeConfig {
+  id: string;
+  type: 'rect' | 'circle' | 'arrow' | 'text' | 'number' | 'line';
+  x: number;
+  y: number;
+  width?: number;
+  height?: number;
+  points?: number[];
+  text?: string;
+  fill?: string;
+  stroke?: string;
+  strokeWidth?: number;
+  opacity?: number;
+  fontSize?: number;
+  fontFamily?: string;
+  fontStyle?: string;
+  rotation?: number;
+}
+
+export interface EditorProps {
+  imageUrl: string;
+  onBack: () => void;
 }

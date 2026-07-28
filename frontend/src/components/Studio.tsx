@@ -3,7 +3,7 @@ import { ArrowLeft, Image as ImageIcon, Sliders, Download, RefreshCw, X } from '
 import { StudioProps } from '@/types/types';
 import { ListScreenshots, GetScreenshotsBaseURL } from '../../wailsjs/go/main/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import Editor from './editor';
+import Editor from '@/components/editor/Editor';
 
 export default function Studio({ onBackToPalette }: StudioProps) {
   const [images, setImages] = useState<string[]>([]);
