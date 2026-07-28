@@ -34,6 +34,10 @@ export function ResumeRecording() {
   return window['go']['main']['App']['ResumeRecording']();
 }
 
+export function SaveFileDialog(arg1) {
+  return window['go']['main']['App']['SaveFileDialog'](arg1);
+}
+
 export function StartRecording(arg1, arg2, arg3) {
   return window['go']['main']['App']['StartRecording'](arg1, arg2, arg3);
 }
@@ -48,4 +52,8 @@ export function TakeAreaScreenshot() {
 
 export function TakeScreenshot() {
   return window['go']['main']['App']['TakeScreenshot']();
+}
+
+export function WriteFile(arg1, arg2) {
+  return window['go']['main']['App']['WriteFile'](arg1, arg2);
 }

@@ -193,3 +193,26 @@ func (a *App) ListScreenshots() ([]string, error) {
 func (a *App) GetScreenshotsBaseURL() string {
     return a.screenshotsURL
 }
+
+
+func (a *App) SaveFileDialog(defaultName string) (string, error) {
+    filePath, err := runtime.SaveFileDialog(a.ctx, runtime.SaveDialogOptions{
+        Title:           "Save Edited Image",
+        DefaultFilename: defaultName,
+        Filters: []runtime.FileFilter{
+            {DisplayName: "PNG Image (*.png)", Pattern: "*.png"},
+        },
+    })
+    if err != nil {
+        return "", err
+    }
+    if filePath == "" {
+        return "", fmt.Errorf("no file selected")
+    }
+    return filePath, nil
+}
+
+
+func (a *App) WriteFile(filePath string, data []byte) error {
+    return os.WriteFile(filePath, data, 0644)
+}

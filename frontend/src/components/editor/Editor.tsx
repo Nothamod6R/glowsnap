@@ -11,6 +11,8 @@ import OptionsBar from './OptionsBar';
 import BackgroundControls from './BackgroundControls';
 import TextEditor from './TextEditor';
 import Canvas from './Canvas';
+import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
+
 
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
@@ -66,8 +68,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       setImageTransform({
         x: pad,
         y: pad,
-        scaleX: baseScale, 
-        scaleY: baseScale,  
+        scaleX: baseScale,
+        scaleY: baseScale,
         rotation: 0,
       });
     };
@@ -116,17 +118,32 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     setSelectedTool('select');
   };
 
-  const exportImage = () => {
-    if (stageRef.current) {
+  const exportImage = async () => {
+    if (!stageRef.current) return;
+
+    try {
+      const defaultName = `edited-${Date.now()}.png`;
+      const filePath = await SaveFileDialog(defaultName);
+
+      if (!filePath) return;
+
       const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
-      const link = document.createElement('a');
-      link.download = 'edited.png';
-      link.href = uri;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const arrayBuffer = await blob.arrayBuffer();
+      const uint8arr = new Uint8Array(arrayBuffer);
+
+      await WriteFile(filePath, Array.from(uint8arr));
+      
+      console.log('Image saved to:', filePath);
+    } catch (err) {
+      console.error('Export failed:', err);
     }
   };
+
+
+
 
   return (
     <div className="w-full h-full flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
@@ -143,7 +160,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
               <Trash2 size={16} />
             </button>
           )}
-          <button onClick={exportImage} className="p-2 hover:bg-blue-500/20 rounded ">
+          <button  onClick={exportImage} className="p-2 hover:bg-white/10  rounded ">
             <Download size={16} />
           </button>
         </div>
