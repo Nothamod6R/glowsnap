@@ -25,9 +25,9 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
         <span>Studio</span>
       </Button>
 
-      <Button variant="outline" onClick={onClose}>
+      {/*<Button variant="outline" onClick={onClose}>
         <X size={14} />
-      </Button>
+      </Button>*/}
     </motion.div>
   );
 }
