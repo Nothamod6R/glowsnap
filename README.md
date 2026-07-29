@@ -45,7 +45,7 @@ Built with simplicity and performance in mind, GlowSnap aims to bring a premium 
 -  Crop tools
 
 ### Recording
--  Screen recording support
+-  Experimental screen recording
 -  Native Linux integration
 -  More recording features coming soon
 
