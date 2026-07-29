@@ -2,7 +2,6 @@ app-id: io.github.libreglow.glowsnap
 
 runtime: org.gnome.Platform
 runtime-version: "50"
-
 sdk: org.gnome.Sdk
 
 sdk-extensions:
@@ -16,50 +15,50 @@ finish-args:
   - --socket=wayland
   - --socket=fallback-x11
   - --device=dri
-  - --talk-name=org.freedesktop.Notifications
+  - --share=network
   - --talk-name=org.freedesktop.portal.Desktop
+  - --talk-name=org.freedesktop.Notifications
   - --filesystem=xdg-pictures
   - --filesystem=xdg-videos
-  - --share=network
 
 modules:
   - name: glowsnap
-
     buildsystem: simple
 
     build-options:
-      build-args:
-        - --share=network
-
-      append-path: /usr/lib/sdk/golang/bin:/usr/lib/sdk/node22/bin:/run/build/glowsnap/go/bin
-
-      env:
-        GOPROXY: https://proxy.golang.org,direct
+      append-path: /usr/lib/sdk/golang/bin:/usr/lib/sdk/node22/bin
 
     sources:
-      - type: archive
-        url: https://github.com/libreglow/glowsnap/archive/refs/tags/v0.1.0.zip
-        sha256: c12925148abfbfe37001b42edd5daa8cbd9ecf0a3cd809d0647b933fea46b73a
+      - type: dir
+        path: ..
 
     build-commands:
-      - go mod download
+      - |
+          set -eux
 
-      - mkdir -p /run/build/glowsnap/go/bin
+          export PATH=/usr/lib/sdk/golang/bin:/usr/lib/sdk/node22/bin:$PATH
+          export GOFLAGS="-mod=vendor"
 
-      - GOBIN=/run/build/glowsnap/go/bin go install github.com/wailsapp/wails/v2/cmd/wails@v2.13.0
+          npm install --prefix frontend
 
-      - sed -i 's/webkit2gtk-4\.0/webkit2gtk-4.1/g' $(go env GOPATH)/pkg/mod/github.com/wailsapp/wails/v2@v2.12.0/pkg/assetserver/webview/*.go
+          npm run build --prefix frontend
 
-      - npm install --prefix frontend
+          go run -mod=vendor github.com/wailsapp/wails/v2/cmd/wails \
+            build \
+            -tags webkit2gtk_4_1 \
+            -clean
 
-      - npm run build --prefix frontend
+          install -Dm755 build/bin/glowsnap \
+            /app/bin/glowsnap
 
-      - /run/build/glowsnap/go/bin/wails build
+          install -Dm644 \
+            packaging/io.github.libreglow.glowsnap.desktop \
+            /app/share/applications/io.github.libreglow.glowsnap.desktop
 
-      - install -Dm755 build/bin/glowsnap /app/bin/glowsnap
+          install -Dm644 \
+            packaging/io.github.libreglow.glowsnap.metainfo.xml \
+            /app/share/metainfo/io.github.libreglow.glowsnap.metainfo.xml
 
-      - install -Dm644 packaging/io.github.libreglow.glowsnap.desktop /app/share/applications/io.github.libreglow.glowsnap.desktop
-
-      - install -Dm644 packaging/io.github.libreglow.glowsnap.metainfo.xml /app/share/metainfo/io.github.libreglow.glowsnap.metainfo.xml
-
-      - install -Dm644 packaging/io.github.libreglow.glowsnap.png /app/share/icons/hicolor/512x512/apps/io.github.libreglow.glowsnap.png
+          install -Dm644 \
+            packaging/io.github.libreglow.glowsnap.png \
+            /app/share/icons/hicolor/512x512/apps/io.github.libreglow.glowsnap.png

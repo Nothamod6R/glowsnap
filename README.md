@@ -16,6 +16,10 @@
   <img src="https://img.shields.io/badge/status-early%20development-orange">
 </p>
 
+<p align="center">
+  <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Banner">
+</p>
+
 ---
 
 ##  About
