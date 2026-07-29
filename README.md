@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Banner">
+  <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Logo" width="128">
 </p>
 
 ---
