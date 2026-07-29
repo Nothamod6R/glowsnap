@@ -1,7 +1,8 @@
 #  GlowSnap
 
+
 <p align="center">
-  <img src="./docs/images/banner.png" alt="GlowSnap Banner">
+  <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Logo" width="128">
 </p>
 
 <p align="center">
@@ -17,9 +18,8 @@
 </p>
 
 <p align="center">
-  <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Logo" width="128">
+  <img src="./docs/images/banner.png" alt="GlowSnap Banner">
 </p>
-
 ---
 
 ##  About
