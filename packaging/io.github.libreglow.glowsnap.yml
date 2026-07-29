@@ -1,0 +1,32 @@
+app-id: io.github.libreglow.glowsnap
+
+runtime: org.gnome.Platform
+runtime-version: "49"
+sdk: org.gnome.Sdk
+
+command: glowsnap
+
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --talk-name=org.freedesktop.Notifications
+  - --talk-name=org.freedesktop.portal.Desktop
+  - --filesystem=xdg-pictures
+  - --filesystem=xdg-videos
+  - --share=network
+
+modules:
+  - name: glowsnap
+    buildsystem: simple
+
+    build-commands:
+      - install -Dm755 build/bin/glowsnap /app/bin/glowsnap
+      - install -Dm644 packaging/io.github.libreglow.glowsnap.desktop /app/share/applications/io.github.libreglow.glowsnap.desktop
+      - install -Dm644 packaging/io.github.libreglow.glowsnap.metainfo.xml /app/share/metainfo/io.github.libreglow.glowsnap.metainfo.xml
+      - install -Dm644 packaging/io.github.libreglow.glowsnap.png /app/share/icons/hicolor/512x512/apps/io.github.libreglow.glowsnap.png
+
+    sources:
+      - type: dir
+        path: ..

@@ -1,0 +1,17 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=GlowSnap
+GenericName=Screenshot and Screen Recorder
+Comment=Capture, record, and annotate your screen
+
+Exec=glowsnap
+Icon=io.github.libreglow.glowsnap
+
+Terminal=false
+StartupNotify=true
+StartupWMClass=glowsnap
+
+Categories=Graphics;Utility;
+Keywords=screenshot;screen;capture;record;editor;annotation;
