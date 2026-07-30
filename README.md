@@ -31,7 +31,7 @@ It helps you capture your screen, organize your screenshots, and turn them into 
 Built with simplicity and performance in mind, GlowSnap aims to bring a premium screenshot workflow to Linux.
 
 
-### Turn raw code and screenshots into polished, professional assets in one click. Perfect for content creators, developers, and testers on Linux.
+Turn raw code and screenshots into polished, professional assets in one click. Perfect for content creators, developers, and testers on Linux.
 <p align="center">
   <img src="./docs/images/res.png" alt="GlowSnap">
 </p>
