@@ -146,7 +146,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
 
   return (
-    <div className="w-full h-full flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
+    <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
         <button onClick={onBack} className="flex items-center gap-2 text-sm hover:bg-white/10 px-3 py-1 rounded-lg">
           <X size={16} /> Back
@@ -187,7 +187,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isItalic={isItalic} setIsItalic={setIsItalic}
       />
 
-      <div className="flex-1 relative wails-no-drag" style={{ background: 'radial-gradient(circle at center, #1a1a1a 0%, #000 100%)' }}>
+      <div className="flex-1 relative wails-no-drag flex justify-center items-center flex-col" style={{ background: 'radial-gradient(circle at center, #1a1a1a 0%, #000 100%)' }}>
         <Canvas
           ref={stageRef}
           image={image}

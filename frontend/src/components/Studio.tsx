@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Image as ImageIcon, Sliders, Download, RefreshCw, X } from 'lucide-react';
 import { StudioProps } from '@/types/types';
-import { ListScreenshots, GetScreenshotsBaseURL } from '../../wailsjs/go/main/App';
+import { ListScreenshots, GetScreenshotsBaseURL, ResizeToStudio } from '../../wailsjs/go/main/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Editor from '@/components/editor/Editor';
 
@@ -54,7 +54,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
 
   if (selectedImage) {
     const imageUrl = `${baseUrl}/${encodeURIComponent(selectedImage)}`;
-    console.log(imageUrl)
+    ResizeToStudio()
     return <Editor imageUrl={imageUrl} onBack={handleBackToGallery} />;
   }
   return (

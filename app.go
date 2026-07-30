@@ -99,10 +99,7 @@ func (a *App) ResizeToPalette() {
 	runtime.WindowCenter(a.ctx)
 }
 
-func (a *App) ResizeToStudio() {
-	runtime.WindowSetSize(a.ctx, 1024, 768)
-	runtime.WindowCenter(a.ctx)
-}
+
 
 func (a *App) TakeScreenshot() {
 	if a.screenshotService == nil {
@@ -215,4 +212,8 @@ func (a *App) SaveFileDialog(defaultName string) (string, error) {
 
 func (a *App) WriteFile(filePath string, data []byte) error {
     return os.WriteFile(filePath, data, 0644)
+}
+
+func (a *App) ResizeToStudio() {
+    runtime.WindowMaximise(a.ctx)
 }

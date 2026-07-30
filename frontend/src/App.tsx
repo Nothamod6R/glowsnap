@@ -42,7 +42,7 @@ export default function App() {
   const handleStartRecording = async () => {
     try {
       const home = await GetHomeDir();
-      const outPath = `${home}/Videos/recording.webm`; // يمكن إضافة طابع زمني
+      const outPath = `${home}/Videos/recording.webm`;
       await StartRecording(outPath, true, true);
       setMode('recording');
       setIsPaused(false);
