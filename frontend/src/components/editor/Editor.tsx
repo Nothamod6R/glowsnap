@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Konva from 'konva';
 import { X, Download, Undo2, Redo2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Tool, EditorProps } from '@/types/types';
+import { Tool, EditorProps, ShapeConfig } from '@/types/types';
 import { useShapes } from '@/hooks/useShapes';
 import { useTextEditing } from '@/hooks/useTextEditing';
 import { useBackground } from '@/hooks/useBackground';
@@ -11,11 +11,14 @@ import OptionsBar from './OptionsBar';
 import BackgroundControls from './BackgroundControls';
 import TextEditor from './TextEditor';
 import Canvas from './Canvas';
+import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
 
 
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
+  const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const [stageContainerRect, setStageContainerRect] = useState<DOMRect | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>('select');
   const [color, setColor] = useState('#ff3b30');
@@ -97,9 +100,53 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
   useEffect(() => {
     if (selectedId) {
-      updateShape(selectedId, { stroke: color, strokeWidth, opacity }, false);
+      const shape = shapes.find(s => s.id === selectedId);
+      if (shape) {
+        if (shape.type === 'text' || shape.type === 'number') {
+          updateShape(selectedId, { fill: color }, false);
+        } else {
+          updateShape(selectedId, { stroke: color, strokeWidth, opacity }, false);
+        }
+      }
     }
   }, [color, strokeWidth, opacity]);
+
+  // Track the canvas container position for the floating toolbar
+  useEffect(() => {
+    if (canvasContainerRef.current) {
+      const rect = canvasContainerRef.current.getBoundingClientRect();
+      setStageContainerRect(rect);
+    }
+  }, [stageSize, image]);
+
+  useEffect(() => {
+    if (selectedId) {
+      const shape = shapes.find(s => s.id === selectedId);
+      if (shape) {
+        if (shape.type === 'text' || shape.type === 'number') {
+          if (shape.fill) setColor(shape.fill);
+          if (shape.fontSize) setFontSize(shape.fontSize);
+          if (shape.fontFamily) setFontFamily(shape.fontFamily);
+          if (shape.fontStyle) {
+            setIsBold(shape.fontStyle.includes('bold'));
+            setIsItalic(shape.fontStyle.includes('italic'));
+          }
+        }
+      }
+    }
+  }, [selectedId]);
+
+  const handleDuplicate = useCallback((shape: ShapeConfig) => {
+    const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    const newShape: ShapeConfig = {
+      ...shape,
+      id: newId,
+      x: (shape.x || 0) + 20,
+      y: (shape.y || 0) + 20,
+    };
+    addShape(newShape, true);
+    commitShapes();
+  }, [addShape, commitShapes]);
 
   const handleToolChange = (tool: Tool) => {
     setSelectedTool(tool);
@@ -141,6 +188,72 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       console.error('Export failed:', err);
     }
   };
+
+  // Clipboard for copy/paste
+  const clipboardRef = useRef<ShapeConfig | null>(null);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't handle shortcuts when editing text
+      if (editingTextId) return;
+
+      const isCtrl = e.ctrlKey || e.metaKey;
+
+      // Delete / Backspace → Delete selected shape
+      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+        e.preventDefault();
+        deleteShape(selectedId);
+        return;
+      }
+
+      // Ctrl+C → Copy selected shape
+      if (isCtrl && e.key === 'c' && selectedId) {
+        e.preventDefault();
+        const shape = shapes.find(s => s.id === selectedId);
+        if (shape) {
+          clipboardRef.current = { ...shape };
+        }
+        return;
+      }
+
+      // Ctrl+V → Paste copied shape
+      if (isCtrl && e.key === 'v' && clipboardRef.current) {
+        e.preventDefault();
+        const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+        const pastedShape: ShapeConfig = {
+          ...clipboardRef.current,
+          id: newId,
+          x: (clipboardRef.current.x || 0) + 20,
+          y: (clipboardRef.current.y || 0) + 20,
+        };
+        addShape(pastedShape, true);
+        commitShapes();
+        setSelectedTool('select');
+        return;
+      }
+
+      // Ctrl+D → Duplicate selected shape
+      if (isCtrl && e.key === 'd' && selectedId) {
+        e.preventDefault();
+        const shape = shapes.find(s => s.id === selectedId);
+        if (shape) {
+          handleDuplicate(shape);
+        }
+        return;
+      }
+
+      // Esc → Deselect
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        setSelectedId(null);
+        return;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, setSelectedTool, setSelectedId]);
 
 
 
@@ -187,7 +300,11 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isItalic={isItalic} setIsItalic={setIsItalic}
       />
 
-      <div className="flex-1 relative wails-no-drag flex justify-center items-center flex-col" style={{ background: 'radial-gradient(circle at center, #1a1a1a 0%, #000 100%)' }}>
+      <div
+        ref={canvasContainerRef}
+        className="flex-1 relative wails-no-drag flex justify-center items-center flex-col"
+        style={{ background: 'radial-gradient(circle at center, #1a1a1a 0%, #000 100%)' }}
+      >
         <Canvas
           ref={stageRef}
           image={image}
@@ -211,6 +328,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           backgroundSettings={background}
           imageTransform={imageTransform}
           onImageTransform={setImageTransform}
+          onChangeTool={handleToolChange}
         />
         {editingTextId && (
           <TextEditor
@@ -223,6 +341,27 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             color={color}
           />
         )}
+        <FloatingToolbar
+          selectedShape={shapes.find(s => s.id === selectedId) || null}
+          visible={selectedTool === 'select' && !!selectedId}
+          stageContainerRect={stageContainerRect}
+          stageSize={stageSize}
+          onUpdateShape={updateShape}
+          onDelete={deleteShape}
+          onDuplicate={handleDuplicate}
+          color={color}
+          setColor={setColor}
+          fontFamily={fontFamily}
+          setFontFamily={setFontFamily}
+          fontSize={fontSize}
+          setFontSize={setFontSize}
+          opacity={opacity}
+          setOpacity={setOpacity}
+          isBold={isBold}
+          setIsBold={setIsBold}
+          isItalic={isItalic}
+          setIsItalic={setIsItalic}
+        />
         {cropMode && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             <Button onClick={applyCrop} variant="secondary">Apply Crop</Button>
