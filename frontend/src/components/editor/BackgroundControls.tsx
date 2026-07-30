@@ -87,7 +87,7 @@ export default function BackgroundControls({ bg, onToggle, onTypeChange, onStart
               onValueChange={(v) => onAngle(Array.isArray(v) ? v[0] : v)}
               className="w-20 h-4"
             />
-            <span className="text-[10px] text-white/60 w-6 text-right">{bg.angle}°</span>
+            <span className="text-[10px] text-white/60 w-6 text-right tabular-nums">{Number(bg.angle).toFixed(1)}°</span>
           </div>
 
           <div className="w-px h-4 bg-white/20" />
@@ -103,7 +103,7 @@ export default function BackgroundControls({ bg, onToggle, onTypeChange, onStart
               onValueChange={(v) => onPadding(Array.isArray(v) ? v[0] : v)}
               className="w-20 h-4"
             />
-            <span className="text-[10px] text-white/60 w-8 text-right">{bg.padding}px</span>
+            <span className="text-[10px] text-white/60 w-8 text-right tabular-nums">{bg.padding}px</span>
           </div>
         </>
       )}

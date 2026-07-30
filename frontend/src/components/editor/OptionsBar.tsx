@@ -56,7 +56,7 @@ export default function OptionsBar({
           className="w-20 h-4"
         />
         <Plus size={13} className="text-white/50" />
-        <span className="text-[10px] text-white/60 w-6 text-right">{strokeWidth}px</span>
+        <span className="text-[10px] text-white/60 w-6 text-right tabular-nums">{Number(strokeWidth).toFixed(1)}px</span>
       </div>
 
       <div className="w-px h-4 bg-white/20" />
@@ -71,7 +71,7 @@ export default function OptionsBar({
           onValueChange={handleSlider(v => setOpacity(v / 100))}
           className="w-20 h-4"
         />
-        <span className="text-[10px] text-white/60 w-8 text-right">{Math.round(opacity * 100)}%</span>
+        <span className="text-[10px] text-white/60 w-8 text-right tabular-nums">{Math.round(opacity * 100)}%</span>
       </div>
 
       {selectedTool === 'text' && (
@@ -120,7 +120,7 @@ export default function OptionsBar({
               onValueChange={handleSlider(setFontSize)}
               className="w-20 h-4"
             />
-            <span className="text-[10px] text-white/60 w-6 text-right">{fontSize}px</span>
+            <span className="text-[10px] text-white/60 w-6 text-right tabular-nums">{fontSize}px</span>
           </div>
         </>
       )}
