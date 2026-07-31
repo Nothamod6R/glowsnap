@@ -5,7 +5,6 @@ import { ShapeConfig, Tool } from '@/types/types';
 import { BackgroundSettings } from '@/lib/hooks/useBackground';
 
 const HANDLE_ANCHOR_SIZE = 10;
-const HANDLE_STROKE_WIDTH = 2;
 const BOUNDING_BOX_STROKE = '#4A90D9';
 const HANDLE_FILL = '#ffffff';
 const HANDLE_STROKE = '#4A90D9';
@@ -52,13 +51,11 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
 }, ref) => {
   const stageRef = useRef<Konva.Stage>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
-  const imageTransformerRef = useRef<Konva.Transformer>(null);
   const drawingRef = useRef<ShapeConfig | null>(null);
   const isDrawing = useRef(false);
   const cropStartPos = useRef<{ x: number; y: number } | null>(null);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
-
 
   const getGradientEndPoint = () => {
     const rad = (backgroundSettings.angle * Math.PI) / 180;
@@ -116,10 +113,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const handleShapeDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
     const id = node.id();
-    updateShape(id, {
-      x: node.x(),
-      y: node.y(),
-    });
+    updateShape(id, { x: node.x(), y: node.y() });
   }, [updateShape]);
 
   const handleTransformEnd = useCallback((e: Konva.KonvaEventObject<Event>) => {
@@ -130,8 +124,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
 
     const scaleX = node.scaleX();
     const scaleY = node.scaleY();
-
-    // Reset scale and update properties
     node.scaleX(1);
     node.scaleY(1);
 
@@ -142,14 +134,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     };
 
     if (shape.type === 'text' || shape.type === 'number') {
-      // For text, scale the font size proportionally
-      const newFontSize = Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2));
-      newAttrs.fontSize = Math.max(8, Math.min(200, newFontSize));
-      // Also update width/height if available
+      newAttrs.fontSize = Math.max(8, Math.min(200, Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2))));
       if (shape.width) newAttrs.width = (shape.width || 100) * scaleX;
       if (shape.height) newAttrs.height = (shape.height || 30) * scaleY;
     } else {
-      // For non-text shapes, update width/height
       if (shape.width) newAttrs.width = (shape.width || 100) * scaleX;
       if (shape.height) newAttrs.height = (shape.height || 30) * scaleY;
     }
@@ -157,25 +145,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     updateShape(id, newAttrs);
   }, [shapes, updateShape]);
 
-  useEffect(() => {
-    if (backgroundSettings.enabled && stageRef.current) {
-      const node = stageRef.current.findOne('#main-image');
-      if (node && imageTransformerRef.current) {
-        imageTransformerRef.current.nodes([node]);
-        imageTransformerRef.current.getLayer()?.batchDraw();
-      }
-    } else if (imageTransformerRef.current) {
-      imageTransformerRef.current.nodes([]);
-      imageTransformerRef.current.getLayer()?.batchDraw();
-    }
-  }, [backgroundSettings.enabled, imageTransform]);
-
   const handleImageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onImageTransform({
-      ...imageTransform,
-      x: e.target.x(),
-      y: e.target.y(),
-    });
+    onImageTransform({ ...imageTransform, x: e.target.x(), y: e.target.y() });
   };
 
   const handleImageTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
@@ -193,15 +164,14 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     });
   };
 
-
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     const pos = e.target.getStage()?.getPointerPosition();
     if (!pos) return;
 
     if (selectedTool === 'pen' || selectedTool === 'arrow') {
       isDrawing.current = true;
-      const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-      const newShape: ShapeConfig = {
+      const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
+      drawingRef.current = {
         id,
         type: selectedTool === 'arrow' ? 'arrow' : 'line',
         x: 0, y: 0,
@@ -211,8 +181,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         opacity,
         fill: 'transparent',
       };
-      drawingRef.current = newShape;
-      addShape(newShape, false);
+      addShape(drawingRef.current, false);
     } else if (selectedTool === 'crop') {
       setCropMode(true);
       cropStartPos.current = { x: pos.x, y: pos.y };
@@ -225,9 +194,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     if (!point) return;
 
     if (isDrawing.current && drawingRef.current) {
-      const shape = drawingRef.current;
-      const newPoints = [...(shape.points || []), point.x, point.y];
-      updateShape(shape.id, { points: newPoints }, false);
+      const currentPoints = drawingRef.current.points || [];
+      const newPoints = [...currentPoints, point.x, point.y];
+      drawingRef.current.points = newPoints;
+      updateShape(drawingRef.current.id, { points: newPoints }, false);
     } else if (selectedTool === 'crop' && cropStartPos.current) {
       const start = cropStartPos.current;
       setCropRect({
@@ -241,7 +211,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing.current) {
-      commitShapes(); 
+      commitShapes();
       isDrawing.current = false;
       drawingRef.current = null;
     }
@@ -256,7 +226,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     if (selectedTool === 'crop' || selectedTool === 'pen' || selectedTool === 'arrow') return;
     const pos = e.target.getStage()?.getPointerPosition();
     if (!pos) return;
-    const id = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 
     if (selectedTool === 'text' || selectedTool === 'number') {
       const text = selectedTool === 'number'
@@ -269,7 +239,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         x: pos.x, y: pos.y,
         text, fill: fillColor, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
       });
-      // Auto-switch to select tool so the user can move/resize immediately
       onChangeTool?.('select');
     } else if (selectedTool === 'rectangle') {
       addShape({
@@ -293,21 +262,16 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       key: shape.id,
       draggable: selectedTool === 'select',
       onClick: (e: Konva.KonvaEventObject<MouseEvent>) => {
-        // Text/number shapes can be clicked in any tool mode to select them
         if (selectedTool === 'select' || shape.type === 'text' || shape.type === 'number') {
           setSelectedId(shape.id);
-          if (selectedTool !== 'select') {
-            onChangeTool?.('select');
-          }
+          if (selectedTool !== 'select') onChangeTool?.('select');
           e.cancelBubble = true;
         }
       },
       onTap: (e: Konva.KonvaEventObject<Event>) => {
         if (selectedTool === 'select' || shape.type === 'text' || shape.type === 'number') {
           setSelectedId(shape.id);
-          if (selectedTool !== 'select') {
-            onChangeTool?.('select');
-          }
+          if (selectedTool !== 'select') onChangeTool?.('select');
           e.cancelBubble = true;
         }
       },
@@ -341,16 +305,16 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             rotation={shape.rotation || 0}
           />
         );
-        case 'line':
-          return (
-            <Line
-              {...commonProps}
-              points={shape.points!}
-              tension={0.3}
-              lineCap="round"
-              lineJoin="round"
-            />
-          );
+      case 'line':
+        return (
+          <Line
+            {...commonProps}
+            points={shape.points!}
+            tension={0.2}
+            lineCap="round"
+            lineJoin="round"
+          />
+        );
       default:
         return null;
     }
@@ -375,9 +339,9 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             image={image}
             x={imageTransform.x}
             y={imageTransform.y}
-            width={image.width}  
+            width={image.width}
             height={image.height}
-              cornerRadius={25}
+            cornerRadius={25}
             scaleX={imageTransform.scaleX}
             scaleY={imageTransform.scaleY}
             rotation={imageTransform.rotation}
@@ -406,7 +370,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             }}
           />
         )}
-        {/*{backgroundSettings.enabled && <Transformer ref={imageTransformerRef} />}*/}
         {cropMode && cropRect && (
           <Rect
             {...cropRect}
