@@ -9,6 +9,7 @@ import {
   Bold,
   Italic,
   Palette,
+  PaintBucket,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
@@ -34,6 +35,8 @@ interface FloatingToolbarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  fillEnabled: boolean;
+  setFillEnabled: (v: boolean) => void;
 }
 
 export default function FloatingToolbar({
@@ -56,6 +59,8 @@ export default function FloatingToolbar({
   setIsBold,
   isItalic,
   setIsItalic,
+  fillEnabled,
+  setFillEnabled,
 }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -103,8 +108,18 @@ export default function FloatingToolbar({
     onDelete(selectedShape.id);
   };
 
+  const handleFillToggle = () => {
+    if (!selectedShape) return;
+    const newFillEnabled = !fillEnabled;
+    setFillEnabled(newFillEnabled);
+    onUpdateShape(selectedShape.id, {
+      fillEnabled: newFillEnabled,
+      fill: newFillEnabled ? color : 'transparent',
+    });
+  };
+
+  const isRectOrCircle = selectedShape?.type === 'rect' || selectedShape?.type === 'circle';
   const isText = selectedShape?.type === 'text' || selectedShape?.type === 'number';
-  if (!isText) return null;
 
   const currentOpacity = selectedShape?.opacity ?? 1;
   const currentFontSize = selectedShape?.fontSize ?? 24;
@@ -138,54 +153,73 @@ export default function FloatingToolbar({
               />
             </div>
 
-            <div className="w-px h-6 bg-white/10" />
+            {isRectOrCircle && (
+              <>
+                <div className="w-px h-6 bg-white/10" />
+                <button
+                  onClick={handleFillToggle}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    fillEnabled ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                  }`}
+                  title={fillEnabled ? 'Fill enabled' : 'No fill'}
+                >
+                  <PaintBucket size={12} />
+                </button>
+              </>
+            )}
 
-            <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
-              <Toggle
-                pressed={isBold}
-                onPressedChange={setIsBold}
-                className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                title="Bold"
-              >
-                <Bold size={12} />
-              </Toggle>
-              <Toggle
-                pressed={isItalic}
-                onPressedChange={setIsItalic}
-                className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                title="Italic"
-              >
-                <Italic size={12} />
-              </Toggle>
-            </div>
+            {isText && (
+              <>
+                <div className="w-px h-6 bg-white/10" />
 
-            <div className="w-px h-6 bg-white/10" />
+                <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
+                  <Toggle
+                    pressed={isBold}
+                    onPressedChange={setIsBold}
+                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                    title="Bold"
+                  >
+                    <Bold size={12} />
+                  </Toggle>
+                  <Toggle
+                    pressed={isItalic}
+                    onPressedChange={setIsItalic}
+                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                    title="Italic"
+                  >
+                    <Italic size={12} />
+                  </Toggle>
+                </div>
 
-            <div className="bg-white/5 rounded-lg px-1.5 py-1">
-              <select
-                value={fontFamily}
-                onChange={e => setFontFamily(e.target.value)}
-                className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
-              >
-                {['Inter', 'Arial', 'Courier New', 'Georgia'].map(f => (
-                  <option key={f} value={f} className="bg-gray-900 text-white">{f}</option>
-                ))}
-              </select>
-            </div>
+                <div className="w-px h-6 bg-white/10" />
 
-            <div className="w-px h-6 bg-white/10" />
+                <div className="bg-white/5 rounded-lg px-1.5 py-1">
+                  <select
+                    value={fontFamily}
+                    onChange={e => setFontFamily(e.target.value)}
+                    className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
+                  >
+                    {['Inter', 'Arial', 'Courier New', 'Georgia'].map(f => (
+                      <option key={f} value={f} className="bg-gray-900 text-white">{f}</option>
+                    ))}
+                  </select>
+                </div>
 
-            <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-              <Type size={12} className="text-white/50 shrink-0" />
-              <Slider
-                value={[currentFontSize]}
-                min={8}
-                max={120}
-                onValueChange={handleFontSizeChange}
-                className="w-16 h-4"
-              />
-              <span className="text-[10px] text-white/60 w-7 text-right tabular-nums">{currentFontSize}</span>
-            </div>
+                <div className="w-px h-6 bg-white/10" />
+
+                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                  <Type size={12} className="text-white/50 shrink-0" />
+                  <Slider
+                    value={[currentFontSize]}
+                    min={8}
+                    max={120}
+                    onValueChange={handleFontSizeChange}
+                    className="w-16 h-4"
+                  />
+                  <span className="text-[10px] text-white/60 w-7 text-right tabular-nums">{currentFontSize}</span>
+                </div>
+              </>
+            )}
 
             <div className="w-px h-6 bg-white/10" />
 
