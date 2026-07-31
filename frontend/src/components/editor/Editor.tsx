@@ -369,6 +369,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setSelectedId={setSelectedId}
           addShape={addShape}
           updateShape={updateShape}
+          deleteShape={deleteShape}
           commitShapes={commitShapes}
           color={color}
           strokeWidth={strokeWidth}
