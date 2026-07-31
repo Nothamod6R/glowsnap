@@ -41,6 +41,24 @@ interface CanvasProps {
   onChangeTool?: (tool: Tool) => void;
 }
 
+function snapToNearestAngle(angle: number): number {
+  const snapIncrement = Math.PI / 4;
+  return Math.round(angle / snapIncrement) * snapIncrement;
+}
+
+function getConstrainedPoint(start: { x: number; y: number }, current: { x: number; y: number }): { x: number; y: number } {
+  const dx = current.x - start.x;
+  const dy = current.y - start.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  if (distance < 1) return current;
+  const angle = Math.atan2(dy, dx);
+  const snappedAngle = snapToNearestAngle(angle);
+  return {
+    x: start.x + Math.cos(snappedAngle) * distance,
+    y: start.y + Math.sin(snappedAngle) * distance,
+  };
+}
+
 const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   image, stageSize, selectedTool, shapes, selectedId, setSelectedId,
   addShape, updateShape, commitShapes, color, strokeWidth, opacity,
@@ -53,6 +71,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const transformerRef = useRef<Konva.Transformer>(null);
   const drawingRef = useRef<ShapeConfig | null>(null);
   const isDrawing = useRef(false);
+  const isShiftPressed = useRef(false);
+  const startPointRef = useRef<{ x: number; y: number } | null>(null);
   const cropStartPos = useRef<{ x: number; y: number } | null>(null);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
@@ -96,6 +116,25 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       );
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        isShiftPressed.current = true;
+      }
+    };
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        isShiftPressed.current = false;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   useEffect(() => {
     if (transformerRef.current && selectedId && selectedTool === 'select' && stageRef.current) {
@@ -170,6 +209,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
 
     if (selectedTool === 'pen' || selectedTool === 'arrow') {
       isDrawing.current = true;
+      startPointRef.current = { x: pos.x, y: pos.y };
       const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
       drawingRef.current = {
         id,
@@ -194,10 +234,18 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     if (!point) return;
 
     if (isDrawing.current && drawingRef.current) {
-      const currentPoints = drawingRef.current.points || [];
-      const newPoints = [...currentPoints, point.x, point.y];
-      drawingRef.current.points = newPoints;
-      updateShape(drawingRef.current.id, { points: newPoints }, false);
+      const startPoint = startPointRef.current;
+      if (isShiftPressed.current && startPoint) {
+        const constrainedEnd = getConstrainedPoint(startPoint, point);
+        const newPoints = [startPoint.x, startPoint.y, constrainedEnd.x, constrainedEnd.y];
+        drawingRef.current.points = newPoints;
+        updateShape(drawingRef.current.id, { points: newPoints }, false);
+      } else {
+        const currentPoints = drawingRef.current.points || [];
+        const newPoints = [...currentPoints, point.x, point.y];
+        drawingRef.current.points = newPoints;
+        updateShape(drawingRef.current.id, { points: newPoints }, false);
+      }
     } else if (selectedTool === 'crop' && cropStartPos.current) {
       const start = cropStartPos.current;
       setCropRect({
@@ -214,6 +262,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       commitShapes();
       isDrawing.current = false;
       drawingRef.current = null;
+      startPointRef.current = null;
     }
     cropStartPos.current = null;
   }, [commitShapes]);

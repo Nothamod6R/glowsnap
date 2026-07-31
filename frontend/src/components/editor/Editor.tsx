@@ -111,7 +111,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     }
   }, [color, strokeWidth, opacity]);
 
-  // Track the canvas container position for the floating toolbar
   useEffect(() => {
     if (canvasContainerRef.current) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
