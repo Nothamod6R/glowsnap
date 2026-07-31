@@ -217,3 +217,24 @@ func (a *App) WriteFile(filePath string, data []byte) error {
 func (a *App) ResizeToStudio() {
     runtime.WindowMaximise(a.ctx)
 }
+
+
+func (a *App) RenameScreenshot(oldName, newName string) error {
+    home, err := os.UserHomeDir()
+    if err != nil {
+        return err
+    }
+    dir := filepath.Join(home, "Pictures", "Screenshots")
+    oldPath := filepath.Join(dir, oldName)
+    newPath := filepath.Join(dir, newName)
+    return os.Rename(oldPath, newPath)
+}
+
+func (a *App) DeleteScreenshot(fileName string) error {
+    home, err := os.UserHomeDir()
+    if err != nil {
+        return err
+    }
+    path := filepath.Join(home, "Pictures", "Screenshots", fileName)
+    return os.Remove(path)
+}
