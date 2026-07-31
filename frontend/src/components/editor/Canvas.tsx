@@ -229,6 +229,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 
     if (selectedTool === 'text' || selectedTool === 'number') {
+      const isNumber = selectedTool === 'number';
       const text = selectedTool === 'number'
         ? (shapes.filter(s => s.type === 'number').length + 1).toString()
         : 'Text';
@@ -239,7 +240,9 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         x: pos.x, y: pos.y,
         text, fill: fillColor, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
       });
-      onChangeTool?.('select');
+      if (!isNumber) {
+        onChangeTool?.('select');
+      }
     } else if (selectedTool === 'rectangle') {
       addShape({
         id, type: 'rect', x: pos.x, y: pos.y,
@@ -345,7 +348,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             scaleX={imageTransform.scaleX}
             scaleY={imageTransform.scaleY}
             rotation={imageTransform.rotation}
-            draggable={backgroundSettings.enabled}
+            draggable={backgroundSettings.enabled && selectedTool === 'select'}
             onDragEnd={handleImageDragEnd}
             onTransformEnd={handleImageTransformEnd}
           />

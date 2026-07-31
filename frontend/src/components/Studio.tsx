@@ -23,7 +23,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebounce(search, 300); // تأخير 300 مللي
+  const debouncedSearch = useDebounce(search, 300);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'az' | 'za'>('newest');
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);

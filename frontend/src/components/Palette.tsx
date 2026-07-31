@@ -15,9 +15,9 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
     >
       <ToolButton icon={<Camera size={18} />} label="Full Screen" onClick={onTakeScreenshot} />
       <ToolButton icon={<Crop size={18} />} label="Select Area" onClick={onTakeAreaScreenshot} />
-      <ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
+      {/*<ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
       <ToolButton icon={<Type size={18} />} label="OCR Text" />
-      <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" />
+      <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" />*/}
 
       <div className="h-6 w-[1px] bg-white/20 mx-1" />
 
