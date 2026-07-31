@@ -28,6 +28,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [fontFamily, setFontFamily] = useState('Inter');
   const [isBold, setIsBold] = useState(false);
   const [isItalic, setIsItalic] = useState(false);
+  const [fillEnabled, setFillEnabled] = useState(false);
   const [cropMode, setCropMode] = useState(false);
   const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
@@ -96,7 +97,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         }, false);
       }
     }
-  }, [fontSize, fontFamily, isBold, isItalic]);
+  }, [fontSize, fontFamily, isBold, isItalic, selectedId]);
 
   useEffect(() => {
     if (selectedId) {
@@ -105,11 +106,16 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         if (shape.type === 'text' || shape.type === 'number') {
           updateShape(selectedId, { fill: color }, false);
         } else {
-          updateShape(selectedId, { stroke: color, strokeWidth, opacity }, false);
+          const attrs: Partial<ShapeConfig> = { stroke: color, strokeWidth, opacity };
+          if (shape.type === 'rect' || shape.type === 'circle') {
+            attrs.fill = fillEnabled ? color : 'transparent';
+            attrs.fillEnabled = fillEnabled;
+          }
+          updateShape(selectedId, attrs, false);
         }
       }
     }
-  }, [color, strokeWidth, opacity]);
+  }, [color, strokeWidth, opacity, fillEnabled, selectedId]);
 
   useEffect(() => {
     if (canvasContainerRef.current) {
@@ -130,10 +136,17 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             setIsBold(shape.fontStyle.includes('bold'));
             setIsItalic(shape.fontStyle.includes('italic'));
           }
+        } else {
+          if (shape.stroke) setColor(shape.stroke);
+          if (shape.strokeWidth !== undefined) setStrokeWidth(shape.strokeWidth);
+          if (shape.opacity !== undefined) setOpacity(shape.opacity);
+          if (shape.type === 'rect' || shape.type === 'circle') {
+            if (shape.fillEnabled !== undefined) setFillEnabled(shape.fillEnabled);
+          }
         }
       }
     }
-  }, [selectedId]);
+  }, [selectedId, shapes]);
 
   const handleDuplicate = useCallback((shape: ShapeConfig) => {
     const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -144,8 +157,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       y: (shape.y || 0) + 20,
     };
     addShape(newShape, true);
-    commitShapes();
-  }, [addShape, commitShapes]);
+  }, [addShape]);
 
   const handleToolChange = (tool: Tool) => {
     setSelectedTool(tool);
@@ -284,7 +296,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           y: (clipboardRef.current.y || 0) + 20,
         };
         addShape(pastedShape, true);
-        commitShapes();
         setSelectedTool('select');
         return;
       }
@@ -298,6 +309,12 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         return;
       }
 
+      if (isCtrl && e.key === 'y' && !editingTextId) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+
       if (e.key === 'Escape') {
         e.preventDefault();
         setSelectedId(null);
@@ -307,7 +324,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, setSelectedTool, setSelectedId]);
+  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, handleUndo, handleRedo, setSelectedTool, setSelectedId]);
 
 
 
@@ -352,6 +369,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         fontFamily={fontFamily} setFontFamily={setFontFamily}
         isBold={isBold} setIsBold={setIsBold}
         isItalic={isItalic} setIsItalic={setIsItalic}
+        fillEnabled={fillEnabled} setFillEnabled={setFillEnabled}
       />
 
       <div
@@ -374,6 +392,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           color={color}
           strokeWidth={strokeWidth}
           opacity={opacity}
+          fillEnabled={fillEnabled}
           cropMode={cropMode}
           setCropMode={setCropMode}
           cropRect={cropRect}
@@ -416,6 +435,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setIsBold={setIsBold}
           isItalic={isItalic}
           setIsItalic={setIsItalic}
+          fillEnabled={fillEnabled}
+          setFillEnabled={setFillEnabled}
         />
         {cropMode && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">

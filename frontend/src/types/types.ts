@@ -60,6 +60,7 @@ export interface ShapeConfig {
   fontFamily?: string;
   fontStyle?: string;
   rotation?: number;
+  fillEnabled?: boolean;
 }
 
 export interface EditorProps {

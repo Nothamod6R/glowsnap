@@ -7,10 +7,14 @@ export function useShapes() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { saveHistory, undo, redo } = useHistory();
 
-  const addShape = useCallback((shape: ShapeConfig, select = true) => {
-    setShapes(prev => [...prev, shape]);
+  const addShape = useCallback((shape: ShapeConfig, select = true, save = true) => {
+    setShapes(prev => {
+      const newShapes = [...prev, shape];
+      if (save) saveHistory(newShapes);
+      return newShapes;
+    });
     if (select) setSelectedId(shape.id);
-  }, []);
+  }, [saveHistory]);
 
   const updateShape = useCallback((id: string, newAttrs: Partial<ShapeConfig>, save = true) => {
     setShapes(prev => {

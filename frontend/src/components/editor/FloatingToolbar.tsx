@@ -9,6 +9,7 @@ import {
   Bold,
   Italic,
   Palette,
+  PaintBucket,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
@@ -34,6 +35,8 @@ interface FloatingToolbarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  fillEnabled: boolean;
+  setFillEnabled: (v: boolean) => void;
 }
 
 export default function FloatingToolbar({
@@ -56,6 +59,8 @@ export default function FloatingToolbar({
   setIsBold,
   isItalic,
   setIsItalic,
+  fillEnabled,
+  setFillEnabled,
 }: FloatingToolbarProps) {
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
@@ -103,6 +108,17 @@ export default function FloatingToolbar({
     onDelete(selectedShape.id);
   };
 
+  const handleFillToggle = () => {
+    if (!selectedShape) return;
+    const newFillEnabled = !fillEnabled;
+    setFillEnabled(newFillEnabled);
+    onUpdateShape(selectedShape.id, {
+      fillEnabled: newFillEnabled,
+      fill: newFillEnabled ? color : 'transparent',
+    });
+  };
+
+  const isRectOrCircle = selectedShape?.type === 'rect' || selectedShape?.type === 'circle';
   const isText = selectedShape?.type === 'text' || selectedShape?.type === 'number';
 
   const currentOpacity = selectedShape?.opacity ?? 1;
@@ -136,6 +152,21 @@ export default function FloatingToolbar({
                 className="w-5 h-5 rounded border border-white/10 bg-transparent cursor-pointer"
               />
             </div>
+
+            {isRectOrCircle && (
+              <>
+                <div className="w-px h-6 bg-white/10" />
+                <button
+                  onClick={handleFillToggle}
+                  className={`p-1.5 rounded-lg transition-colors ${
+                    fillEnabled ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                  }`}
+                  title={fillEnabled ? 'Fill enabled' : 'No fill'}
+                >
+                  <PaintBucket size={12} />
+                </button>
+              </>
+            )}
 
             {isText && (
               <>

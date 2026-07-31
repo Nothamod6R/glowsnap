@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Minus, Plus, Bold, Italic, Layers, Type } from 'lucide-react';
+import { Palette, Minus, Plus, Bold, Italic, Layers, Type, PaintBucket } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Tool } from '@/types/types';
@@ -20,6 +20,8 @@ interface OptionsBarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  fillEnabled: boolean;
+  setFillEnabled: (v: boolean) => void;
 }
 
 const handleSlider = (setter: (v: number) => void) => (v: number | readonly number[]) => {
@@ -28,7 +30,8 @@ const handleSlider = (setter: (v: number) => void) => (v: number | readonly numb
 
 export default function OptionsBar({
   selectedTool, color, setColor, strokeWidth, setStrokeWidth, opacity, setOpacity,
-  fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic
+  fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic,
+  fillEnabled, setFillEnabled,
 }: OptionsBarProps) {
   if (selectedTool === 'select' || selectedTool === 'crop') return null;
 
@@ -73,6 +76,24 @@ export default function OptionsBar({
         />
         <span className="text-[10px] text-white/60 w-8 text-right tabular-nums">{Math.round(opacity * 100)}%</span>
       </div>
+
+      {(selectedTool === 'rectangle' || selectedTool === 'circle') && (
+        <>
+          <div className="w-px h-4 bg-white/20" />
+          <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+            <PaintBucket size={13} className="text-white/50" />
+            <button
+              onClick={() => setFillEnabled(!fillEnabled)}
+              className={`text-[10px] px-2 py-0.5 rounded transition-colors ${
+                fillEnabled ? 'bg-white/20 text-white' : 'text-white/40'
+              }`}
+              title={fillEnabled ? 'Fill enabled' : 'No fill'}
+            >
+              {fillEnabled ? 'Fill' : 'No Fill'}
+            </button>
+          </div>
+        </>
+      )}
 
       {selectedTool === 'text' && (
         <>

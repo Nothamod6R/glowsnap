@@ -1,34 +1,43 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { ShapeConfig } from "@/types/types";
 
 export function useHistory() {
   const [history, setHistory] = useState<ShapeConfig[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
 
+  const historyRef = useRef({ history: [] as ShapeConfig[][], index: -1 });
+
   const saveHistory = useCallback((shapes: ShapeConfig[]) => {
-    setHistory(prev => {
-      const newHistory = prev.slice(0, historyIndex + 1);
-      newHistory.push([...shapes]); 
-      return newHistory;
-    });
-    setHistoryIndex(prev => prev + 1);
-  }, [historyIndex]);
+    const current = historyRef.current;
+    const newHistory = current.history.slice(0, current.index + 1);
+    newHistory.push(shapes.map(s => ({ ...s })));
+    current.history = newHistory;
+    current.index = newHistory.length - 1;
+    setHistory(newHistory);
+    setHistoryIndex(current.index);
+  }, []);
 
   const undo = useCallback(() => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      return history[historyIndex - 1];
+    const current = historyRef.current;
+    if (current.index > 0) {
+      current.index -= 1;
+      setHistoryIndex(current.index);
+      setHistory(current.history);
+      return current.history[current.index].map(s => ({ ...s }));
     }
     return null;
-  }, [history, historyIndex]);
+  }, []);
 
   const redo = useCallback(() => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      return history[historyIndex + 1];
+    const current = historyRef.current;
+    if (current.index < current.history.length - 1) {
+      current.index += 1;
+      setHistoryIndex(current.index);
+      setHistory(current.history);
+      return current.history[current.index].map(s => ({ ...s }));
     }
     return null;
-  }, [history, historyIndex]);
+  }, []);
 
   return { saveHistory, undo, redo, historyIndex, historyLength: history.length };
 }

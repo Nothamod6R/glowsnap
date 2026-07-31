@@ -16,13 +16,14 @@ interface CanvasProps {
   shapes: ShapeConfig[];
   selectedId: string | null;
   setSelectedId: (id: string | null) => void;
-  addShape: (shape: ShapeConfig, select?: boolean) => void;
+  addShape: (shape: ShapeConfig, select?: boolean, save?: boolean) => void;
   updateShape: (id: string, attrs: Partial<ShapeConfig>, save?: boolean) => void;
   deleteShape: (id: string) => void;
   commitShapes: () => void;
   color: string;
   strokeWidth: number;
   opacity: number;
+  fillEnabled: boolean;
   cropMode: boolean;
   setCropMode: (v: boolean) => void;
   cropRect: { x: number; y: number; width: number; height: number } | null;
@@ -62,7 +63,7 @@ function getConstrainedPoint(start: { x: number; y: number }, current: { x: numb
 
 const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   image, stageSize, selectedTool, shapes, selectedId, setSelectedId,
-  addShape, updateShape, deleteShape, commitShapes, color, strokeWidth, opacity,
+  addShape, updateShape, deleteShape, commitShapes, color, strokeWidth, opacity, fillEnabled,
   cropMode, setCropMode, cropRect, setCropRect,
   onTextDoubleClick, editingTextId,
   backgroundSettings, imageTransform, onImageTransform,
@@ -75,6 +76,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const isShiftPressed = useRef(false);
   const startPointRef = useRef<{ x: number; y: number } | null>(null);
   const cropStartPos = useRef<{ x: number; y: number } | null>(null);
+  const justFinishedDrawing = useRef(false);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
 
@@ -153,8 +155,17 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const handleShapeDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
     const id = node.id();
-    updateShape(id, { x: node.x(), y: node.y() });
-  }, [updateShape]);
+    const shape = shapes.find(s => s.id === id);
+    if (!shape) return;
+
+    if (shape.type === 'circle') {
+      const w = shape.width || 80;
+      const h = shape.height || 80;
+      updateShape(id, { x: node.x() - w / 2, y: node.y() - h / 2 });
+    } else {
+      updateShape(id, { x: node.x(), y: node.y() });
+    }
+  }, [shapes, updateShape]);
 
   const handleTransformEnd = useCallback((e: Konva.KonvaEventObject<Event>) => {
     const node = e.target;
@@ -168,8 +179,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     node.scaleY(1);
 
     const newAttrs: Partial<ShapeConfig> = {
-      x: node.x(),
-      y: node.y(),
       rotation: node.rotation(),
     };
 
@@ -177,9 +186,20 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       newAttrs.fontSize = Math.max(8, Math.min(200, Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2))));
       if (shape.width) newAttrs.width = (shape.width || 100) * scaleX;
       if (shape.height) newAttrs.height = (shape.height || 30) * scaleY;
+      newAttrs.x = node.x();
+      newAttrs.y = node.y();
+    } else if (shape.type === 'circle') {
+      const newWidth = (shape.width || 80) * scaleX;
+      const newHeight = (shape.height || 80) * scaleY;
+      newAttrs.width = Math.max(10, newWidth);
+      newAttrs.height = Math.max(10, newHeight);
+      newAttrs.x = node.x() - newWidth / 2;
+      newAttrs.y = node.y() - newHeight / 2;
     } else {
       if (shape.width) newAttrs.width = (shape.width || 100) * scaleX;
       if (shape.height) newAttrs.height = (shape.height || 30) * scaleY;
+      newAttrs.x = node.x();
+      newAttrs.y = node.y();
     }
 
     updateShape(id, newAttrs);
@@ -222,7 +242,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         opacity,
         fill: 'transparent',
       };
-      addShape(drawingRef.current, false);
+      addShape(drawingRef.current, false, false);
     } else if (selectedTool === 'rectangle' || selectedTool === 'circle') {
       isDrawing.current = true;
       startPointRef.current = { x: pos.x, y: pos.y };
@@ -235,18 +255,19 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         y: pos.y,
         width: 0,
         height: 0,
-        fill: 'transparent',
+        fill: fillEnabled ? color : 'transparent',
+        fillEnabled: fillEnabled,
         stroke: color,
         strokeWidth,
         opacity,
       };
-      addShape(drawingRef.current, false);
+      addShape(drawingRef.current, false, false);
     } else if (selectedTool === 'crop') {
       setCropMode(true);
       cropStartPos.current = { x: pos.x, y: pos.y };
       setCropRect({ x: pos.x, y: pos.y, width: 0, height: 0 });
     }
-  }, [selectedTool, color, strokeWidth, opacity, addShape, setCropMode, setCropRect]);
+  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, setCropMode, setCropRect]);
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     const point = e.target.getStage()?.getPointerPosition();
@@ -263,7 +284,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         let width = Math.abs(dx);
         let height = Math.abs(dy);
 
-        // Constrain to square/circle when Shift is held
         if (isShiftPressed.current) {
           const size = Math.max(width, height);
           width = size;
@@ -273,7 +293,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         const x = dx >= 0 ? startPoint.x : startPoint.x - width;
         const y = dy >= 0 ? startPoint.y : startPoint.y - height;
 
-        // Update both the React state and the ref so handleMouseUp reads correct dimensions
         drawingRef.current = { ...drawingRef.current, x, y, width, height };
         updateShape(drawingRef.current.id, {
           x,
@@ -282,7 +301,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
           height,
         }, false);
       } else {
-        // Pen/arrow drawing
         if (isShiftPressed.current) {
           const constrainedEnd = getConstrainedPoint(startPoint, point);
           const newPoints = [startPoint.x, startPoint.y, constrainedEnd.x, constrainedEnd.y];
@@ -320,21 +338,27 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
           setSelectedId(shape.id);
           onChangeTool?.('select');
         } else {
-          // Discard tiny accidental shapes
           deleteShape(shape.id);
         }
       } else {
         commitShapes();
+        setSelectedId(shape.id);
+        onChangeTool?.('select');
       }
 
       isDrawing.current = false;
       drawingRef.current = null;
       startPointRef.current = null;
+      justFinishedDrawing.current = true;
     }
     cropStartPos.current = null;
   }, [commitShapes, setSelectedId, onChangeTool, deleteShape]);
 
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (justFinishedDrawing.current) {
+      justFinishedDrawing.current = false;
+      return;
+    }
     if (selectedTool === 'select') {
       setSelectedId(null);
       return;
@@ -354,14 +378,13 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       addShape({
         id, type: selectedTool === 'number' ? 'number' : 'text',
         x: pos.x, y: pos.y,
-        text, fill: fillColor, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
+        text, fill: fillColor, fillEnabled: true, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
       });
       if (!isNumber) {
         onChangeTool?.('select');
       }
     }
-    commitShapes();
-  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, commitShapes, onChangeTool]);
+  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, onChangeTool]);
 
   const renderShape = (shape: ShapeConfig) => {
     if (editingTextId === shape.id) return null;
@@ -388,7 +411,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       onTransformEnd: handleTransformEnd,
       onDblClick: () => { if (shape.type === 'text' || shape.type === 'number') onTextDoubleClick(shape); },
       stroke: shape.stroke,
-      fill: shape.fill,
+      fill: shape.fillEnabled === false ? 'transparent' : (shape.fill || 'transparent'),
       strokeWidth: shape.strokeWidth,
       opacity: shape.opacity,
     };
