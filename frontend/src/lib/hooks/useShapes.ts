@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { ShapeConfig } from "@/types/types";
-import { useHistory } from '@/hooks/useHistory';
+import { useHistory } from '@/lib/hooks/useHistory';
 
 export function useShapes() {
   const [shapes, setShapes] = useState<ShapeConfig[]>([]);

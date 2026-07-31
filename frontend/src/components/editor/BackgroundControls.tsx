@@ -1,7 +1,7 @@
 import React from 'react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
-import { BackgroundSettings } from '@/hooks/useBackground';
+import { BackgroundSettings } from '@/lib/hooks/useBackground';
 import { Paintbrush, ArrowRightLeft, Palette, RotateCw, Maximize } from 'lucide-react';
 
 interface Props {

@@ -15,7 +15,7 @@ import { AnimatePresence } from 'framer-motion';
 import Palette from './components/Palette';
 import Studio from './components/Studio';
 import RecordingBar from './components/RecordingBar';
-import useKeyboardShortcut from './hooks/useKeyboardShortcut';
+import useKeyboardShortcut from './lib/hooks/useKeyboardShortcut';
 import { WindowMode } from './types/types';
 
 export default function App() {

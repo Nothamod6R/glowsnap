@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/godbus/dbus/v5 v5.2.2
-	github.com/wailsapp/wails/v2 v2.13.0
+	github.com/wailsapp/wails/v2 v2.12.0
 )
 
 require (

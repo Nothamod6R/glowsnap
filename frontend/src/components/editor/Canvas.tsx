@@ -2,7 +2,7 @@ import React, { forwardRef, useImperativeHandle, useRef, useEffect, useCallback 
 import Konva from 'konva';
 import { Stage, Layer, Rect, Circle, Arrow, Text, Line, Image as KonvaImage, Transformer } from 'react-konva';
 import { ShapeConfig, Tool } from '@/types/types';
-import { BackgroundSettings } from '@/hooks/useBackground';
+import { BackgroundSettings } from '@/lib/hooks/useBackground';
 
 const HANDLE_ANCHOR_SIZE = 10;
 const HANDLE_STROKE_WIDTH = 2;
@@ -249,11 +249,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   }, [commitShapes]);
 
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    // Deselect when clicking on the stage background
     if (selectedTool === 'select') {
-      if (e.target === e.target.getStage()) {
-        setSelectedId(null);
-      }
+      setSelectedId(null);
       return;
     }
     if (selectedTool === 'crop' || selectedTool === 'pen' || selectedTool === 'arrow') return;
@@ -344,8 +341,16 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             rotation={shape.rotation || 0}
           />
         );
-      case 'line':
-        return <Line {...commonProps} points={shape.points!} tension={0.5} lineCap="round" />;
+        case 'line':
+          return (
+            <Line
+              {...commonProps}
+              points={shape.points!}
+              tension={0.3}
+              lineCap="round"
+              lineJoin="round"
+            />
+          );
       default:
         return null;
     }

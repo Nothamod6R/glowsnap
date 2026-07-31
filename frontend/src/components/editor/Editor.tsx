@@ -3,9 +3,9 @@ import Konva from 'konva';
 import { X, Download, Undo2, Redo2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tool, EditorProps, ShapeConfig } from '@/types/types';
-import { useShapes } from '@/hooks/useShapes';
-import { useTextEditing } from '@/hooks/useTextEditing';
-import { useBackground } from '@/hooks/useBackground';
+import { useShapes } from '@/lib/hooks/useShapes';
+import { useTextEditing } from '@/lib/hooks/useTextEditing';
+import { useBackground } from '@/lib/hooks/useBackground';
 import Toolbar from './Toolbar';
 import OptionsBar from './OptionsBar';
 import BackgroundControls from './BackgroundControls';
@@ -154,6 +154,52 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   };
 
   const applyCrop = () => {
+    if (!image || !cropRect || !stageRef.current) return;
+  
+    const scaleX = imageTransform.scaleX;
+    const scaleY = imageTransform.scaleY;
+    const offsetX = imageTransform.x;
+    const offsetY = imageTransform.y;
+  
+    const cropX = (cropRect.x - offsetX) / scaleX;
+    const cropY = (cropRect.y - offsetY) / scaleY;
+    const cropWidth = cropRect.width / scaleX;
+    const cropHeight = cropRect.height / scaleY;
+  
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+  
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+  
+    ctx.drawImage(
+      image,
+      cropX, cropY, cropWidth, cropHeight,
+      0, 0, cropWidth, cropHeight
+    );
+  
+    const croppedImage = new window.Image();
+    croppedImage.src = canvas.toDataURL();
+    croppedImage.onload = () => {
+      setImage(croppedImage);
+      const maxW = window.innerWidth * 0.8;
+      const maxH = window.innerHeight * 0.75;
+      const baseScale = Math.min(maxW / croppedImage.width, maxH / croppedImage.height, 1);
+      const pad = background.enabled ? background.padding : 0;
+      setStageSize({
+        width: croppedImage.width * baseScale + pad * 2,
+        height: croppedImage.height * baseScale + pad * 2,
+      });
+      setImageTransform({
+        x: pad,
+        y: pad,
+        scaleX: baseScale,
+        scaleY: baseScale,
+        rotation: 0,
+      });
+    };
+  
     setCropMode(false);
     setCropRect(null);
     setSelectedTool('select');
@@ -189,25 +235,37 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     }
   };
 
-  // Clipboard for copy/paste
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
-  // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't handle shortcuts when editing text
       if (editingTextId) return;
 
       const isCtrl = e.ctrlKey || e.metaKey;
 
-      // Delete / Backspace → Delete selected shape
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault();
         deleteShape(selectedId);
         return;
       }
 
-      // Ctrl+C → Copy selected shape
+      if (isCtrl && e.key === 'z' && !e.shiftKey) {
+           e.preventDefault();
+           handleUndo();
+           return;
+         }
+         if (isCtrl && (e.key === 'Z' || (e.key === 'z' && e.shiftKey))) {
+           e.preventDefault();
+           handleRedo();
+           return;
+         }
+         if (isCtrl && e.key === 's' || isCtrl && e.key === 'S' ) {
+           e.preventDefault();
+           exportImage(); 
+           return;
+         }
+
+
       if (isCtrl && e.key === 'c' && selectedId) {
         e.preventDefault();
         const shape = shapes.find(s => s.id === selectedId);
@@ -217,7 +275,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         return;
       }
 
-      // Ctrl+V → Paste copied shape
       if (isCtrl && e.key === 'v' && clipboardRef.current) {
         e.preventDefault();
         const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -233,7 +290,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         return;
       }
 
-      // Ctrl+D → Duplicate selected shape
       if (isCtrl && e.key === 'd' && selectedId) {
         e.preventDefault();
         const shape = shapes.find(s => s.id === selectedId);
@@ -243,7 +299,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         return;
       }
 
-      // Esc → Deselect
       if (e.key === 'Escape') {
         e.preventDefault();
         setSelectedId(null);

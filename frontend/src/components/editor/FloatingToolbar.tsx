@@ -127,8 +127,7 @@ export default function FloatingToolbar({
             pointerEvents: 'auto',
           }}
         >
-          <div className="flex items-center gap-1.5 bg-gray-900/95 backdrop-blur-xl border border-white/15 rounded-xl px-2.5 py-2 shadow-2xl shadow-black/50">
-            {/* Color Picker */}
+          <div className="flex items-center gap-1.5 backdrop-blur-xl  border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
             <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1.5 py-1">
               <Palette size={12} className="text-white/50 shrink-0" />
               <input
@@ -141,7 +140,6 @@ export default function FloatingToolbar({
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Bold / Italic */}
             <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
               <Toggle
                 pressed={isBold}
@@ -163,7 +161,6 @@ export default function FloatingToolbar({
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Font Family */}
             <div className="bg-white/5 rounded-lg px-1.5 py-1">
               <select
                 value={fontFamily}
@@ -171,14 +168,13 @@ export default function FloatingToolbar({
                 className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
               >
                 {['Inter', 'Arial', 'Courier New', 'Georgia'].map(f => (
-                  <option key={f} value={f} className="bg-gray-800 text-white">{f}</option>
+                  <option key={f} value={f} className="bg-gray-900 text-white">{f}</option>
                 ))}
               </select>
             </div>
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Font Size */}
             <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
               <Type size={12} className="text-white/50 shrink-0" />
               <Slider
@@ -193,7 +189,6 @@ export default function FloatingToolbar({
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Opacity */}
             <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
               <Layers size={12} className="text-white/50 shrink-0" />
               <Slider
@@ -208,7 +203,6 @@ export default function FloatingToolbar({
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Rotation */}
             <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
               <RotateCw size={12} className="text-white/50 shrink-0" />
               <Slider
@@ -223,16 +217,14 @@ export default function FloatingToolbar({
 
             <div className="w-px h-6 bg-white/10" />
 
-            {/* Duplicate */}
             <button
               onClick={handleDuplicate}
-              className="p-1.5 hover:bg-white/10 rounded-lg text-white/60 hover:text-white transition-colors"
+              className="p-1.5 bg-white/5 rounded-lg text-white/60 hover:text-white transition-colors"
               title="Duplicate"
             >
               <Copy size={14} />
             </button>
 
-            {/* Delete */}
             <button
               onClick={handleDelete}
               className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-colors"
