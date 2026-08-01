@@ -14,7 +14,6 @@ import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
 
-
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -87,7 +86,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   }, [background.padding, background.enabled, image]);
 
   useEffect(() => {
-    if (selectedId) {
+    if (selectedId && selectedTool === 'select') {
       const shape = shapes.find(s => s.id === selectedId);
       if (shape && (shape.type === 'text' || shape.type === 'number')) {
         updateShape(selectedId, {
@@ -97,10 +96,10 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         }, false);
       }
     }
-  }, [fontSize, fontFamily, isBold, isItalic, selectedId]);
+  }, [fontSize, fontFamily, isBold, isItalic, selectedId, selectedTool]);
 
   useEffect(() => {
-    if (selectedId) {
+    if (selectedId && selectedTool === 'select') {
       const shape = shapes.find(s => s.id === selectedId);
       if (shape) {
         if (shape.type === 'text' || shape.type === 'number') {
@@ -115,7 +114,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         }
       }
     }
-  }, [color, strokeWidth, opacity, fillEnabled, selectedId]);
+  }, [color, strokeWidth, opacity, fillEnabled, selectedId, selectedTool]);
 
   useEffect(() => {
     if (canvasContainerRef.current) {
@@ -166,30 +165,30 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
   const applyCrop = () => {
     if (!image || !cropRect || !stageRef.current) return;
-  
+
     const scaleX = imageTransform.scaleX;
     const scaleY = imageTransform.scaleY;
     const offsetX = imageTransform.x;
     const offsetY = imageTransform.y;
-  
+
     const cropX = (cropRect.x - offsetX) / scaleX;
     const cropY = (cropRect.y - offsetY) / scaleY;
     const cropWidth = cropRect.width / scaleX;
     const cropHeight = cropRect.height / scaleY;
-  
+
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-  
+
     canvas.width = cropWidth;
     canvas.height = cropHeight;
-  
+
     ctx.drawImage(
       image,
       cropX, cropY, cropWidth, cropHeight,
       0, 0, cropWidth, cropHeight
     );
-  
+
     const croppedImage = new window.Image();
     croppedImage.src = canvas.toDataURL();
     croppedImage.onload = () => {
@@ -210,7 +209,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         rotation: 0,
       });
     };
-  
+
     setCropMode(false);
     setCropRect(null);
     setSelectedTool('select');
@@ -239,7 +238,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       const uint8arr = new Uint8Array(arrayBuffer);
 
       await WriteFile(filePath, Array.from(uint8arr));
-      
+
       console.log('Image saved to:', filePath);
     } catch (err) {
       console.error('Export failed:', err);
@@ -247,7 +246,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   };
 
   const clipboardRef = useRef<ShapeConfig | null>(null);
-
 
   useEffect(() => {
 
@@ -265,7 +263,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingTextId) return;
       if (isEditableTarget(e.target)) return;
-      
+
       const isCtrl = e.ctrlKey || e.metaKey;
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
@@ -275,21 +273,20 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       }
 
       if (isCtrl && e.key === 'z' && !e.shiftKey) {
-           e.preventDefault();
-           handleUndo();
-           return;
-         }
-         if (isCtrl && (e.key === 'Z' || (e.key === 'z' && e.shiftKey))) {
-           e.preventDefault();
-           handleRedo();
-           return;
-         }
-         if (isCtrl && e.key === 's' || isCtrl && e.key === 'S' ) {
-           e.preventDefault();
-           exportImage(); 
-           return;
-         }
-
+        e.preventDefault();
+        handleUndo();
+        return;
+      }
+      if (isCtrl && (e.key === 'Z' || (e.key === 'z' && e.shiftKey))) {
+        e.preventDefault();
+        handleRedo();
+        return;
+      }
+      if (isCtrl && e.key === 's' || isCtrl && e.key === 'S') {
+        e.preventDefault();
+        exportImage();
+        return;
+      }
 
       if (isCtrl && e.key === 'c' && selectedId) {
         e.preventDefault();
@@ -340,9 +337,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, handleUndo, handleRedo, setSelectedTool, setSelectedId]);
 
-
-
-
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
       <div className="flex items-center justify-between px-4 py-2 border-b border-white/10 shrink-0">
@@ -358,7 +352,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
               <Trash2 size={16} />
             </button>
           )}
-          <button  onClick={exportImage} className="p-2 hover:bg-white/10  rounded ">
+          <button onClick={exportImage} className="p-2 hover:bg-white/10  rounded ">
             <Download size={16} />
           </button>
         </div>
