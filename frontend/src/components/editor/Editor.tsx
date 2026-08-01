@@ -14,6 +14,7 @@ import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
 
+
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);

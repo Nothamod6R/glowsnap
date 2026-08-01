@@ -1,6 +1,6 @@
 import React, { forwardRef, useImperativeHandle, useRef, useEffect, useCallback } from 'react';
 import Konva from 'konva';
-import { Stage, Layer, Rect, Ellipse, Arrow, Text, Line, Image as KonvaImage, Transformer } from 'react-konva';
+import { Stage, Layer, Group, Rect, Ellipse, Arrow, Text, Line, Image as KonvaImage, Transformer } from 'react-konva';
 import { ShapeConfig, Tool } from '@/types/types';
 import { BackgroundSettings } from '@/lib/hooks/useBackground';
 
@@ -70,6 +70,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   onChangeTool,
 }, ref) => {
   const stageRef = useRef<Konva.Stage>(null);
+  const contentGroupRef = useRef<Konva.Group>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const drawingRef = useRef<ShapeConfig | null>(null);
   const isDrawing = useRef(false);
@@ -79,6 +80,17 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const justFinishedDrawing = useRef(false);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
+
+  const groupOffsetX = imageTransform.x;
+  const groupOffsetY = imageTransform.y;
+
+  const getRelativePointer = useCallback((): { x: number; y: number } | null => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+    const pos = stage.getPointerPosition();
+    if (!pos) return null;
+    return { x: pos.x - groupOffsetX, y: pos.y - groupOffsetY };
+  }, [groupOffsetX, groupOffsetY]);
 
   const getGradientEndPoint = () => {
     const rad = (backgroundSettings.angle * Math.PI) / 180;
@@ -205,27 +217,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     updateShape(id, newAttrs);
   }, [shapes, updateShape]);
 
-  const handleImageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
-    onImageTransform({ ...imageTransform, x: e.target.x(), y: e.target.y() });
-  };
-
-  const handleImageTransformEnd = (e: Konva.KonvaEventObject<Event>) => {
-    const node = e.target;
-    const scaleX = node.scaleX();
-    const scaleY = node.scaleY();
-    node.scaleX(1);
-    node.scaleY(1);
-    onImageTransform({
-      x: node.x(),
-      y: node.y(),
-      scaleX: imageTransform.scaleX * scaleX,
-      scaleY: imageTransform.scaleY * scaleY,
-      rotation: node.rotation(),
-    });
-  };
-
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    const pos = e.target.getStage()?.getPointerPosition();
+    const pos = getRelativePointer();
     if (!pos) return;
 
     if (selectedTool === 'pen' || selectedTool === 'arrow') {
@@ -267,10 +260,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       cropStartPos.current = { x: pos.x, y: pos.y };
       setCropRect({ x: pos.x, y: pos.y, width: 0, height: 0 });
     }
-  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, setCropMode, setCropRect]);
+  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, setCropMode, setCropRect, getRelativePointer]);
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
-    const point = e.target.getStage()?.getPointerPosition();
+    const point = getRelativePointer();
     if (!point) return;
 
     if (isDrawing.current && drawingRef.current) {
@@ -322,7 +315,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         height: Math.abs(point.y - start.y),
       });
     }
-  }, [selectedTool, updateShape, setCropRect]);
+  }, [selectedTool, updateShape, setCropRect, getRelativePointer]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing.current && drawingRef.current) {
@@ -364,7 +357,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       return;
     }
     if (selectedTool === 'crop' || selectedTool === 'pen' || selectedTool === 'arrow' || selectedTool === 'rectangle' || selectedTool === 'circle') return;
-    const pos = e.target.getStage()?.getPointerPosition();
+    const pos = getRelativePointer();
     if (!pos) return;
     const id = Date.now().toString(36) + Math.random().toString(36).substring(2, 7);
 
@@ -384,7 +377,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         onChangeTool?.('select');
       }
     }
-  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, onChangeTool]);
+  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, onChangeTool, getRelativePointer]);
 
   const renderShape = (shape: ShapeConfig) => {
     if (editingTextId === shape.id) return null;
@@ -468,43 +461,47 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     >
       <Layer>
         {renderBackground()}
-        {image && (
-          <KonvaImage
-            id="main-image"
-            image={image}
-            x={imageTransform.x}
-            y={imageTransform.y}
-            width={image.width}
-            height={image.height}
-            cornerRadius={25}
-            scaleX={imageTransform.scaleX}
-            scaleY={imageTransform.scaleY}
-            rotation={imageTransform.rotation}
-            draggable={backgroundSettings.enabled && selectedTool === 'select'}
-            onDragEnd={handleImageDragEnd}
-            onTransformEnd={handleImageTransformEnd}
-          />
-        )}
-        {shapes.map(renderShape)}
-        {selectedId && selectedTool === 'select' && (
-          <Transformer
-            ref={transformerRef}
-            rotateEnabled={true}
-            enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
-            borderStroke={BOUNDING_BOX_STROKE}
-            borderStrokeWidth={1.5}
-            borderDash={[4, 4]}
-            anchorFill={HANDLE_FILL}
-            anchorStroke={HANDLE_STROKE}
-            anchorSize={HANDLE_ANCHOR_SIZE}
-            anchorCornerRadius={2}
-            keepRatio={false}
-            boundBoxFunc={(oldBox, newBox) => {
-              if (newBox.width < 10 || newBox.height < 10) return oldBox;
-              return newBox;
-            }}
-          />
-        )}
+        <Group
+          ref={contentGroupRef}
+          x={groupOffsetX}
+          y={groupOffsetY}
+        >
+          {image && (
+            <KonvaImage
+              id="main-image"
+              image={image}
+              x={0}
+              y={0}
+              width={image.width}
+              height={image.height}
+              cornerRadius={25}
+              scaleX={imageTransform.scaleX}
+              scaleY={imageTransform.scaleY}
+              rotation={imageTransform.rotation}
+              draggable={false}
+            />
+          )}
+          {shapes.map(renderShape)}
+          {selectedId && selectedTool === 'select' && (
+            <Transformer
+              ref={transformerRef}
+              rotateEnabled={true}
+              enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
+              borderStroke={BOUNDING_BOX_STROKE}
+              borderStrokeWidth={1.5}
+              borderDash={[4, 4]}
+              anchorFill={HANDLE_FILL}
+              anchorStroke={HANDLE_STROKE}
+              anchorSize={HANDLE_ANCHOR_SIZE}
+              anchorCornerRadius={2}
+              keepRatio={false}
+              boundBoxFunc={(oldBox, newBox) => {
+                if (newBox.width < 10 || newBox.height < 10) return oldBox;
+                return newBox;
+              }}
+            />
+          )}
+        </Group>
         {cropMode && cropRect && (
           <Rect
             {...cropRect}
