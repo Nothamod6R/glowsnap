@@ -1,4 +1,7 @@
 import Konva from 'konva';
+import type { main } from '../../wailsjs/go/models';
+
+export type Screenshot = main.ScreenshotInfo;
 
 
 export interface PaletteProps {

@@ -16,6 +16,7 @@ import (
 
 	"github.com/godbus/dbus/v5"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
+	"golang.org/x/sys/unix"
 )
 
 type App struct {
@@ -160,9 +161,27 @@ func (a *App) GetHomeDir() string {
 	return home
 }
 
+type ScreenshotInfo struct {
+	Name       string `json:"name"`
+	Path       string `json:"path"`
+	Size       int64  `json:"size"`
+	CreatedAt  int64  `json:"createdAt"`  
+	ModifiedAt int64  `json:"modifiedAt"` 
+	Date       int64  `json:"date"`      
+	DateSource string `json:"dateSource"` 
+}
 
+func birthTime(path string) (int64, string) {
+	var stx unix.Statx_t
+	if err := unix.Statx(unix.AT_FDCWD, path, 0, unix.STATX_BTIME, &stx); err == nil {
+		if stx.Mask&unix.STATX_BTIME != 0 && stx.Btime.Sec > 0 {
+			return stx.Btime.Sec, "birth"
+		}
+	}
+	return 0, ""
+}
 
-func (a *App) ListScreenshots() ([]string, error) {
+func (a *App) ListScreenshots() ([]ScreenshotInfo, error) {
     home, err := os.UserHomeDir()
     if err != nil {
         return nil, err
@@ -173,7 +192,7 @@ func (a *App) ListScreenshots() ([]string, error) {
         return nil, err
     }
 
-    var files []string
+    var files []ScreenshotInfo
     for _, entry := range entries {
         if entry.IsDir() {
             continue
@@ -181,8 +200,39 @@ func (a *App) ListScreenshots() ([]string, error) {
         ext := filepath.Ext(entry.Name())
         switch ext {
         case ".png", ".jpg", ".jpeg", ".webp", ".bmp":
-            files = append(files, entry.Name())
+        default:
+            continue
         }
+        full := filepath.Join(dir, entry.Name())
+        info, err := os.Stat(full)
+        if err != nil {
+            continue
+        }
+        modTime := info.ModTime().Unix()
+        birth, src := birthTime(full)
+
+        var date int64
+        var dateSource string
+        if birth > 0 {
+            date = birth
+            dateSource = src
+        } else {
+            date = modTime
+            dateSource = "mtime"
+        }
+
+        files = append(files, ScreenshotInfo{
+            Name:       entry.Name(),
+            Path:       full,
+            Size:       info.Size(),
+            CreatedAt:  birth,
+            ModifiedAt: modTime,
+            Date:       date,
+            DateSource: dateSource,
+        })
+    }
+    if files == nil {
+        files = []ScreenshotInfo{}
     }
     return files, nil
 }
