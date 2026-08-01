@@ -1,23 +1,47 @@
-import { useState } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { ShapeConfig } from '@/types/types';
 
-export function useTextEditing(updateShape: (id: string, attrs: Partial<ShapeConfig>) => void) {
+export function useTextEditing(updateShape: (id: string, attrs: Partial<ShapeConfig>, save?: boolean) => void) {
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
   const [editingTextValue, setEditingTextValue] = useState('');
-  const [editingTextPosition, setEditingTextPosition] = useState({ x: 0, y: 0 });
+  const originalTextRef = useRef('');
 
-  const startEditing = (shape: ShapeConfig) => {
-    setEditingTextId(shape.id);
+  const startEditing = useCallback((shape: ShapeConfig) => {
+    originalTextRef.current = shape.text || '';
     setEditingTextValue(shape.text || '');
-    setEditingTextPosition({ x: shape.x, y: shape.y });
-  };
+    setEditingTextId(shape.id);
+  }, []);
 
-  const finishEditing = () => {
+  const updateEditingText = useCallback((value: string) => {
+    setEditingTextValue(value);
+    if (editingTextId) updateShape(editingTextId, { text: value }, false);
+  }, [editingTextId, updateShape]);
+
+  const setEditingText = useCallback((value: string) => {
+    setEditingTextValue(value);
+  }, []);
+
+  const commitEditing = useCallback((extra?: Partial<ShapeConfig>) => {
     if (editingTextId) {
-      updateShape(editingTextId, { text: editingTextValue });
+      updateShape(editingTextId, { text: editingTextValue, ...extra }, true);
       setEditingTextId(null);
     }
-  };
+  }, [editingTextId, editingTextValue, updateShape]);
 
-  return { editingTextId, editingTextValue, editingTextPosition, startEditing, finishEditing, setEditingTextValue };
+  const cancelEditing = useCallback(() => {
+    if (editingTextId) {
+      updateShape(editingTextId, { text: originalTextRef.current }, false);
+      setEditingTextId(null);
+    }
+  }, [editingTextId, updateShape]);
+
+  return {
+    editingTextId,
+    editingTextValue,
+    startEditing,
+    updateEditingText,
+    setEditingText,
+    commitEditing,
+    cancelEditing,
+  };
 }

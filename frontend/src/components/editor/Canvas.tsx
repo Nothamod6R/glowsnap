@@ -161,7 +161,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       transformerRef.current.nodes([]);
       transformerRef.current.getLayer()?.batchDraw();
     }
-  }, [selectedId, selectedTool, shapes]);
+  }, [selectedId, selectedTool, shapes, editingTextId]);
 
   const handleShapeDragEnd = useCallback((e: Konva.KonvaEventObject<DragEvent>) => {
     const node = e.target;
@@ -385,16 +385,18 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         : 'Text';
       const fillColor = selectedTool === 'number' ? '#ff3b30' : color;
       const style = selectedTool === 'number' ? 'bold' : '';
-      addShape({
+      const textShape: ShapeConfig = {
         id, type: selectedTool === 'number' ? 'number' : 'text',
         x: pos.x, y: pos.y,
         text, fill: fillColor, fillEnabled: true, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
-      });
+      };
+      addShape(textShape);
       if (!isNumber) {
         onChangeTool?.('select');
+        onTextDoubleClick(textShape);
       }
     }
-  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, onChangeTool, getRelativePointer]);
+  }, [selectedTool, color, strokeWidth, opacity, shapes, addShape, onChangeTool, onTextDoubleClick, getRelativePointer]);
 
   const renderShape = (shape: ShapeConfig) => {
     if (editingTextId === shape.id) return null;
@@ -520,7 +522,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             />
           )}
           {shapes.map(renderShape)}
-          {selectedId && selectedTool === 'select' && (
+          {selectedId && selectedTool === 'select' && editingTextId !== selectedId && (
             <Transformer
               ref={transformerRef}
               rotateEnabled={true}
