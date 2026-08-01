@@ -248,10 +248,24 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
+
   useEffect(() => {
+
+    const isEditableTarget = (target: EventTarget | null) => {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      return (
+        tag === 'INPUT' ||
+        tag === 'TEXTAREA' ||
+        tag === 'SELECT' ||
+        target.isContentEditable
+      );
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingTextId) return;
-
+      if (isEditableTarget(e.target)) return;
+      
       const isCtrl = e.ctrlKey || e.metaKey;
 
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
