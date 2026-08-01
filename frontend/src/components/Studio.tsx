@@ -275,16 +275,37 @@ export default function Studio({ onBackToPalette }: StudioProps) {
             />
           </div>
 
-          <select
-            value={sortOrder}
-            onChange={e => setSortOrder(e.target.value as any)}
-            className="h-8 bg-black border border-white/10 rounded-lg text-xs px-2 text-white/80 focus:outline-none"
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="az">A-Z</option>
-            <option value="za">Z-A</option>
-          </select>
+          <div className="relative w-32">
+            <select
+              value={sortOrder}
+              onChange={e => setSortOrder(e.target.value as any)}
+              className="w-full h-8 pl-2 pr-8 text-xs bg-white/5 border border-white/10 rounded-lg text-white/80 focus:outline-none focus:border-white/30 appearance-none cursor-pointer"
+            >
+              <option value="newest" className="bg-black">
+                Newest
+              </option>
+              <option value="oldest" className="bg-black">
+                Oldest
+              </option>
+              <option value="az" className="bg-black">
+                A-Z
+              </option>
+              <option value="za" className="bg-black">
+                Z-A
+              </option>
+            </select>
+
+            <svg
+              className="absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/50 pointer-events-none"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+            </svg>
+          </div>
 
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
