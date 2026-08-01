@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ArrowLeft, Image as ImageIcon, RefreshCw, X, Search, Star, ArrowUpDown } from 'lucide-react';
-import { StudioProps } from '@/types/types';
+import { ArrowLeft, Image as ImageIcon, RefreshCw, X, Search, Star } from 'lucide-react';
+import { StudioProps, Screenshot } from '@/types/types';
 import { ListScreenshots, GetScreenshotsBaseURL, RenameScreenshot, DeleteScreenshot } from '../../wailsjs/go/main/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Editor from '@/components/editor/Editor';
@@ -17,11 +17,47 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const IMAGES_PER_PAGE = 50;
 
+const SUPPORTED_IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.bmp'];
+function withSupportedExtension(name: string, originalName: string): string {
+  const lower = name.toLowerCase();
+  if (SUPPORTED_IMAGE_EXTS.some(ext => lower.endsWith(ext))) return name;
+  const dot = originalName.lastIndexOf('.');
+  const ext = dot >= 0 ? originalName.slice(dot) : '.png';
+  return name + ext;
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(unixSeconds: number): string {
+  const d = new Date(unixSeconds * 1000);
+  return d.toLocaleString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function dateGroupLabel(unixSeconds: number): string {
+  const d = new Date(unixSeconds * 1000);
+  const today = new Date();
+  const sameDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  if (sameDay(d, today)) return 'Today';
+  const yest = new Date(today);
+  yest.setDate(today.getDate() - 1);
+  if (sameDay(d, yest)) return 'Yesterday';
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
 export default function Studio({ onBackToPalette }: StudioProps) {
-  const [images, setImages] = useState<string[]>([]);
+
+  const [images, setImages] = useState<Screenshot[]>([]);
   const [baseUrl, setBaseUrl] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<Screenshot | null>(null);
   const [search, setSearch] = useState('');
   const debouncedSearch = useDebounce(search, 300);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'az' | 'za'>('newest');
@@ -33,6 +69,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
 
   const imageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const lastOpenedImage = useRef<string | null>(null);
+  const renamingRef = useRef(false);
   useEffect(() => {
     const stored = localStorage.getItem('glowsnap-favorites');
     if (stored) {
@@ -53,13 +90,23 @@ export default function Studio({ onBackToPalette }: StudioProps) {
       const files = await ListScreenshots();
       const url = await GetScreenshotsBaseURL();
       setBaseUrl(url);
-      setImages(files);
+      setImages(files ?? []);
     } catch (err) {
       console.error('Failed to load screenshots:', err);
     } finally {
       setLoading(false);
     }
   };
+
+  const syncImages = useCallback(async () => {
+    try {
+      const files = await ListScreenshots();
+      console.log('[rename-dbg] ListScreenshots() returned', JSON.stringify(files));
+      setImages(files ?? []);
+    } catch (err) {
+      console.error('[rename-dbg] Failed to reload screenshots after rename:', err);
+    }
+  }, []);
 
   useEffect(() => {
     loadImages();
@@ -85,64 +132,90 @@ export default function Studio({ onBackToPalette }: StudioProps) {
     });
   }, []);
 
-  const handleRename = useCallback(async (oldName: string) => {
-    if (!renameValue.trim() || renameValue === oldName) {
+  const handleRename = useCallback(async (oldName: string, newNameInput: string) => {
+    const rawName = newNameInput.trim();
+
+    if (!rawName) {
+      console.log('[rename-dbg] cancel (empty input) old=', oldName);
+      setRenameValue('');
       setRenamingImage(null);
       return;
     }
+
+    const newName = withSupportedExtension(rawName, oldName);
+
+    if (newName === oldName) {
+      console.log('[rename-dbg] cancel (unchanged) old=', oldName, 'new=', newName);
+      setRenameValue('');
+      setRenamingImage(null);
+      return;
+    }
+
+    if (renamingRef.current) {
+      console.log('[rename-dbg] duplicate call suppressed (renamingRef) old=', oldName, 'new=', newName);
+      return;
+    }
+    renamingRef.current = true;
+
+    console.log('[rename-dbg] RenameScreenshot(', JSON.stringify(oldName), '->', JSON.stringify(newName), ') [raw=', JSON.stringify(rawName), ']');
     try {
-      await RenameScreenshot(oldName, renameValue.trim());
-      setImages(prev => prev.map(name => name === oldName ? renameValue.trim() : name));
+      await RenameScreenshot(oldName, newName);
+      console.log('[rename-dbg] RenameScreenshot resolved OK (backend error = none)');
+
       setFavorites(prev => {
         if (!prev.has(oldName)) return prev;
         const newSet = new Set(prev);
         newSet.delete(oldName);
-        newSet.add(renameValue.trim());
+        newSet.add(newName);
+        console.log('[rename-dbg] favorites migrated', JSON.stringify([...prev]), '->', JSON.stringify([...newSet]));
         return newSet;
       });
-      setRenamingImage(null);
+      await syncImages();
     } catch (err) {
-      console.error('Rename failed:', err);
+      console.error('[rename-dbg] Rename failed:', err);
+    } finally {
+      setRenameValue('');
+      setRenamingImage(null);
     }
-  }, [renameValue, favorites]);
+  }, [syncImages]);
 
   const handleDelete = useCallback(async (fileName: string) => {
     try {
       await DeleteScreenshot(fileName);
-      setImages(prev => prev.filter(name => name !== fileName));
       setFavorites(prev => {
         const newSet = new Set(prev);
         newSet.delete(fileName);
         return newSet;
       });
+      await syncImages();
     } catch (err) {
-      console.error('Delete failed:', err);
+      console.error('[rename-dbg] Delete failed:', err);
     }
-  }, []);
+  }, [syncImages]);
   const processedImages = useMemo(() => {
     let filtered = [...images];
 
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(name => name.toLowerCase().includes(q));
+      filtered = filtered.filter(s => s.name.toLowerCase().includes(q));
     }
 
     if (showFavoritesOnly) {
-      filtered = filtered.filter(name => favorites.has(name));
+      filtered = filtered.filter(s => favorites.has(s.name));
     }
 
     switch (sortOrder) {
       case 'newest':
-        filtered.sort((a, b) => b.localeCompare(a));
+        filtered.sort((a, b) => b.date - a.date);
         break;
       case 'oldest':
-        filtered.sort((a, b) => a.localeCompare(b));
+        filtered.sort((a, b) => a.date - b.date);
         break;
       case 'az':
-        filtered.sort((a, b) => a.localeCompare(b));
+        filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'za':
-        filtered.sort((a, b) => b.localeCompare(a));
+        filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
     }
 
@@ -153,12 +226,18 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   const currentPageImages = processedImages.slice(0, page * IMAGES_PER_PAGE);
 
   useEffect(() => {
+    console.log('[rename-dbg] render state: images=', JSON.stringify(images),
+      'filtered(', debouncedSearch, ',', sortOrder, ',fav=', showFavoritesOnly, ')=', JSON.stringify(processedImages),
+      'page1=', JSON.stringify(currentPageImages));
+  }, [images, processedImages, currentPageImages, debouncedSearch, sortOrder, showFavoritesOnly]);
+
+  useEffect(() => {
     setPage(1);
   }, [debouncedSearch, sortOrder, showFavoritesOnly]);
 
-  const handleImageClick = (fileName: string) => {
-    lastOpenedImage.current = fileName;
-    setSelectedImage(fileName);
+  const handleImageClick = (screenshot: Screenshot) => {
+    lastOpenedImage.current = screenshot.name;
+    setSelectedImage(screenshot);
   };
 
   const handleBackToGallery = () => {
@@ -166,7 +245,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   };
 
   if (selectedImage) {
-    const imageUrl = `${baseUrl}/${encodeURIComponent(selectedImage)}`;
+    const imageUrl = `${baseUrl}/${encodeURIComponent(selectedImage.name)}`;
     return <Editor imageUrl={imageUrl} onBack={handleBackToGallery} />;
   }
 
@@ -240,52 +319,60 @@ export default function Studio({ onBackToPalette }: StudioProps) {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max">
               {currentPageImages.map((file) => (
                 <div
-                  key={file}
-                  ref={(el) => { imageRefs.current[file] = el; }}
+                  key={file.name}
+                  ref={(el) => { imageRefs.current[file.name] = el; }}
                   className="relative group bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-200 cursor-pointer"
                 >
                   <img
                     onClick={() => handleImageClick(file)}
-                    src={`${baseUrl}/${encodeURIComponent(file)}`}
-                    alt={file}
+                    src={`${baseUrl}/${encodeURIComponent(file.name)}`}
+                    alt={file.name}
                     className="w-full h-48 object-cover"
                     loading="lazy"
                   />
-                  <div className="p-2 text-xs truncate text-white/70 flex justify-between items-center">
-                    {renamingImage === file ? (
+                  <div className="p-2 text-xs text-white/70">
+                    {renamingImage === file.name ? (
                       <input
                         autoFocus
                         value={renameValue}
                         onChange={e => setRenameValue(e.target.value)}
-                        onBlur={() => handleRename(file)}
-                        onKeyDown={e => e.key === 'Enter' && handleRename(file)}
-                        className="bg-white/10 rounded text-xs px-1 w-full outline-none"
+                        onBlur={() => handleRename(file.name, renameValue)}
+                        onKeyDown={e => e.key === 'Enter' && handleRename(file.name, renameValue)}
+                        className="bg-white/10 rounded text-xs px-1 w-full outline-none mb-1"
                       />
                     ) : (
                       <span
                         onDoubleClick={() => {
-                          setRenamingImage(file);
-                          setRenameValue(file);
+                          renamingRef.current = false;
+                          setRenamingImage(file.name);
+                          setRenameValue(file.name);
                         }}
-                        className="cursor-pointer"
+                        className="cursor-pointer block truncate"
+                        title={file.name}
                       >
-                        {file}
+                        {file.name}
                       </span>
                     )}
-                    <div className="flex gap-1">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleFavorite(file); }}
-                        className={`text-xs ${favorites.has(file) ? 'text-yellow-400' : 'text-white/30 hover:text-yellow-400'}`}
-                      >
-                        <Star size={15} />
-                      </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleDelete(file); }}
-                        className="text-xs text-red-400 hover:text-red-300"
-                      >
-                        <X size={15} />
-                      </button>
+                    <div className="flex items-center justify-between mt-1">
+                      <span className="text-[10px] text-white/40 truncate" title={formatDate(file.date)}>
+                        {formatDate(file.date)}
+                      </span>
+                      <div className="flex gap-1 shrink-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file.name); }}
+                          className={`text-xs ${favorites.has(file.name) ? 'text-yellow-400' : 'text-white/30 hover:text-yellow-400'}`}
+                        >
+                          <Star size={15} />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleDelete(file.name); }}
+                          className="text-xs text-red-400 hover:text-red-300"
+                        >
+                          <X size={15} />
+                        </button>
+                      </div>
                     </div>
+                    <span className="text-[10px] text-white/30">{formatSize(file.size)}</span>
                   </div>
                 </div>
               ))}
