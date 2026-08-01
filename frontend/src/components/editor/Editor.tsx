@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Konva from 'konva';
 import { X, Download, Undo2, Redo2, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useBackground } from '@/lib/hooks/useBackground';
 import Toolbar from './Toolbar';
 import OptionsBar from './OptionsBar';
 import BackgroundControls from './BackgroundControls';
-import TextEditor from './TextEditor';
+import InlineTextEditor from './InlineTextEditor';
 import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
@@ -40,7 +40,10 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const loadingStyleRef = useRef(false);
+  const contentSizeRef = useRef({ width: 80, height: 24 });
+  const selectAllOnMountRef = useRef(false);
   const [stageContainerRect, setStageContainerRect] = useState<DOMRect | null>(null);
+  const [stageRect, setStageRect] = useState<DOMRect | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>('select');
   const [toolStyle, setToolStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
@@ -76,9 +79,34 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   } = useShapes();
 
   const {
-    editingTextId, editingTextValue, editingTextPosition,
-    startEditing, finishEditing, setEditingTextValue,
+    editingTextId, editingTextValue,
+    startEditing, updateEditingText,
+    commitEditing, cancelEditing,
   } = useTextEditing(updateShape);
+
+  const beginEditing = useCallback((shape: ShapeConfig) => {
+    selectAllOnMountRef.current = !shape.text || shape.text === 'Text';
+    startEditing(shape);
+  }, [startEditing]);
+
+  const handleEditingTextChange = useCallback((value: string) => {
+    updateEditingText(value);
+  }, [updateEditingText]);
+
+  const handleEditingTextMetrics = useCallback((width: number, height: number) => {
+    contentSizeRef.current = { width, height };
+  }, []);
+
+  const handleCommitEditing = useCallback(() => {
+    commitEditing({
+      width: contentSizeRef.current.width,
+      height: contentSizeRef.current.height,
+    });
+  }, [commitEditing]);
+
+  const handleCancelEditing = useCallback(() => {
+    cancelEditing();
+  }, [cancelEditing]);
 
   useEffect(() => {
     const img = new window.Image();
@@ -195,7 +223,23 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       const rect = canvasContainerRef.current.getBoundingClientRect();
       setStageContainerRect(rect);
     }
-  }, [stageSize, image]);
+    const stageEl = stageRef.current?.container?.();
+    if (stageEl) {
+      setStageRect(stageEl.getBoundingClientRect());
+    }
+  }, [stageSize, image, editingTextId]);
+
+  const editingShape = editingTextId ? (shapes.find(s => s.id === editingTextId) || null) : null;
+
+  const editingBox = useMemo(() => {
+    if (!editingShape || !stageRect) return null;
+    const containerRect = canvasContainerRef.current?.getBoundingClientRect();
+    if (!containerRect) return null;
+    return {
+      left: stageRect.left - containerRect.left + imageTransform.x + (editingShape.x || 0),
+      top: stageRect.top - containerRect.top + imageTransform.y + (editingShape.y || 0),
+    };
+  }, [editingShape, stageRect, imageTransform.x, imageTransform.y]);
 
   const handleDuplicate = useCallback((shape: ShapeConfig) => {
     const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -316,6 +360,15 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
       const isCtrl = e.ctrlKey || e.metaKey;
 
+      if (e.key === 'Enter' && selectedTool === 'select' && selectedId) {
+        const shape = shapes.find(s => s.id === selectedId);
+        if (shape && (shape.type === 'text' || shape.type === 'number')) {
+          e.preventDefault();
+          beginEditing(shape);
+          return;
+        }
+      }
+
       if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
         e.preventDefault();
         deleteShape(selectedId);
@@ -385,7 +438,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, handleUndo, handleRedo, setSelectedTool, setSelectedId]);
+  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, handleUndo, handleRedo, setSelectedTool, setSelectedId, beginEditing]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
@@ -455,22 +508,31 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setCropMode={setCropMode}
           cropRect={cropRect}
           setCropRect={setCropRect}
-          onTextDoubleClick={startEditing}
+          onTextDoubleClick={beginEditing}
           editingTextId={editingTextId}
           backgroundSettings={background}
           imageTransform={imageTransform}
           onImageTransform={setImageTransform}
           onChangeTool={handleToolChange}
         />
-        {editingTextId && (
-          <TextEditor
+        {editingShape && editingBox && (
+          <InlineTextEditor
             value={editingTextValue}
-            onChange={setEditingTextValue}
-            onFinish={finishEditing}
-            position={editingTextPosition}
-            fontSize={selectedStyle.fontSize}
-            fontFamily={selectedStyle.fontFamily}
-            color={selectedStyle.color}
+            onChange={handleEditingTextChange}
+            onCommit={handleCommitEditing}
+            onCancel={handleCancelEditing}
+            left={editingBox.left}
+            top={editingBox.top}
+            rotation={editingShape.rotation || 0}
+            fontFamily={editingShape.fontFamily || 'Inter'}
+            fontSize={editingShape.fontSize || 24}
+            fontWeight={(editingShape.fontStyle || '').includes('bold') ? 700 : 400}
+            fontStyle={(editingShape.fontStyle || '').includes('italic') ? 'italic' : 'normal'}
+            color={editingShape.fill || '#ffffff'}
+            lineHeight={1.2}
+            wrapWidth={editingShape.width && editingShape.width > 0 ? editingShape.width : undefined}
+            maxWidth={stageRect ? Math.max(120, Math.floor(stageRect.width) - 60) : 600}
+            onMetrics={handleEditingTextMetrics}
           />
         )}
         <FloatingToolbar
