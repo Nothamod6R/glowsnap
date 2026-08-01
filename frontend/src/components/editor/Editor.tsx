@@ -342,103 +342,127 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
   useEffect(() => {
-
     const isEditableTarget = (target: EventTarget | null) => {
       if (!(target instanceof HTMLElement)) return false;
-      const tag = target.tagName;
-      return (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        target.isContentEditable
-      );
-    };
+
+    const tag = target.tagName;
+    return (
+      tag === 'INPUT' ||
+      tag === 'TEXTAREA' ||
+      tag === 'SELECT' ||
+      target.isContentEditable
+    );
+  };
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingTextId) return;
       if (isEditableTarget(e.target)) return;
 
-      const isCtrl = e.ctrlKey || e.metaKey;
+    const isCtrl = e.ctrlKey || e.metaKey;
 
-      if (e.key === 'Enter' && selectedTool === 'select' && selectedId) {
-        const shape = shapes.find(s => s.id === selectedId);
-        if (shape && (shape.type === 'text' || shape.type === 'number')) {
-          e.preventDefault();
-          beginEditing(shape);
-          return;
-        }
+    if (e.key === 'Enter' && selectedTool === 'select' && selectedId) {
+      const shape = shapes.find((s) => s.id === selectedId);
+      if (shape && (shape.type === 'text' || shape.type === 'number')) {
+        e.preventDefault();
+        beginEditing(shape);
+        return;
       }
+    }
 
-      if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-        e.preventDefault();
-        deleteShape(selectedId);
-        return;
-      }
+    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
+      e.preventDefault();
+      deleteShape(selectedId);
+      return;
+    }
 
-      if (isCtrl && e.key === 'z' && !e.shiftKey) {
-        e.preventDefault();
-        handleUndo();
-        return;
-      }
-      if (isCtrl && (e.key === 'Z' || (e.key === 'z' && e.shiftKey))) {
-        e.preventDefault();
-        handleRedo();
-        return;
-      }
-      if (isCtrl && e.key === 's' || isCtrl && e.key === 'S') {
-        e.preventDefault();
-        exportImage();
-        return;
-      }
+    if (isCtrl && e.code === 'KeyZ' && !e.shiftKey) {
+      e.preventDefault();
+      handleUndo();
+      return;
+    }
 
-      if (isCtrl && e.key === 'c' && selectedId) {
-        e.preventDefault();
-        const shape = shapes.find(s => s.id === selectedId);
-        if (shape) {
-          clipboardRef.current = { ...shape };
-        }
-        return;
-      }
+    if (
+      isCtrl &&
+      (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))
+    ) {
+      e.preventDefault();
+      handleRedo();
+      return;
+    }
 
-      if (isCtrl && e.key === 'v' && clipboardRef.current) {
-        e.preventDefault();
-        const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-        const pastedShape: ShapeConfig = {
-          ...clipboardRef.current,
-          id: newId,
-          x: (clipboardRef.current.x || 0) + 20,
-          y: (clipboardRef.current.y || 0) + 20,
-        };
-        addShape(pastedShape, true);
-        setSelectedTool('select');
-        return;
+    if (isCtrl && e.code === 'KeyS') {
+      e.preventDefault();
+      exportImage();
+      return;
+    }
+
+    if (isCtrl && e.code === 'KeyC' && selectedId) {
+      e.preventDefault();
+
+      const shape = shapes.find((s) => s.id === selectedId);
+      if (shape) {
+        clipboardRef.current = { ...shape };
       }
 
-      if (isCtrl && e.key === 'd' && selectedId) {
-        e.preventDefault();
-        const shape = shapes.find(s => s.id === selectedId);
-        if (shape) {
-          handleDuplicate(shape);
-        }
-        return;
+      return;
+    }
+
+    if (isCtrl && e.code === 'KeyV' && clipboardRef.current) {
+      e.preventDefault();
+
+      const newId =
+        Date.now().toString(36) +
+        Math.random().toString(36).substring(2, 7);
+
+      const pastedShape: ShapeConfig = {
+        ...clipboardRef.current,
+        id: newId,
+        x: (clipboardRef.current.x ?? 0) + 20,
+        y: (clipboardRef.current.y ?? 0) + 20,
+      };
+
+      addShape(pastedShape, true);
+      setSelectedTool('select');
+      return;
+    }
+
+    if (isCtrl && e.code === 'KeyD' && selectedId) {
+      e.preventDefault();
+
+      const shape = shapes.find((s) => s.id === selectedId);
+      if (shape) {
+        handleDuplicate(shape);
       }
 
-      if (isCtrl && e.key === 'y' && !editingTextId) {
-        e.preventDefault();
-        handleRedo();
-        return;
-      }
+      return;
+    }
 
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        setSelectedId(null);
-        return;
-      }
-    };
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setSelectedId(null);
+      return;
+    }
+  };
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, shapes, editingTextId, deleteShape, addShape, commitShapes, handleDuplicate, handleUndo, handleRedo, setSelectedTool, setSelectedId, beginEditing]);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    selectedId,
+    selectedTool,
+    shapes,
+    editingTextId,
+    deleteShape,
+    addShape,
+    handleDuplicate,
+    handleUndo,
+    handleRedo,
+    beginEditing,
+    setSelectedTool,
+    setSelectedId,
+  ]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
