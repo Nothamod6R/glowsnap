@@ -14,21 +14,46 @@ import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
 
+interface ToolStyleState {
+  color: string;
+  strokeWidth: number;
+  opacity: number;
+  fontSize: number;
+  fontFamily: string;
+  isBold: boolean;
+  isItalic: boolean;
+  fillEnabled: boolean;
+}
+
+const DEFAULT_STYLE: ToolStyleState = {
+  color: '#ff3b30',
+  strokeWidth: 3,
+  opacity: 1,
+  fontSize: 24,
+  fontFamily: 'Inter',
+  isBold: false,
+  isItalic: false,
+  fillEnabled: false,
+};
 
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
+  const loadingStyleRef = useRef(false);
   const [stageContainerRect, setStageContainerRect] = useState<DOMRect | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>('select');
-  const [color, setColor] = useState('#ff3b30');
-  const [strokeWidth, setStrokeWidth] = useState(3);
-  const [opacity, setOpacity] = useState(1);
-  const [fontSize, setFontSize] = useState(24);
-  const [fontFamily, setFontFamily] = useState('Inter');
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
-  const [fillEnabled, setFillEnabled] = useState(false);
+  const [toolStyle, setToolStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
+  const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
+
+  const setToolProp = useCallback(<K extends keyof ToolStyleState>(key: K, value: ToolStyleState[K]) => {
+    setToolStyle(prev => ({ ...prev, [key]: value }));
+  }, []);
+
+  const setSelectedProp = useCallback(<K extends keyof ToolStyleState>(key: K, value: ToolStyleState[K]) => {
+    setSelectedStyle(prev => ({ ...prev, [key]: value }));
+  }, []);
+
   const [cropMode, setCropMode] = useState(false);
   const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
@@ -87,35 +112,83 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   }, [background.padding, background.enabled, image]);
 
   useEffect(() => {
+    if (!selectedId) return;
+    const shape = shapes.find(s => s.id === selectedId);
+    if (!shape) return;
+    loadingStyleRef.current = true;
+    if (shape.type === 'text' || shape.type === 'number') {
+      setSelectedStyle(prev => ({
+        ...prev,
+        color: shape.fill || prev.color,
+        fontSize: shape.fontSize ?? prev.fontSize,
+        fontFamily: shape.fontFamily || prev.fontFamily,
+        isBold: shape.fontStyle ? shape.fontStyle.includes('bold') : prev.isBold,
+        isItalic: shape.fontStyle ? shape.fontStyle.includes('italic') : prev.isItalic,
+      }));
+    } else {
+      setSelectedStyle(prev => ({
+        ...prev,
+        color: shape.stroke || prev.color,
+        strokeWidth: shape.strokeWidth ?? prev.strokeWidth,
+        opacity: shape.opacity ?? prev.opacity,
+        fillEnabled: shape.type === 'rect' || shape.type === 'circle'
+          ? (shape.fillEnabled ?? prev.fillEnabled)
+          : prev.fillEnabled,
+      }));
+    }
+  }, [selectedId, shapes]);
+
+  useEffect(() => {
+    if (loadingStyleRef.current) return;
     if (selectedId && selectedTool === 'select') {
       const shape = shapes.find(s => s.id === selectedId);
       if (shape && (shape.type === 'text' || shape.type === 'number')) {
-        updateShape(selectedId, {
-          fontSize,
-          fontFamily,
-          fontStyle: (isBold ? 'bold ' : '') + (isItalic ? 'italic' : ''),
-        }, false);
+        const nextFontStyle = (selectedStyle.isBold ? 'bold ' : '') + (selectedStyle.isItalic ? 'italic' : '');
+        if (
+          shape.fontSize !== selectedStyle.fontSize ||
+          shape.fontFamily !== selectedStyle.fontFamily ||
+          shape.fontStyle !== nextFontStyle
+        ) {
+          updateShape(selectedId, {
+            fontSize: selectedStyle.fontSize,
+            fontFamily: selectedStyle.fontFamily,
+            fontStyle: nextFontStyle,
+          }, false);
+        }
       }
     }
-  }, [fontSize, fontFamily, isBold, isItalic, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedId, selectedTool]);
 
   useEffect(() => {
+    if (loadingStyleRef.current) return;
     if (selectedId && selectedTool === 'select') {
       const shape = shapes.find(s => s.id === selectedId);
       if (shape) {
         if (shape.type === 'text' || shape.type === 'number') {
-          updateShape(selectedId, { fill: color }, false);
-        } else {
-          const attrs: Partial<ShapeConfig> = { stroke: color, strokeWidth, opacity };
-          if (shape.type === 'rect' || shape.type === 'circle') {
-            attrs.fill = fillEnabled ? color : 'transparent';
-            attrs.fillEnabled = fillEnabled;
+          if (shape.fill !== selectedStyle.color) {
+            updateShape(selectedId, { fill: selectedStyle.color }, false);
           }
-          updateShape(selectedId, attrs, false);
+        } else {
+          const attrs: Partial<ShapeConfig> = {};
+          if (shape.stroke !== selectedStyle.color) attrs.stroke = selectedStyle.color;
+          if (shape.strokeWidth !== selectedStyle.strokeWidth) attrs.strokeWidth = selectedStyle.strokeWidth;
+          if (shape.opacity !== selectedStyle.opacity) attrs.opacity = selectedStyle.opacity;
+          if (shape.type === 'rect' || shape.type === 'circle') {
+            const nextFill = selectedStyle.fillEnabled ? selectedStyle.color : 'transparent';
+            if (shape.fillEnabled !== selectedStyle.fillEnabled) attrs.fillEnabled = selectedStyle.fillEnabled;
+            if (shape.fill !== nextFill) attrs.fill = nextFill;
+          }
+          if (Object.keys(attrs).length > 0) {
+            updateShape(selectedId, attrs, false);
+          }
         }
       }
     }
-  }, [color, strokeWidth, opacity, fillEnabled, selectedId, selectedTool]);
+  }, [selectedStyle.color, selectedStyle.strokeWidth, selectedStyle.opacity, selectedStyle.fillEnabled, selectedId, selectedTool]);
+
+  useEffect(() => {
+    loadingStyleRef.current = false;
+  });
 
   useEffect(() => {
     if (canvasContainerRef.current) {
@@ -123,30 +196,6 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       setStageContainerRect(rect);
     }
   }, [stageSize, image]);
-
-  useEffect(() => {
-    if (selectedId) {
-      const shape = shapes.find(s => s.id === selectedId);
-      if (shape) {
-        if (shape.type === 'text' || shape.type === 'number') {
-          if (shape.fill) setColor(shape.fill);
-          if (shape.fontSize) setFontSize(shape.fontSize);
-          if (shape.fontFamily) setFontFamily(shape.fontFamily);
-          if (shape.fontStyle) {
-            setIsBold(shape.fontStyle.includes('bold'));
-            setIsItalic(shape.fontStyle.includes('italic'));
-          }
-        } else {
-          if (shape.stroke) setColor(shape.stroke);
-          if (shape.strokeWidth !== undefined) setStrokeWidth(shape.strokeWidth);
-          if (shape.opacity !== undefined) setOpacity(shape.opacity);
-          if (shape.type === 'rect' || shape.type === 'circle') {
-            if (shape.fillEnabled !== undefined) setFillEnabled(shape.fillEnabled);
-          }
-        }
-      }
-    }
-  }, [selectedId, shapes]);
 
   const handleDuplicate = useCallback((shape: ShapeConfig) => {
     const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -371,14 +420,14 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
       <OptionsBar
         selectedTool={selectedTool}
-        color={color} setColor={setColor}
-        strokeWidth={strokeWidth} setStrokeWidth={setStrokeWidth}
-        opacity={opacity} setOpacity={setOpacity}
-        fontSize={fontSize} setFontSize={setFontSize}
-        fontFamily={fontFamily} setFontFamily={setFontFamily}
-        isBold={isBold} setIsBold={setIsBold}
-        isItalic={isItalic} setIsItalic={setIsItalic}
-        fillEnabled={fillEnabled} setFillEnabled={setFillEnabled}
+        color={toolStyle.color} setColor={c => setToolProp('color', c)}
+        strokeWidth={toolStyle.strokeWidth} setStrokeWidth={w => setToolProp('strokeWidth', w)}
+        opacity={toolStyle.opacity} setOpacity={o => setToolProp('opacity', o)}
+        fontSize={toolStyle.fontSize} setFontSize={s => setToolProp('fontSize', s)}
+        fontFamily={toolStyle.fontFamily} setFontFamily={f => setToolProp('fontFamily', f)}
+        isBold={toolStyle.isBold} setIsBold={b => setToolProp('isBold', b)}
+        isItalic={toolStyle.isItalic} setIsItalic={i => setToolProp('isItalic', i)}
+        fillEnabled={toolStyle.fillEnabled} setFillEnabled={v => setToolProp('fillEnabled', v)}
       />
 
       <div
@@ -398,10 +447,10 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           updateShape={updateShape}
           deleteShape={deleteShape}
           commitShapes={commitShapes}
-          color={color}
-          strokeWidth={strokeWidth}
-          opacity={opacity}
-          fillEnabled={fillEnabled}
+          color={toolStyle.color}
+          strokeWidth={toolStyle.strokeWidth}
+          opacity={toolStyle.opacity}
+          fillEnabled={toolStyle.fillEnabled}
           cropMode={cropMode}
           setCropMode={setCropMode}
           cropRect={cropRect}
@@ -419,9 +468,9 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             onChange={setEditingTextValue}
             onFinish={finishEditing}
             position={editingTextPosition}
-            fontSize={fontSize}
-            fontFamily={fontFamily}
-            color={color}
+            fontSize={selectedStyle.fontSize}
+            fontFamily={selectedStyle.fontFamily}
+            color={selectedStyle.color}
           />
         )}
         <FloatingToolbar
@@ -432,20 +481,20 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           onUpdateShape={updateShape}
           onDelete={deleteShape}
           onDuplicate={handleDuplicate}
-          color={color}
-          setColor={setColor}
-          fontFamily={fontFamily}
-          setFontFamily={setFontFamily}
-          fontSize={fontSize}
-          setFontSize={setFontSize}
-          opacity={opacity}
-          setOpacity={setOpacity}
-          isBold={isBold}
-          setIsBold={setIsBold}
-          isItalic={isItalic}
-          setIsItalic={setIsItalic}
-          fillEnabled={fillEnabled}
-          setFillEnabled={setFillEnabled}
+          color={selectedStyle.color}
+          setColor={c => setSelectedProp('color', c)}
+          fontFamily={selectedStyle.fontFamily}
+          setFontFamily={f => setSelectedProp('fontFamily', f)}
+          fontSize={selectedStyle.fontSize}
+          setFontSize={s => setSelectedProp('fontSize', s)}
+          opacity={selectedStyle.opacity}
+          setOpacity={o => setSelectedProp('opacity', o)}
+          isBold={selectedStyle.isBold}
+          setIsBold={b => setSelectedProp('isBold', b)}
+          isItalic={selectedStyle.isItalic}
+          setIsItalic={i => setSelectedProp('isItalic', i)}
+          fillEnabled={selectedStyle.fillEnabled}
+          setFillEnabled={v => setSelectedProp('fillEnabled', v)}
         />
         {cropMode && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
