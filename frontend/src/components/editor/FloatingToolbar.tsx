@@ -141,8 +141,8 @@ export default function FloatingToolbar({
           transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
           className="absolute z-50"
           style={{
-            left: position.x,
-            top: position.y - 70,
+            left: position.x + 60,
+            top: position.y - 130,
             transform: 'translateX(-50%)',
             pointerEvents: 'auto',
           }}
