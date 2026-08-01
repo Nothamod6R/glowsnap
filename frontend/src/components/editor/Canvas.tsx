@@ -72,6 +72,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const stageRef = useRef<Konva.Stage>(null);
   const contentGroupRef = useRef<Konva.Group>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
+  const textTransformerRef = useRef<Konva.Transformer>(null);
   const drawingRef = useRef<ShapeConfig | null>(null);
   const isDrawing = useRef(false);
   const isShiftPressed = useRef(false);
@@ -150,16 +151,37 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     };
   }, []);
 
+
   useEffect(() => {
-    if (transformerRef.current && selectedId && selectedTool === 'select' && stageRef.current) {
-      const node = stageRef.current.findOne('#' + selectedId);
-      if (node) {
-        transformerRef.current.nodes([node]);
-        transformerRef.current.getLayer()?.batchDraw();
-      }
-    } else if (transformerRef.current) {
-      transformerRef.current.nodes([]);
-      transformerRef.current.getLayer()?.batchDraw();
+    const clearBoth = () => {
+      transformerRef.current?.nodes([]);
+      transformerRef.current?.getLayer()?.batchDraw();
+      textTransformerRef.current?.nodes([]);
+      textTransformerRef.current?.getLayer()?.batchDraw();
+    };
+
+    if (!selectedId || selectedTool !== 'select' || editingTextId === selectedId) {
+      clearBoth();
+      return;
+    }
+
+    const shape = shapes.find(s => s.id === selectedId);
+    const node = stageRef.current?.findOne('#' + selectedId);
+    if (!shape || !node) {
+      clearBoth();
+      return;
+    }
+
+    if (shape.type === 'text' || shape.type === 'number') {
+      transformerRef.current?.nodes([]);
+      transformerRef.current?.getLayer()?.batchDraw();
+      textTransformerRef.current?.nodes([node]);
+      textTransformerRef.current?.getLayer()?.batchDraw();
+    } else {
+      textTransformerRef.current?.nodes([]);
+      textTransformerRef.current?.getLayer()?.batchDraw();
+      transformerRef.current?.nodes([node]);
+      transformerRef.current?.getLayer()?.batchDraw();
     }
   }, [selectedId, selectedTool, shapes, editingTextId]);
 
@@ -201,16 +223,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       rotation: node.rotation(),
     };
 
-    if (shape.type === 'text' || shape.type === 'number') {
-      const newFontSize = Math.max(8, Math.min(200, Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2))));
-      const newWidth = (shape.width || 100) * scaleX;
-      const newHeight = (shape.height || (shape.fontSize || 24) * 1.2) * scaleY;
-      newAttrs.fontSize = newFontSize;
-      if (shape.width) newAttrs.width = newWidth;
-      if (shape.height) newAttrs.height = newHeight;
-      newAttrs.x = node.x() - newWidth / 2;
-      newAttrs.y = node.y() - newHeight / 2;
-    } else if (shape.type === 'circle') {
+    if (shape.type === 'circle') {
       const newWidth = (shape.width || 80) * scaleX;
       const newHeight = (shape.height || 80) * scaleY;
       newAttrs.width = Math.max(10, newWidth);
@@ -233,6 +246,66 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
 
     updateShape(id, newAttrs);
   }, [shapes, updateShape]);
+
+  const handleTextTransform = useCallback((e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target as Konva.Text;
+    const id = node.id();
+    const shape = shapes.find(s => s.id === id);
+    if (!shape) return;
+
+    const scaleX = node.scaleX();
+    const currentAttrWidth = node.width() || (shape.width || 100);
+
+    node.scaleX(1);
+    node.scaleY(1);
+
+    const newWidth = Math.max(20, currentAttrWidth * scaleX);
+    node.width(newWidth);
+
+    node.height(undefined as unknown as number);
+    const autoHeight = node.getHeight();
+    const contentHeight = Math.max(shape.fontSize || 24, autoHeight || 0);
+
+    const centerX = node.x();
+    const centerY = node.y();
+    node.offsetX(newWidth / 2);
+    node.offsetY(contentHeight / 2);
+
+    updateShape(id, {
+      x: centerX - newWidth / 2,
+      y: centerY - contentHeight / 2,
+      width: newWidth,
+      height: contentHeight,
+    }, false);
+  }, [shapes, updateShape]);
+
+  const handleTextTransformEnd = useCallback((e: Konva.KonvaEventObject<Event>) => {
+    const node = e.target as Konva.Text;
+    const id = node.id();
+    const shape = shapes.find(s => s.id === id);
+    if (!shape) return;
+
+    node.scaleX(1);
+    node.scaleY(1);
+
+    const w = node.width() || shape.width || 100;
+    const h = node.height() || shape.height || (shape.fontSize || 24) * 1.2;
+
+    updateShape(id, {
+      rotation: node.rotation(),
+      width: w,
+      height: h,
+      x: node.x() - w / 2,
+      y: node.y() - h / 2,
+    });
+  }, [shapes, updateShape]);
+
+  const handleImageDragEnd = (e: Konva.KonvaEventObject<DragEvent>) => {
+    const dx = e.target.x();
+    const dy = e.target.y();
+    onImageTransform({ ...imageTransform, x: imageTransform.x + dx, y: imageTransform.y + dy });
+    e.target.position({ x: 0, y: 0 });
+  };
 
   const handleMouseDown = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     const pos = getRelativePointer();
@@ -420,8 +493,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         }
       },
       onDragEnd: handleShapeDragEnd,
-      onTransformEnd: handleTransformEnd,
-      onDblClick: () => { if (shape.type === 'text' || shape.type === 'number') onTextDoubleClick(shape); },
       stroke: shape.stroke,
       fill: shape.fillEnabled === false ? 'transparent' : (shape.fill || 'transparent'),
       strokeWidth: shape.strokeWidth,
@@ -444,13 +515,31 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             offsetX={w / 2}
             offsetY={h / 2}
             rotation={rotation}
+            onTransformEnd={handleTransformEnd}
           />
         );
       }
       case 'circle':
-        return <Ellipse {...commonProps} x={shape.x + (shape.width || 80) / 2} y={shape.y + (shape.height || 80) / 2} radiusX={(shape.width || 80) / 2} radiusY={(shape.height || 80) / 2} rotation={rotation} />;
+        return (
+          <Ellipse
+            {...commonProps}
+            x={shape.x + (shape.width || 80) / 2}
+            y={shape.y + (shape.height || 80) / 2}
+            radiusX={(shape.width || 80) / 2}
+            radiusY={(shape.height || 80) / 2}
+            rotation={rotation}
+            onTransformEnd={handleTransformEnd}
+          />
+        );
       case 'arrow':
-        return <Arrow {...commonProps} points={shape.points!} rotation={rotation} />;
+        return (
+          <Arrow
+            {...commonProps}
+            points={shape.points!}
+            rotation={rotation}
+            onTransformEnd={handleTransformEnd}
+          />
+        );
       case 'text':
       case 'number': {
         const w = shape.width || 100;
@@ -468,6 +557,9 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             fontSize={shape.fontSize}
             fontFamily={shape.fontFamily}
             fontStyle={shape.fontStyle}
+            wrap="word"
+            onTransform={handleTextTransform}
+            onTransformEnd={handleTextTransformEnd}
             rotation={rotation}
           />
         );
@@ -481,6 +573,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             lineCap="round"
             lineJoin="round"
             rotation={rotation}
+            onTransformEnd={handleTransformEnd}
           />
         );
       default:
@@ -522,25 +615,42 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             />
           )}
           {shapes.map(renderShape)}
-          {selectedId && selectedTool === 'select' && editingTextId !== selectedId && (
-            <Transformer
-              ref={transformerRef}
-              rotateEnabled={true}
-              enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
-              borderStroke={BOUNDING_BOX_STROKE}
-              borderStrokeWidth={1.5}
-              borderDash={[4, 4]}
-              anchorFill={HANDLE_FILL}
-              anchorStroke={HANDLE_STROKE}
-              anchorSize={HANDLE_ANCHOR_SIZE}
-              anchorCornerRadius={2}
-              keepRatio={false}
-              boundBoxFunc={(oldBox, newBox) => {
-                if (newBox.width < 10 || newBox.height < 10) return oldBox;
-                return newBox;
-              }}
-            />
-          )}
+
+          <Transformer
+            ref={transformerRef}
+            rotateEnabled={true}
+            enabledAnchors={['top-left', 'top-right', 'bottom-left', 'bottom-right', 'middle-left', 'middle-right']}
+            borderStroke={BOUNDING_BOX_STROKE}
+            borderStrokeWidth={1.5}
+            borderDash={[4, 4]}
+            anchorFill={HANDLE_FILL}
+            anchorStroke={HANDLE_STROKE}
+            anchorSize={HANDLE_ANCHOR_SIZE}
+            anchorCornerRadius={2}
+            keepRatio={false}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 10 || newBox.height < 10) return oldBox;
+              return newBox;
+            }}
+          />
+
+          <Transformer
+            ref={textTransformerRef}
+            rotateEnabled={true}
+            enabledAnchors={['middle-left', 'middle-right']}
+            borderStroke={BOUNDING_BOX_STROKE}
+            borderStrokeWidth={1.5}
+            borderDash={[4, 4]}
+            anchorFill={HANDLE_FILL}
+            anchorStroke={HANDLE_STROKE}
+            anchorSize={HANDLE_ANCHOR_SIZE}
+            anchorCornerRadius={2}
+            keepRatio={false}
+            boundBoxFunc={(oldBox, newBox) => {
+              if (newBox.width < 20) return oldBox;
+              return { ...newBox, height: oldBox.height, y: oldBox.y };
+            }}
+          />
         </Group>
         {cropMode && cropRect && (
           <Rect
