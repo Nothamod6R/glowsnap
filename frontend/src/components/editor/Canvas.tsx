@@ -80,7 +80,6 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const justFinishedDrawing = useRef(false);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
-
   const groupOffsetX = imageTransform.x;
   const groupOffsetY = imageTransform.y;
 
@@ -174,6 +173,14 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       const w = shape.width || 80;
       const h = shape.height || 80;
       updateShape(id, { x: node.x() - w / 2, y: node.y() - h / 2 });
+    } else if (shape.type === 'rect') {
+      const w = shape.width || 0;
+      const h = shape.height || 0;
+      updateShape(id, { x: node.x() - w / 2, y: node.y() - h / 2 });
+    } else if (shape.type === 'text' || shape.type === 'number') {
+      const w = shape.width || 100;
+      const h = shape.height || (shape.fontSize || 24) * 1.2;
+      updateShape(id, { x: node.x() - w / 2, y: node.y() - h / 2 });
     } else {
       updateShape(id, { x: node.x(), y: node.y() });
     }
@@ -195,16 +202,26 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     };
 
     if (shape.type === 'text' || shape.type === 'number') {
-      newAttrs.fontSize = Math.max(8, Math.min(200, Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2))));
-      if (shape.width) newAttrs.width = (shape.width || 100) * scaleX;
-      if (shape.height) newAttrs.height = (shape.height || 30) * scaleY;
-      newAttrs.x = node.x();
-      newAttrs.y = node.y();
+      const newFontSize = Math.max(8, Math.min(200, Math.round((shape.fontSize || 24) * ((scaleX + scaleY) / 2))));
+      const newWidth = (shape.width || 100) * scaleX;
+      const newHeight = (shape.height || (shape.fontSize || 24) * 1.2) * scaleY;
+      newAttrs.fontSize = newFontSize;
+      if (shape.width) newAttrs.width = newWidth;
+      if (shape.height) newAttrs.height = newHeight;
+      newAttrs.x = node.x() - newWidth / 2;
+      newAttrs.y = node.y() - newHeight / 2;
     } else if (shape.type === 'circle') {
       const newWidth = (shape.width || 80) * scaleX;
       const newHeight = (shape.height || 80) * scaleY;
       newAttrs.width = Math.max(10, newWidth);
       newAttrs.height = Math.max(10, newHeight);
+      newAttrs.x = node.x() - newWidth / 2;
+      newAttrs.y = node.y() - newHeight / 2;
+    } else if (shape.type === 'rect') {
+      const newWidth = (shape.width || 100) * scaleX;
+      const newHeight = (shape.height || 30) * scaleY;
+      newAttrs.width = newWidth;
+      newAttrs.height = newHeight;
       newAttrs.x = node.x() - newWidth / 2;
       newAttrs.y = node.y() - newHeight / 2;
     } else {
@@ -412,19 +429,39 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     const rotation = shape.rotation || 0;
 
     switch (shape.type) {
-      case 'rect':
-        return <Rect {...commonProps} x={shape.x} y={shape.y} width={shape.width} height={shape.height} rotation={rotation} />;
+      case 'rect': {
+        const w = shape.width || 0;
+        const h = shape.height || 0;
+        return (
+          <Rect
+            {...commonProps}
+            x={shape.x + w / 2}
+            y={shape.y + h / 2}
+            width={w}
+            height={h}
+            offsetX={w / 2}
+            offsetY={h / 2}
+            rotation={rotation}
+          />
+        );
+      }
       case 'circle':
         return <Ellipse {...commonProps} x={shape.x + (shape.width || 80) / 2} y={shape.y + (shape.height || 80) / 2} radiusX={(shape.width || 80) / 2} radiusY={(shape.height || 80) / 2} rotation={rotation} />;
       case 'arrow':
         return <Arrow {...commonProps} points={shape.points!} rotation={rotation} />;
       case 'text':
-      case 'number':
+      case 'number': {
+        const w = shape.width || 100;
+        const h = shape.height || (shape.fontSize || 24) * 1.2;
         return (
           <Text
             {...commonProps}
-            x={shape.x}
-            y={shape.y}
+            x={shape.x + w / 2}
+            y={shape.y + h / 2}
+            offsetX={w / 2}
+            offsetY={h / 2}
+            width={w}
+            height={h}
             text={shape.text}
             fontSize={shape.fontSize}
             fontFamily={shape.fontFamily}
@@ -432,6 +469,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             rotation={rotation}
           />
         );
+      }
       case 'line':
         return (
           <Line
