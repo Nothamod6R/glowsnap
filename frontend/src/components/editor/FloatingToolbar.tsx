@@ -39,6 +39,11 @@ interface FloatingToolbarProps {
   setFillEnabled: (v: boolean) => void;
 }
 
+const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
+
+const numberInputClass =
+  'text-[10px] text-white/60 w-8 text-right tabular-nums bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-white/30 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+
 export default function FloatingToolbar({
   selectedShape,
   visible,
@@ -216,7 +221,21 @@ export default function FloatingToolbar({
                     onValueChange={handleFontSizeChange}
                     className="w-16 h-4"
                   />
-                  <span className="text-[10px] text-white/60 w-7 text-right tabular-nums">{currentFontSize}</span>
+                  <input
+                    type="number"
+                    value={currentFontSize}
+                    min={8}
+                    max={120}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleFontSizeChange(val);
+                    }}
+                    onBlur={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleFontSizeChange(clamp(val, 8, 120));
+                    }}
+                    className={numberInputClass}
+                  />
                 </div>
               </>
             )}
@@ -232,7 +251,22 @@ export default function FloatingToolbar({
                 onValueChange={handleOpacityChange}
                 className="w-16 h-4"
               />
-              <span className="text-[10px] text-white/60 w-7 text-right tabular-nums">{Math.round(currentOpacity * 100)}%</span>
+              <input
+                type="number"
+                value={Math.round(currentOpacity * 100)}
+                min={10}
+                max={100}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val)) handleOpacityChange(val);
+                }}
+                onBlur={e => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val)) handleOpacityChange(clamp(val, 10, 100));
+                }}
+                className={numberInputClass}
+              />
+              <span className="text-[10px] text-white/60">%</span>
             </div>
 
             <div className="w-px h-6 bg-white/10" />
@@ -246,7 +280,22 @@ export default function FloatingToolbar({
                 onValueChange={handleRotationChange}
                 className="w-16 h-4"
               />
-              <span className="text-[10px] text-white/60 w-7 text-right tabular-nums">{Number(currentRotation).toFixed(1)}°</span>
+              <input
+                type="number"
+                value={Number(currentRotation).toFixed(1)}
+                min={-180}
+                max={180}
+                onChange={e => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val)) handleRotationChange(val);
+                }}
+                onBlur={e => {
+                  const val = Number(e.target.value);
+                  if (!isNaN(val)) handleRotationChange(clamp(val, -180, 180));
+                }}
+                className={numberInputClass}
+              />
+              <span className="text-[10px] text-white/60">°</span>
             </div>
 
             <div className="w-px h-6 bg-white/10" />
