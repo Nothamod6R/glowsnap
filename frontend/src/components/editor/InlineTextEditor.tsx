@@ -14,6 +14,8 @@ interface InlineTextEditorProps {
   fontStyle: 'normal' | 'italic';
   color: string;
   lineHeight: number;
+  direction: 'ltr' | 'rtl';
+  align: 'left' | 'center' | 'right';
   wrapWidth?: number;
   maxWidth: number;
   onMetrics: (width: number, height: number) => void;
@@ -26,6 +28,7 @@ export default function InlineTextEditor({
   value, onChange, onCommit, onCancel,
   left, top, rotation,
   fontFamily, fontSize, fontWeight, fontStyle, color, lineHeight,
+  direction, align,
   wrapWidth, maxWidth, onMetrics,
 }: InlineTextEditorProps) {
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -65,7 +68,7 @@ export default function InlineTextEditor({
 
     el.style.transformOrigin = `${width / 2}px ${height / 2}px`;
     onMetrics(width, height);
-  }, [value, wrapWidth, maxWidth, fontSize, fontFamily, fontWeight, fontStyle, onMetrics]);
+  }, [value, wrapWidth, maxWidth, fontSize, fontFamily, fontWeight, fontStyle, direction, onMetrics]);
 
   return (
     <textarea
@@ -108,7 +111,8 @@ export default function InlineTextEditor({
         color,
         lineHeight,
         caretColor: color,
-        textAlign: 'left',
+        direction,
+        textAlign: align,
         fontVariantLigatures: 'none',
         zIndex: 100,
       }}

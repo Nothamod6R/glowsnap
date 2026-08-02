@@ -23,6 +23,7 @@ interface ToolStyleState {
   fontFamily: string;
   isBold: boolean;
   isItalic: boolean;
+  textAlign: 'left' | 'center' | 'right';
   fillEnabled: boolean;
 }
 
@@ -34,6 +35,7 @@ const DEFAULT_STYLE: ToolStyleState = {
   fontFamily: 'Inter',
   isBold: false,
   isItalic: false,
+  textAlign: 'left',
   fillEnabled: false,
 };
 
@@ -153,6 +155,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         fontFamily: shape.fontFamily || prev.fontFamily,
         isBold: shape.fontStyle ? shape.fontStyle.includes('bold') : prev.isBold,
         isItalic: shape.fontStyle ? shape.fontStyle.includes('italic') : prev.isItalic,
+        textAlign: shape.align || prev.textAlign,
       }));
     } else {
       setSelectedStyle(prev => ({
@@ -173,20 +176,23 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       const shape = shapes.find(s => s.id === selectedId);
       if (shape && (shape.type === 'text' || shape.type === 'number')) {
         const nextFontStyle = (selectedStyle.isBold ? 'bold ' : '') + (selectedStyle.isItalic ? 'italic' : '');
+        const nextAlign = selectedStyle.textAlign;
         if (
           shape.fontSize !== selectedStyle.fontSize ||
           shape.fontFamily !== selectedStyle.fontFamily ||
-          shape.fontStyle !== nextFontStyle
+          shape.fontStyle !== nextFontStyle ||
+          (shape.align || 'left') !== nextAlign
         ) {
           updateShape(selectedId, {
             fontSize: selectedStyle.fontSize,
             fontFamily: selectedStyle.fontFamily,
             fontStyle: nextFontStyle,
+            align: nextAlign,
           }, false);
         }
       }
     }
-  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.textAlign, selectedId, selectedTool]);
 
   useEffect(() => {
     if (loadingStyleRef.current) return;
@@ -453,6 +459,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         fontFamily={toolStyle.fontFamily} setFontFamily={f => setToolProp('fontFamily', f)}
         isBold={toolStyle.isBold} setIsBold={b => setToolProp('isBold', b)}
         isItalic={toolStyle.isItalic} setIsItalic={i => setToolProp('isItalic', i)}
+        textAlign={toolStyle.textAlign} setTextAlign={a => setToolProp('textAlign', a)}
         fillEnabled={toolStyle.fillEnabled} setFillEnabled={v => setToolProp('fillEnabled', v)}
       />
 
@@ -487,6 +494,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           imageTransform={imageTransform}
           onImageTransform={setImageTransform}
           onChangeTool={handleToolChange}
+          textAlign={toolStyle.textAlign}
         />
         {editingShape && editingBox && (
           <InlineTextEditor
@@ -501,6 +509,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             fontSize={editingShape.fontSize || 24}
             fontWeight={(editingShape.fontStyle || '').includes('bold') ? 700 : 400}
             fontStyle={(editingShape.fontStyle || '').includes('italic') ? 'italic' : 'normal'}
+            direction={editingShape.direction === 'rtl' ? 'rtl' : 'ltr'}
+            align={editingShape.align || 'left'}
             color={editingShape.fill || '#ffffff'}
             lineHeight={1.2}
             wrapWidth={editingShape.width && editingShape.width > 0 ? editingShape.width : undefined}
@@ -528,6 +538,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setIsBold={b => setSelectedProp('isBold', b)}
           isItalic={selectedStyle.isItalic}
           setIsItalic={i => setSelectedProp('isItalic', i)}
+          textAlign={selectedStyle.textAlign}
+          setTextAlign={a => setSelectedProp('textAlign', a)}
           fillEnabled={selectedStyle.fillEnabled}
           setFillEnabled={v => setSelectedProp('fillEnabled', v)}
         />
