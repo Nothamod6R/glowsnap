@@ -15,7 +15,7 @@ import { AnimatePresence } from 'framer-motion';
 import Palette from './components/Palette';
 import Studio from './components/Studio';
 import RecordingBar from './components/RecordingBar';
-import useKeyboardShortcut from './lib/hooks/useKeyboardShortcut';
+import { APP_SHORTCUTS, matchesShortcut, isEditableTarget } from './lib/shortcut';
 import { WindowMode } from './types/types';
 
 export default function App() {
@@ -70,7 +70,24 @@ export default function App() {
     }
   };
 
-  useKeyboardShortcut({ alt: true, ctrl: true, key: 's' }, switchToPalette);
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      for (const shortcut of APP_SHORTCUTS) {
+        if (matchesShortcut(shortcut, e)) {
+          e.preventDefault();
+          switch (shortcut.action) {
+            case 'toggle-palette':
+              switchToPalette();
+              break;
+          }
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [switchToPalette]);
 
   useEffect(() => {
     const unsub = EventsOn('toggle-palette', switchToPalette);

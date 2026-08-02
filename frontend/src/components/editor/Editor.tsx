@@ -13,6 +13,7 @@ import InlineTextEditor from './InlineTextEditor';
 import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
+import { EDITOR_SHORTCUTS, matchesShortcut, isEditableTarget, type EditorAction } from '@/lib/shortcut';
 
 interface ToolStyleState {
   color: string;
@@ -342,127 +343,75 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
   useEffect(() => {
-    const isEditableTarget = (target: EventTarget | null) => {
-      if (!(target instanceof HTMLElement)) return false;
-
-    const tag = target.tagName;
-    return (
-      tag === 'INPUT' ||
-      tag === 'TEXTAREA' ||
-      tag === 'SELECT' ||
-      target.isContentEditable
-    );
-  };
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (editingTextId) return;
       if (isEditableTarget(e.target)) return;
 
-    const isCtrl = e.ctrlKey || e.metaKey;
-
-    if (e.key === 'Enter' && selectedTool === 'select' && selectedId) {
-      const shape = shapes.find((s) => s.id === selectedId);
-      if (shape && (shape.type === 'text' || shape.type === 'number')) {
-        e.preventDefault();
-        beginEditing(shape);
-        return;
-      }
-    }
-
-    if ((e.key === 'Delete' || e.key === 'Backspace') && selectedId) {
-      e.preventDefault();
-      deleteShape(selectedId);
-      return;
-    }
-
-    if (isCtrl && e.code === 'KeyZ' && !e.shiftKey) {
-      e.preventDefault();
-      handleUndo();
-      return;
-    }
-
-    if (
-      isCtrl &&
-      (e.code === 'KeyY' || (e.code === 'KeyZ' && e.shiftKey))
-    ) {
-      e.preventDefault();
-      handleRedo();
-      return;
-    }
-
-    if (isCtrl && e.code === 'KeyS') {
-      e.preventDefault();
-      exportImage();
-      return;
-    }
-
-    if (isCtrl && e.code === 'KeyC' && selectedId) {
-      e.preventDefault();
-
-      const shape = shapes.find((s) => s.id === selectedId);
-      if (shape) {
-        clipboardRef.current = { ...shape };
-      }
-
-      return;
-    }
-
-    if (isCtrl && e.code === 'KeyV' && clipboardRef.current) {
-      e.preventDefault();
-
-      const newId =
-        Date.now().toString(36) +
-        Math.random().toString(36).substring(2, 7);
-
-      const pastedShape: ShapeConfig = {
-        ...clipboardRef.current,
-        id: newId,
-        x: (clipboardRef.current.x ?? 0) + 20,
-        y: (clipboardRef.current.y ?? 0) + 20,
+      const runAction = (action: EditorAction): boolean => {
+        switch (action) {
+          case 'edit-text': {
+            if (selectedTool !== 'select' || !selectedId) return false;
+            const shape = shapes.find(s => s.id === selectedId);
+            if (!shape || (shape.type !== 'text' && shape.type !== 'number')) return false;
+            beginEditing(shape);
+            return true;
+          }
+          case 'delete':
+            if (!selectedId) return false;
+            deleteShape(selectedId);
+            return true;
+          case 'undo':
+            handleUndo();
+            return true;
+          case 'redo':
+            handleRedo();
+            return true;
+          case 'export':
+            exportImage();
+            return true;
+          case 'copy': {
+            if (!selectedId) return false;
+            const shape = shapes.find(s => s.id === selectedId);
+            if (shape) clipboardRef.current = { ...shape };
+            return true;
+          }
+          case 'paste': {
+            if (!clipboardRef.current) return false;
+            const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+            const pastedShape: ShapeConfig = {
+              ...clipboardRef.current,
+              id: newId,
+              x: (clipboardRef.current.x || 0) + 20,
+              y: (clipboardRef.current.y || 0) + 20,
+            };
+            addShape(pastedShape, true);
+            setSelectedTool('select');
+            return true;
+          }
+          case 'duplicate': {
+            if (!selectedId) return false;
+            const shape = shapes.find(s => s.id === selectedId);
+            if (shape) handleDuplicate(shape);
+            return true;
+          }
+          case 'deselect':
+            setSelectedId(null);
+            return true;
+        }
+        return false;
       };
 
-      addShape(pastedShape, true);
-      setSelectedTool('select');
-      return;
-    }
-
-    if (isCtrl && e.code === 'KeyD' && selectedId) {
-      e.preventDefault();
-
-      const shape = shapes.find((s) => s.id === selectedId);
-      if (shape) {
-        handleDuplicate(shape);
+      for (const shortcut of EDITOR_SHORTCUTS) {
+        if (matchesShortcut(shortcut, e) && runAction(shortcut.action)) {
+          e.preventDefault();
+          break;
+        }
       }
-
-      return;
-    }
-
-    if (e.key === 'Escape') {
-      e.preventDefault();
-      setSelectedId(null);
-      return;
-    }
-  };
+    };
 
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    selectedId,
-    selectedTool,
-    shapes,
-    editingTextId,
-    deleteShape,
-    addShape,
-    handleDuplicate,
-    handleUndo,
-    handleRedo,
-    beginEditing,
-    setSelectedTool,
-    setSelectedId,
-  ]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedId, selectedTool, shapes, editingTextId, deleteShape, addShape, handleDuplicate, handleUndo, handleRedo, beginEditing, setSelectedTool, setSelectedId]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
@@ -470,7 +419,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         <button onClick={onBack} className="flex items-center gap-2 text-sm hover:bg-white/10 px-3 py-1 rounded-lg">
           <X size={16} /> Back
         </button>
-        <Toolbar selectedTool={selectedTool} onToolChange={handleToolChange} />
+        <Toolbar selectedTool={selectedTool} onToolChange={handleToolChange} isEditingText={!!editingTextId} />
         <div className="flex gap-2">
           <button onClick={handleUndo} className="p-2 hover:bg-white/10 rounded"><Undo2 size={16} /></button>
           <button onClick={handleRedo} className="p-2 hover:bg-white/10 rounded"><Redo2 size={16} /></button>
