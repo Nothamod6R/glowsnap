@@ -62,6 +62,8 @@ export interface ShapeConfig {
   fontSize?: number;
   fontFamily?: string;
   fontStyle?: string;
+  direction?: 'ltr' | 'rtl';
+  align?: 'left' | 'center' | 'right';
   rotation?: number;
   fillEnabled?: boolean;
 }

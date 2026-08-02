@@ -10,6 +10,9 @@ import {
   Italic,
   Palette,
   PaintBucket,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
 } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
@@ -35,11 +38,20 @@ interface FloatingToolbarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  textAlign: 'left' | 'center' | 'right';
+  setTextAlign: (a: 'left' | 'center' | 'right') => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
 
 const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
+
+const ALIGN_ORDER: Array<'left' | 'center' | 'right'> = ['left', 'center', 'right'];
+const ALIGN_ICONS = {
+  left: AlignLeft,
+  center: AlignCenter,
+  right: AlignRight,
+} as const;
 
 const numberInputClass =
   'text-[10px] text-white/60 w-8 text-right tabular-nums bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-white/30 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
@@ -64,6 +76,8 @@ export default function FloatingToolbar({
   setIsBold,
   isItalic,
   setIsItalic,
+  textAlign,
+  setTextAlign,
   fillEnabled,
   setFillEnabled,
 }: FloatingToolbarProps) {
@@ -121,6 +135,14 @@ export default function FloatingToolbar({
       fillEnabled: newFillEnabled,
       fill: newFillEnabled ? color : 'transparent',
     });
+  };
+
+  const handleAlignCycle = () => {
+    if (!selectedShape) return;
+    const currentIndex = ALIGN_ORDER.indexOf(textAlign);
+    const next = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
+    setTextAlign(next);
+    onUpdateShape(selectedShape.id, { align: next });
   };
 
   const isRectOrCircle = selectedShape?.type === 'rect' || selectedShape?.type === 'circle';
@@ -194,6 +216,21 @@ export default function FloatingToolbar({
                   >
                     <Italic size={12} />
                   </Toggle>
+                  {(() => {
+                    const AlignIcon = ALIGN_ICONS[textAlign];
+                    const currentIndex = ALIGN_ORDER.indexOf(textAlign);
+                    const next = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
+                    const label = textAlign.charAt(0).toUpperCase() + textAlign.slice(1);
+                    return (
+                      <button
+                        onClick={handleAlignCycle}
+                        className="bg-white/5 hover:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6 flex items-center justify-center transition-colors"
+                        title={`Align ${label} (click for ${next})`}
+                      >
+                        <AlignIcon size={12} />
+                      </button>
+                    );
+                  })()}
                 </div>
 
                 <div className="w-px h-6 bg-white/10" />
