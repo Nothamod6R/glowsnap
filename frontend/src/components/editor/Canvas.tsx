@@ -460,11 +460,27 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         : 'Text';
       const fillColor = selectedTool === 'number' ? '#ff3b30' : color;
       const style = selectedTool === 'number' ? 'bold' : '';
+      const fontSize = 24;
+      const fontFamily = 'Inter';
+      
+      const measureNode = new Konva.Text({
+        text,
+        fontSize,
+        fontFamily,
+        fontStyle: style,
+        padding: 4,
+      });
+      const measuredWidth = measureNode.width() * 8;
+      const measuredHeight = Math.max(fontSize * 1.2, measureNode.height());
+      measureNode.destroy();
+
       const textShape: ShapeConfig = {
         id, type: selectedTool === 'number' ? 'number' : 'text',
         x: pos.x, y: pos.y,
-        text, fill: fillColor, fillEnabled: true, fontSize: 24, fontFamily: 'Inter', fontStyle: style, opacity,
+        text, fill: fillColor, fillEnabled: true, fontSize, fontFamily, fontStyle: style, opacity,
         align: textAlign || 'left',
+        width: measuredWidth,
+        height: measuredHeight,
       };
       addShape(textShape);
       if (!isNumber) {
