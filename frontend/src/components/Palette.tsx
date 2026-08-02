@@ -1,10 +1,38 @@
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Crop, Type, EyeOff, Video, X } from 'lucide-react';
 import { Button } from './ui/button';
 import ToolButton from './ToolButton';
-import { PaletteProps } from '@/types/types';
+import { PALETTE_SHORTCUTS, matchesShortcut, isEditableTarget } from '@/lib/shortcut';
 
 export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording }: any) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditableTarget(e.target)) return;
+      for (const shortcut of PALETTE_SHORTCUTS) {
+        if (matchesShortcut(shortcut, e)) {
+          e.preventDefault();
+          switch (shortcut.action) {
+            case 'full-screen':
+              onTakeScreenshot();
+              break;
+            case 'select-area':
+              onTakeAreaScreenshot();
+              break;
+            case 'studio':
+              onSwitchToStudio();
+              break;
+          }
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio]);
+
+  const shortcutFor = (action: string) => PALETTE_SHORTCUTS.find(s => s.action === action)?.keys;
+
   return (
     <motion.div
       key="palette"
@@ -13,11 +41,12 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
       exit={{ opacity: 0, scale: 0.9 }}
       className="flex items-center gap-2 p-2 rounded-2xl backdrop-blur-2xl bg-black shadow-2xl text-white"
     >
-      <ToolButton icon={<Camera size={18} />} label="Full Screen" onClick={onTakeScreenshot} />
-      <ToolButton icon={<Crop size={18} />} label="Select Area" onClick={onTakeAreaScreenshot} />
-      {/*<ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
+      <ToolButton icon={<Camera size={18} />} label="Full Screen" shortcut={shortcutFor('full-screen')} onClick={onTakeScreenshot} />
+      <ToolButton icon={<Crop size={18} />} label="Select Area" shortcut={shortcutFor('select-area')} onClick={onTakeAreaScreenshot} />
+      {/* Commented-out buttons intentionally get no shortcut.
+      <ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
       <ToolButton icon={<Type size={18} />} label="OCR Text" />
-      <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" />*/}
+      <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" /> */}
 
       <div className="h-6 w-[1px] bg-white/20 mx-1" />
 

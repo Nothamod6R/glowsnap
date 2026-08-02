@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Crop, ArrowUpRight, Type, Hash, Pen, Square, Circle as CircleIcon, MousePointer2 } from 'lucide-react';
 import { Tool } from '@/types/types';
+import { TOOL_SHORTCUTS, matchesShortcut, isEditableTarget } from '@/lib/shortcut';
 
 interface ToolbarProps {
   selectedTool: Tool;
   onToolChange: (tool: Tool) => void;
+  isEditingText?: boolean;
 }
 
 const tools: { tool: Tool; icon: React.ElementType; label: string }[] = [
@@ -19,7 +21,26 @@ const tools: { tool: Tool; icon: React.ElementType; label: string }[] = [
   { tool: 'circle', icon: CircleIcon, label: 'Circle' },
 ];
 
-export default function Toolbar({ selectedTool, onToolChange }: ToolbarProps) {
+const shortcutFor = (tool: Tool): string | undefined =>
+  TOOL_SHORTCUTS.find(s => s.tool === tool)?.keys;
+
+export default function Toolbar({ selectedTool, onToolChange, isEditingText }: ToolbarProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isEditingText) return;
+      if (isEditableTarget(e.target)) return;
+      for (const shortcut of TOOL_SHORTCUTS) {
+        if (matchesShortcut(shortcut, e)) {
+          e.preventDefault();
+          onToolChange(shortcut.tool);
+          break;
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onToolChange, isEditingText]);
+
   return (
     <div className="flex gap-0.5 bg-black/40 backdrop-blur-md rounded-xl p-1 border border-white/10">
       {tools.map(({ tool, icon: Icon, label }) => (
@@ -33,7 +54,7 @@ export default function Toolbar({ selectedTool, onToolChange }: ToolbarProps) {
               ? 'text-white bg-white/20 shadow-sm'
               : 'text-white/60 hover:text-white/90'
           }`}
-          title={label}
+          title={`${label} (${shortcutFor(tool) ?? ''})`}
         >
           <Icon size={16} />
           {selectedTool === tool && (

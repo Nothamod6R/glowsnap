@@ -558,6 +558,14 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             fontFamily={shape.fontFamily}
             fontStyle={shape.fontStyle}
             wrap="word"
+            onDblClick={(e) => {
+              e.cancelBubble = true;
+              onTextDoubleClick(shape);
+            }}
+            onDblTap={(e) => {
+              e.cancelBubble = true;
+              onTextDoubleClick(shape);
+            }}
             onTransform={handleTextTransform}
             onTransformEnd={handleTextTransformEnd}
             rotation={rotation}
