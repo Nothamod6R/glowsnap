@@ -23,6 +23,7 @@ interface ToolStyleState {
   fontFamily: string;
   isBold: boolean;
   isItalic: boolean;
+  isUnderline: boolean;
   textAlign: 'left' | 'center' | 'right';
   lineHeight: number;
   fillEnabled: boolean;
@@ -36,6 +37,7 @@ const DEFAULT_STYLE: ToolStyleState = {
   fontFamily: 'Inter',
   isBold: false,
   isItalic: false,
+  isUnderline: false,
   textAlign: 'left',
   lineHeight: 1,
   fillEnabled: false,
@@ -157,6 +159,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         fontFamily: shape.fontFamily || prev.fontFamily,
         isBold: shape.fontStyle ? shape.fontStyle.includes('bold') : prev.isBold,
         isItalic: shape.fontStyle ? shape.fontStyle.includes('italic') : prev.isItalic,
+        isUnderline: shape.textDecoration === 'underline' || shape.textDecoration?.includes('underline') || prev.isUnderline,
         textAlign: shape.align || prev.textAlign,
         lineHeight: shape.lineHeight ?? prev.lineHeight,
       }));
@@ -180,12 +183,14 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       if (shape && (shape.type === 'text' || shape.type === 'number')) {
         const nextFontStyle = (selectedStyle.isBold ? 'bold ' : '') + (selectedStyle.isItalic ? 'italic' : '');
         const nextAlign = selectedStyle.textAlign;
+        const nextTextDecoration = selectedStyle.isUnderline ? 'underline' : 'none';
         if (
           shape.fontSize !== selectedStyle.fontSize ||
           shape.fontFamily !== selectedStyle.fontFamily ||
           shape.fontStyle !== nextFontStyle ||
           (shape.align || 'left') !== nextAlign ||
-          (shape.lineHeight ?? 1) !== selectedStyle.lineHeight
+          (shape.lineHeight ?? 1) !== selectedStyle.lineHeight ||
+          (shape.textDecoration || 'none') !== nextTextDecoration
         ) {
           updateShape(selectedId, {
             fontSize: selectedStyle.fontSize,
@@ -193,11 +198,12 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             fontStyle: nextFontStyle,
             align: nextAlign,
             lineHeight: selectedStyle.lineHeight,
+            textDecoration: nextTextDecoration,
           }, false);
         }
       }
     }
-  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.textAlign, selectedStyle.lineHeight, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.isUnderline, selectedStyle.textAlign, selectedStyle.lineHeight, selectedId, selectedTool]);
 
   useEffect(() => {
     if (loadingStyleRef.current) return;
@@ -464,6 +470,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         fontFamily={toolStyle.fontFamily} setFontFamily={f => setToolProp('fontFamily', f)}
         isBold={toolStyle.isBold} setIsBold={b => setToolProp('isBold', b)}
         isItalic={toolStyle.isItalic} setIsItalic={i => setToolProp('isItalic', i)}
+        isUnderline={toolStyle.isUnderline} setIsUnderline={u => setToolProp('isUnderline', u)}
         textAlign={toolStyle.textAlign} setTextAlign={a => setToolProp('textAlign', a)}
         lineHeight={toolStyle.lineHeight} setLineHeight={l => setToolProp('lineHeight', l)}
         fillEnabled={toolStyle.fillEnabled} setFillEnabled={v => setToolProp('fillEnabled', v)}
@@ -502,6 +509,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           onChangeTool={handleToolChange}
           textAlign={toolStyle.textAlign}
           lineHeight={toolStyle.lineHeight}
+          textDecoration={toolStyle.isUnderline ? 'underline' : 'none'}
         />
         {editingShape && editingBox && (
           <InlineTextEditor
@@ -520,6 +528,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             align={editingShape.align || 'left'}
             color={editingShape.fill || '#ffffff'}
             lineHeight={editingShape.lineHeight ?? 1}
+            textDecoration={editingShape.textDecoration || 'none'}
             wrapWidth={editingShape.width && editingShape.width > 0 ? editingShape.width : undefined}
             maxWidth={stageRect ? Math.max(120, Math.floor(stageRect.width) - 60) : 600}
             onMetrics={handleEditingTextMetrics}
@@ -545,6 +554,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setIsBold={b => setSelectedProp('isBold', b)}
           isItalic={selectedStyle.isItalic}
           setIsItalic={i => setSelectedProp('isItalic', i)}
+          isUnderline={selectedStyle.isUnderline}
+          setIsUnderline={u => setSelectedProp('isUnderline', u)}
           textAlign={selectedStyle.textAlign}
           setTextAlign={a => setSelectedProp('textAlign', a)}
           lineHeight={selectedStyle.lineHeight}
