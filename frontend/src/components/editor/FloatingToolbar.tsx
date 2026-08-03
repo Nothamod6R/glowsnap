@@ -4,11 +4,13 @@ import {
   Trash2,
   Copy,
   RotateCw,
-  Type,
   Layers,
   Bold,
   Italic,
   Underline,
+  CaseSensitive,
+  WrapText,
+  MoveHorizontal,
   Palette,
   PaintBucket,
   AlignLeft,
@@ -289,7 +291,7 @@ export default function FloatingToolbar({
                 <div className="w-px h-6 bg-white/10" />
 
                 <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <Type size={12} className="text-white/50 shrink-0" />
+                  <CaseSensitive size={12} className="text-white/50 shrink-0" />
                   <Slider
                     value={[currentFontSize]}
                     min={8}
@@ -315,7 +317,7 @@ export default function FloatingToolbar({
                 </div>
 
                 <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <Type size={12} className="text-white/50 shrink-0" />
+                  <WrapText size={12} className="text-white/50 shrink-0" />
                   <Slider
                     value={[currentLineHeight]}
                     min={0}
@@ -343,7 +345,7 @@ export default function FloatingToolbar({
                 </div>
 
                 <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <Type size={12} className="text-white/50 shrink-0" />
+                  <MoveHorizontal size={12} className="text-white/50 shrink-0" />
                   <Slider
                     value={[currentLetterSpacing]}
                     min={-10}

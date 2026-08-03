@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Minus, Plus, Bold, Italic, Underline, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Palette, Minus, Plus, Bold, Italic, Underline, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight, CaseSensitive, WrapText, MoveHorizontal } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Tool } from '@/types/types';
@@ -207,7 +207,7 @@ export default function OptionsBar({
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-            <Type size={13} className="text-white/50" />
+            <CaseSensitive size={13} className="text-white/50" />
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Size</span>
             <Slider
               value={[fontSize]}
@@ -235,7 +235,7 @@ export default function OptionsBar({
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-            <Type size={13} className="text-white/50" />
+            <WrapText size={13} className="text-white/50" />
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Line Height</span>
             <Slider
               value={[lineHeight]}
@@ -264,7 +264,7 @@ export default function OptionsBar({
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-            <Type size={13} className="text-white/50" />
+            <MoveHorizontal size={13} className="text-white/50" />
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Letter Sp.</span>
             <Slider
               value={[letterSpacing]}
