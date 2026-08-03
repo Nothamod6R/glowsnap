@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Minus, Plus, Bold, Italic, Underline, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Palette, Minus, Plus, Bold, Italic, Underline, Strikethrough, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight, CaseSensitive, WrapText, MoveHorizontal } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Tool } from '@/types/types';
@@ -22,10 +22,14 @@ interface OptionsBarProps {
   setIsItalic: (i: boolean) => void;
   isUnderline: boolean;
   setIsUnderline: (u: boolean) => void;
+  isStrikethrough: boolean;
+  setIsStrikethrough: (s: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
   setLineHeight: (l: number) => void;
+  letterSpacing: number;
+  setLetterSpacing: (s: number) => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
@@ -49,7 +53,8 @@ const numberInputClass =
 export default function OptionsBar({
   selectedTool, color, setColor, strokeWidth, setStrokeWidth, opacity, setOpacity,
   fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic,
-  isUnderline, setIsUnderline, textAlign, setTextAlign, lineHeight, setLineHeight,
+  isUnderline, setIsUnderline, isStrikethrough, setIsStrikethrough, textAlign, setTextAlign, lineHeight, setLineHeight,
+  letterSpacing, setLetterSpacing,
   fillEnabled, setFillEnabled,
 }: OptionsBarProps) {
   if (selectedTool === 'select' || selectedTool === 'crop') return null;
@@ -173,6 +178,14 @@ export default function OptionsBar({
             >
               <Underline size={13} />
             </Toggle>
+            <Toggle
+              pressed={isStrikethrough}
+              onPressedChange={setIsStrikethrough}
+              className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1.5"
+              title="Strikethrough"
+            >
+              <Strikethrough size={13} />
+            </Toggle>
             {(() => {
               const AlignIcon = ALIGN_ICONS[textAlign];
               const currentIndex = ALIGN_ORDER.indexOf(textAlign);
@@ -204,7 +217,7 @@ export default function OptionsBar({
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-            <Type size={13} className="text-white/50" />
+            <CaseSensitive size={13} className="text-white/50" />
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Size</span>
             <Slider
               value={[fontSize]}
@@ -232,7 +245,7 @@ export default function OptionsBar({
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
-            <Type size={13} className="text-white/50" />
+            <WrapText size={13} className="text-white/50" />
             <span className="text-[10px] text-white/40 uppercase tracking-wider">Line Height</span>
             <Slider
               value={[lineHeight]}
@@ -255,6 +268,35 @@ export default function OptionsBar({
               onBlur={e => {
                 const val = Number(e.target.value);
                 if (!isNaN(val)) setLineHeight(clamp(val, 0, 3));
+              }}
+              className={numberInputClass}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
+            <MoveHorizontal size={13} className="text-white/50" />
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">Letter Sp.</span>
+            <Slider
+              value={[letterSpacing]}
+              min={-10}
+              max={20}
+              step={0.5}
+              onValueChange={handleSlider(setLetterSpacing)}
+              className="w-20 h-4"
+            />
+            <input
+              type="number"
+              value={letterSpacing}
+              min={-10}
+              max={20}
+              step={0.5}
+              onChange={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLetterSpacing(val);
+              }}
+              onBlur={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLetterSpacing(clamp(val, -10, 20));
               }}
               className={numberInputClass}
             />

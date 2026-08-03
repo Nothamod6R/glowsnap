@@ -65,6 +65,7 @@ export interface ShapeConfig {
   direction?: 'ltr' | 'rtl';
   align?: 'left' | 'center' | 'right';
   lineHeight?: number;
+  letterSpacing?: number;
   textDecoration?: string;
   rotation?: number;
   fillEnabled?: boolean;

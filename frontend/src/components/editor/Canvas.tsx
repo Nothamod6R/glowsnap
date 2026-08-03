@@ -43,6 +43,7 @@ interface CanvasProps {
   onChangeTool?: (tool: Tool) => void;
   textAlign?: 'left' | 'center' | 'right';
   lineHeight?: number;
+  letterSpacing?: number;
   textDecoration?: string;
 }
 
@@ -73,6 +74,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   onChangeTool,
   textAlign,
   lineHeight,
+  letterSpacing,
   textDecoration,
 }, ref) => {
   const stageRef = useRef<Konva.Stage>(null);
@@ -484,6 +486,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         text, fill: fillColor, fillEnabled: true, fontSize, fontFamily, fontStyle: style, opacity,
         align: textAlign || 'left',
         lineHeight: lineHeight ?? 1,
+        letterSpacing: letterSpacing ?? 0,
         textDecoration: textDecoration || 'none',
         width: measuredWidth,
         height: measuredHeight,
@@ -585,6 +588,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             direction={shape.direction === 'rtl' ? 'rtl' : 'ltr'}
             align={shape.align || 'left'}
             lineHeight={shape.lineHeight ?? lineHeight ?? 1}
+            letterSpacing={shape.letterSpacing ?? letterSpacing ?? 0}
             textDecoration={shape.textDecoration || textDecoration || 'none'}
             wrap="word"
             onDblClick={(e) => {
