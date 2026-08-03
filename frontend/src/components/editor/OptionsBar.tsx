@@ -22,6 +22,8 @@ interface OptionsBarProps {
   setIsItalic: (i: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
+  lineHeight: number;
+  setLineHeight: (l: number) => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
@@ -45,7 +47,7 @@ const numberInputClass =
 export default function OptionsBar({
   selectedTool, color, setColor, strokeWidth, setStrokeWidth, opacity, setOpacity,
   fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic,
-  textAlign, setTextAlign,
+  textAlign, setTextAlign, lineHeight, setLineHeight,
   fillEnabled, setFillEnabled,
 }: OptionsBarProps) {
   if (selectedTool === 'select' || selectedTool === 'crop') return null;
@@ -217,6 +219,35 @@ export default function OptionsBar({
               className={numberInputClass}
             />
             <span className="text-[10px] text-white/60">px</span>
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
+            <Type size={13} className="text-white/50" />
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">Line Height</span>
+            <Slider
+              value={[lineHeight]}
+              min={0}
+              max={3}
+              step={0.1}
+              onValueChange={handleSlider(setLineHeight)}
+              className="w-20 h-4"
+            />
+            <input
+              type="number"
+              value={lineHeight}
+              min={0}
+              max={3}
+              step={0.1}
+              onChange={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLineHeight(val);
+              }}
+              onBlur={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLineHeight(clamp(val, 0, 3));
+              }}
+              className={numberInputClass}
+            />
           </div>
         </>
       )}

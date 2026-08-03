@@ -24,6 +24,7 @@ interface ToolStyleState {
   isBold: boolean;
   isItalic: boolean;
   textAlign: 'left' | 'center' | 'right';
+  lineHeight: number;
   fillEnabled: boolean;
 }
 
@@ -36,6 +37,7 @@ const DEFAULT_STYLE: ToolStyleState = {
   isBold: false,
   isItalic: false,
   textAlign: 'left',
+  lineHeight: 1,
   fillEnabled: false,
 };
 
@@ -156,6 +158,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isBold: shape.fontStyle ? shape.fontStyle.includes('bold') : prev.isBold,
         isItalic: shape.fontStyle ? shape.fontStyle.includes('italic') : prev.isItalic,
         textAlign: shape.align || prev.textAlign,
+        lineHeight: shape.lineHeight ?? prev.lineHeight,
       }));
     } else {
       setSelectedStyle(prev => ({
@@ -181,18 +184,20 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           shape.fontSize !== selectedStyle.fontSize ||
           shape.fontFamily !== selectedStyle.fontFamily ||
           shape.fontStyle !== nextFontStyle ||
-          (shape.align || 'left') !== nextAlign
+          (shape.align || 'left') !== nextAlign ||
+          (shape.lineHeight ?? 1) !== selectedStyle.lineHeight
         ) {
           updateShape(selectedId, {
             fontSize: selectedStyle.fontSize,
             fontFamily: selectedStyle.fontFamily,
             fontStyle: nextFontStyle,
             align: nextAlign,
+            lineHeight: selectedStyle.lineHeight,
           }, false);
         }
       }
     }
-  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.textAlign, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.textAlign, selectedStyle.lineHeight, selectedId, selectedTool]);
 
   useEffect(() => {
     if (loadingStyleRef.current) return;
@@ -460,6 +465,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isBold={toolStyle.isBold} setIsBold={b => setToolProp('isBold', b)}
         isItalic={toolStyle.isItalic} setIsItalic={i => setToolProp('isItalic', i)}
         textAlign={toolStyle.textAlign} setTextAlign={a => setToolProp('textAlign', a)}
+        lineHeight={toolStyle.lineHeight} setLineHeight={l => setToolProp('lineHeight', l)}
         fillEnabled={toolStyle.fillEnabled} setFillEnabled={v => setToolProp('fillEnabled', v)}
       />
 
@@ -495,6 +501,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           onImageTransform={setImageTransform}
           onChangeTool={handleToolChange}
           textAlign={toolStyle.textAlign}
+          lineHeight={toolStyle.lineHeight}
         />
         {editingShape && editingBox && (
           <InlineTextEditor
@@ -512,7 +519,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             direction={editingShape.direction === 'rtl' ? 'rtl' : 'ltr'}
             align={editingShape.align || 'left'}
             color={editingShape.fill || '#ffffff'}
-            lineHeight={1.2}
+            lineHeight={editingShape.lineHeight ?? 1}
             wrapWidth={editingShape.width && editingShape.width > 0 ? editingShape.width : undefined}
             maxWidth={stageRect ? Math.max(120, Math.floor(stageRect.width) - 60) : 600}
             onMetrics={handleEditingTextMetrics}
@@ -540,6 +547,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setIsItalic={i => setSelectedProp('isItalic', i)}
           textAlign={selectedStyle.textAlign}
           setTextAlign={a => setSelectedProp('textAlign', a)}
+          lineHeight={selectedStyle.lineHeight}
+          setLineHeight={l => setSelectedProp('lineHeight', l)}
           fillEnabled={selectedStyle.fillEnabled}
           setFillEnabled={v => setSelectedProp('fillEnabled', v)}
         />

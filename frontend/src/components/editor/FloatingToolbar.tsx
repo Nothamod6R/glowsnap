@@ -40,6 +40,8 @@ interface FloatingToolbarProps {
   setIsItalic: (i: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
+  lineHeight: number;
+  setLineHeight: (l: number) => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
@@ -78,6 +80,8 @@ export default function FloatingToolbar({
   setIsItalic,
   textAlign,
   setTextAlign,
+  lineHeight,
+  setLineHeight,
   fillEnabled,
   setFillEnabled,
 }: FloatingToolbarProps) {
@@ -109,6 +113,14 @@ export default function FloatingToolbar({
     const val = Array.isArray(v) ? v[0] : v;
     setFontSize(val);
     onUpdateShape(selectedShape.id, { fontSize: val });
+  };
+
+  const handleLineHeightChange = (v: number | readonly number[]) => {
+    if (!selectedShape) return;
+    const val = Array.isArray(v) ? v[0] : v;
+    const nextValue = Number(val);
+    setLineHeight(nextValue);
+    onUpdateShape(selectedShape.id, { lineHeight: nextValue });
   };
 
   const handleRotationChange = (v: number | readonly number[]) => {
@@ -150,6 +162,7 @@ export default function FloatingToolbar({
 
   const currentOpacity = selectedShape?.opacity ?? 1;
   const currentFontSize = selectedShape?.fontSize ?? 24;
+  const currentLineHeight = selectedShape?.lineHeight ?? lineHeight ?? 1;
   const currentRotation = selectedShape?.rotation ?? 0;
 
   return (
@@ -270,6 +283,34 @@ export default function FloatingToolbar({
                     onBlur={e => {
                       const val = Number(e.target.value);
                       if (!isNaN(val)) handleFontSizeChange(clamp(val, 8, 120));
+                    }}
+                    className={numberInputClass}
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                  <Type size={12} className="text-white/50 shrink-0" />
+                  <Slider
+                    value={[currentLineHeight]}
+                    min={0}
+                    max={3}
+                    step={0.1}
+                    onValueChange={handleLineHeightChange}
+                    className="w-16 h-4"
+                  />
+                  <input
+                    type="number"
+                    value={currentLineHeight}
+                    min={0}
+                    max={3}
+                    step={0.1}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleLineHeightChange(val);
+                    }}
+                    onBlur={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleLineHeightChange(clamp(val, 0, 3));
                     }}
                     className={numberInputClass}
                   />
