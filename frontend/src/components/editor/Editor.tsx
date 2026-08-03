@@ -26,6 +26,7 @@ interface ToolStyleState {
   isUnderline: boolean;
   textAlign: 'left' | 'center' | 'right';
   lineHeight: number;
+  letterSpacing: number;
   fillEnabled: boolean;
 }
 
@@ -40,6 +41,7 @@ const DEFAULT_STYLE: ToolStyleState = {
   isUnderline: false,
   textAlign: 'left',
   lineHeight: 1,
+  letterSpacing: 0,
   fillEnabled: false,
 };
 
@@ -162,6 +164,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isUnderline: shape.textDecoration === 'underline' || shape.textDecoration?.includes('underline') || prev.isUnderline,
         textAlign: shape.align || prev.textAlign,
         lineHeight: shape.lineHeight ?? prev.lineHeight,
+        letterSpacing: shape.letterSpacing ?? prev.letterSpacing,
       }));
     } else {
       setSelectedStyle(prev => ({
@@ -190,6 +193,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           shape.fontStyle !== nextFontStyle ||
           (shape.align || 'left') !== nextAlign ||
           (shape.lineHeight ?? 1) !== selectedStyle.lineHeight ||
+          (shape.letterSpacing ?? 0) !== selectedStyle.letterSpacing ||
           (shape.textDecoration || 'none') !== nextTextDecoration
         ) {
           updateShape(selectedId, {
@@ -198,12 +202,13 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             fontStyle: nextFontStyle,
             align: nextAlign,
             lineHeight: selectedStyle.lineHeight,
+            letterSpacing: selectedStyle.letterSpacing,
             textDecoration: nextTextDecoration,
           }, false);
         }
       }
     }
-  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.isUnderline, selectedStyle.textAlign, selectedStyle.lineHeight, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.isUnderline, selectedStyle.textAlign, selectedStyle.lineHeight, selectedStyle.letterSpacing, selectedId, selectedTool]);
 
   useEffect(() => {
     if (loadingStyleRef.current) return;
@@ -473,6 +478,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isUnderline={toolStyle.isUnderline} setIsUnderline={u => setToolProp('isUnderline', u)}
         textAlign={toolStyle.textAlign} setTextAlign={a => setToolProp('textAlign', a)}
         lineHeight={toolStyle.lineHeight} setLineHeight={l => setToolProp('lineHeight', l)}
+        letterSpacing={toolStyle.letterSpacing} setLetterSpacing={s => setToolProp('letterSpacing', s)}
         fillEnabled={toolStyle.fillEnabled} setFillEnabled={v => setToolProp('fillEnabled', v)}
       />
 
@@ -509,6 +515,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           onChangeTool={handleToolChange}
           textAlign={toolStyle.textAlign}
           lineHeight={toolStyle.lineHeight}
+          letterSpacing={toolStyle.letterSpacing}
           textDecoration={toolStyle.isUnderline ? 'underline' : 'none'}
         />
         {editingShape && editingBox && (
@@ -528,6 +535,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             align={editingShape.align || 'left'}
             color={editingShape.fill || '#ffffff'}
             lineHeight={editingShape.lineHeight ?? 1}
+            letterSpacing={editingShape.letterSpacing ?? 0}
             textDecoration={editingShape.textDecoration || 'none'}
             wrapWidth={editingShape.width && editingShape.width > 0 ? editingShape.width : undefined}
             maxWidth={stageRect ? Math.max(120, Math.floor(stageRect.width) - 60) : 600}
@@ -560,6 +568,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setTextAlign={a => setSelectedProp('textAlign', a)}
           lineHeight={selectedStyle.lineHeight}
           setLineHeight={l => setSelectedProp('lineHeight', l)}
+          letterSpacing={selectedStyle.letterSpacing}
+          setLetterSpacing={s => setSelectedProp('letterSpacing', s)}
           fillEnabled={selectedStyle.fillEnabled}
           setFillEnabled={v => setSelectedProp('fillEnabled', v)}
         />

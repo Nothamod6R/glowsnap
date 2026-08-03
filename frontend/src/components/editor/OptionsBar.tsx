@@ -26,6 +26,8 @@ interface OptionsBarProps {
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
   setLineHeight: (l: number) => void;
+  letterSpacing: number;
+  setLetterSpacing: (s: number) => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
@@ -50,6 +52,7 @@ export default function OptionsBar({
   selectedTool, color, setColor, strokeWidth, setStrokeWidth, opacity, setOpacity,
   fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic,
   isUnderline, setIsUnderline, textAlign, setTextAlign, lineHeight, setLineHeight,
+  letterSpacing, setLetterSpacing,
   fillEnabled, setFillEnabled,
 }: OptionsBarProps) {
   if (selectedTool === 'select' || selectedTool === 'crop') return null;
@@ -255,6 +258,35 @@ export default function OptionsBar({
               onBlur={e => {
                 const val = Number(e.target.value);
                 if (!isNaN(val)) setLineHeight(clamp(val, 0, 3));
+              }}
+              className={numberInputClass}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
+            <Type size={13} className="text-white/50" />
+            <span className="text-[10px] text-white/40 uppercase tracking-wider">Letter Sp.</span>
+            <Slider
+              value={[letterSpacing]}
+              min={-10}
+              max={20}
+              step={0.5}
+              onValueChange={handleSlider(setLetterSpacing)}
+              className="w-20 h-4"
+            />
+            <input
+              type="number"
+              value={letterSpacing}
+              min={-10}
+              max={20}
+              step={0.5}
+              onChange={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLetterSpacing(val);
+              }}
+              onBlur={e => {
+                const val = Number(e.target.value);
+                if (!isNaN(val)) setLetterSpacing(clamp(val, -10, 20));
               }}
               className={numberInputClass}
             />

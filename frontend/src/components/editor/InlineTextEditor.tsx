@@ -14,6 +14,7 @@ interface InlineTextEditorProps {
   fontStyle: 'normal' | 'italic';
   color: string;
   lineHeight: number;
+  letterSpacing?: number;
   textDecoration?: string;
   direction: 'ltr' | 'rtl';
   align: 'left' | 'center' | 'right';
@@ -28,7 +29,7 @@ const PLACEHOLDER = 'Text';
 export default function InlineTextEditor({
   value, onChange, onCommit, onCancel,
   left, top, rotation,
-  fontFamily, fontSize, fontWeight, fontStyle, color, lineHeight, textDecoration,
+  fontFamily, fontSize, fontWeight, fontStyle, color, lineHeight, letterSpacing, textDecoration,
   direction, align,
   wrapWidth, maxWidth, onMetrics,
 }: InlineTextEditorProps) {
@@ -111,6 +112,7 @@ export default function InlineTextEditor({
         fontStyle,
         color,
         lineHeight,
+        letterSpacing: letterSpacing ?? 0,
         textDecoration: textDecoration || 'none',
         caretColor: color,
         direction,

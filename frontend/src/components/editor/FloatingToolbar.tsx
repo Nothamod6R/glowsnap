@@ -45,6 +45,8 @@ interface FloatingToolbarProps {
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
   setLineHeight: (l: number) => void;
+  letterSpacing: number;
+  setLetterSpacing: (s: number) => void;
   fillEnabled: boolean;
   setFillEnabled: (v: boolean) => void;
 }
@@ -87,6 +89,8 @@ export default function FloatingToolbar({
   setTextAlign,
   lineHeight,
   setLineHeight,
+  letterSpacing,
+  setLetterSpacing,
   fillEnabled,
   setFillEnabled,
 }: FloatingToolbarProps) {
@@ -126,6 +130,14 @@ export default function FloatingToolbar({
     const nextValue = Number(val);
     setLineHeight(nextValue);
     onUpdateShape(selectedShape.id, { lineHeight: nextValue });
+  };
+
+  const handleLetterSpacingChange = (v: number | readonly number[]) => {
+    if (!selectedShape) return;
+    const val = Array.isArray(v) ? v[0] : v;
+    const nextValue = Number(val);
+    setLetterSpacing(nextValue);
+    onUpdateShape(selectedShape.id, { letterSpacing: nextValue });
   };
 
   const handleRotationChange = (v: number | readonly number[]) => {
@@ -168,6 +180,7 @@ export default function FloatingToolbar({
   const currentOpacity = selectedShape?.opacity ?? 1;
   const currentFontSize = selectedShape?.fontSize ?? 24;
   const currentLineHeight = selectedShape?.lineHeight ?? lineHeight ?? 1;
+  const currentLetterSpacing = selectedShape?.letterSpacing ?? letterSpacing ?? 0;
   const currentRotation = selectedShape?.rotation ?? 0;
 
   return (
@@ -324,6 +337,34 @@ export default function FloatingToolbar({
                     onBlur={e => {
                       const val = Number(e.target.value);
                       if (!isNaN(val)) handleLineHeightChange(clamp(val, 0, 3));
+                    }}
+                    className={numberInputClass}
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                  <Type size={12} className="text-white/50 shrink-0" />
+                  <Slider
+                    value={[currentLetterSpacing]}
+                    min={-10}
+                    max={20}
+                    step={0.5}
+                    onValueChange={handleLetterSpacingChange}
+                    className="w-16 h-4"
+                  />
+                  <input
+                    type="number"
+                    value={currentLetterSpacing}
+                    min={-10}
+                    max={20}
+                    step={0.5}
+                    onChange={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleLetterSpacingChange(val);
+                    }}
+                    onBlur={e => {
+                      const val = Number(e.target.value);
+                      if (!isNaN(val)) handleLetterSpacingChange(clamp(val, -10, 20));
                     }}
                     className={numberInputClass}
                   />
