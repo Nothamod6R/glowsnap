@@ -8,6 +8,7 @@ import {
   Bold,
   Italic,
   Underline,
+  Strikethrough,
   CaseSensitive,
   WrapText,
   MoveHorizontal,
@@ -43,6 +44,8 @@ interface FloatingToolbarProps {
   setIsItalic: (i: boolean) => void;
   isUnderline: boolean;
   setIsUnderline: (u: boolean) => void;
+  isStrikethrough: boolean;
+  setIsStrikethrough: (s: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
@@ -87,6 +90,8 @@ export default function FloatingToolbar({
   setIsItalic,
   isUnderline,
   setIsUnderline,
+  isStrikethrough,
+  setIsStrikethrough,
   textAlign,
   setTextAlign,
   lineHeight,
@@ -256,6 +261,14 @@ export default function FloatingToolbar({
                     title="Underline"
                   >
                     <Underline size={12} />
+                  </Toggle>
+                  <Toggle
+                    pressed={isStrikethrough}
+                    onPressedChange={setIsStrikethrough}
+                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                    title="Strikethrough"
+                  >
+                    <Strikethrough size={12} />
                   </Toggle>
                   {(() => {
                     const AlignIcon = ALIGN_ICONS[textAlign];

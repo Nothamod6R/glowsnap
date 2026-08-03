@@ -24,6 +24,7 @@ interface ToolStyleState {
   isBold: boolean;
   isItalic: boolean;
   isUnderline: boolean;
+  isStrikethrough: boolean;
   textAlign: 'left' | 'center' | 'right';
   lineHeight: number;
   letterSpacing: number;
@@ -39,6 +40,7 @@ const DEFAULT_STYLE: ToolStyleState = {
   isBold: false,
   isItalic: false,
   isUnderline: false,
+  isStrikethrough: false,
   textAlign: 'left',
   lineHeight: 1,
   letterSpacing: 0,
@@ -162,6 +164,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isBold: shape.fontStyle ? shape.fontStyle.includes('bold') : prev.isBold,
         isItalic: shape.fontStyle ? shape.fontStyle.includes('italic') : prev.isItalic,
         isUnderline: shape.textDecoration === 'underline' || shape.textDecoration?.includes('underline') || prev.isUnderline,
+        isStrikethrough: shape.textDecoration === 'line-through' || shape.textDecoration?.includes('line-through') || prev.isStrikethrough,
         textAlign: shape.align || prev.textAlign,
         lineHeight: shape.lineHeight ?? prev.lineHeight,
         letterSpacing: shape.letterSpacing ?? prev.letterSpacing,
@@ -186,7 +189,10 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       if (shape && (shape.type === 'text' || shape.type === 'number')) {
         const nextFontStyle = (selectedStyle.isBold ? 'bold ' : '') + (selectedStyle.isItalic ? 'italic' : '');
         const nextAlign = selectedStyle.textAlign;
-        const nextTextDecoration = selectedStyle.isUnderline ? 'underline' : 'none';
+        const nextTextDecoration = [
+          selectedStyle.isUnderline ? 'underline' : null,
+          selectedStyle.isStrikethrough ? 'line-through' : null,
+        ].filter(Boolean).join(' ') || 'none';
         if (
           shape.fontSize !== selectedStyle.fontSize ||
           shape.fontFamily !== selectedStyle.fontFamily ||
@@ -208,7 +214,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         }
       }
     }
-  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.isUnderline, selectedStyle.textAlign, selectedStyle.lineHeight, selectedStyle.letterSpacing, selectedId, selectedTool]);
+  }, [selectedStyle.fontSize, selectedStyle.fontFamily, selectedStyle.isBold, selectedStyle.isItalic, selectedStyle.isUnderline, selectedStyle.isStrikethrough, selectedStyle.textAlign, selectedStyle.lineHeight, selectedStyle.letterSpacing, selectedId, selectedTool]);
 
   useEffect(() => {
     if (loadingStyleRef.current) return;
@@ -476,6 +482,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         isBold={toolStyle.isBold} setIsBold={b => setToolProp('isBold', b)}
         isItalic={toolStyle.isItalic} setIsItalic={i => setToolProp('isItalic', i)}
         isUnderline={toolStyle.isUnderline} setIsUnderline={u => setToolProp('isUnderline', u)}
+        isStrikethrough={toolStyle.isStrikethrough} setIsStrikethrough={s => setToolProp('isStrikethrough', s)}
         textAlign={toolStyle.textAlign} setTextAlign={a => setToolProp('textAlign', a)}
         lineHeight={toolStyle.lineHeight} setLineHeight={l => setToolProp('lineHeight', l)}
         letterSpacing={toolStyle.letterSpacing} setLetterSpacing={s => setToolProp('letterSpacing', s)}
@@ -516,7 +523,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           textAlign={toolStyle.textAlign}
           lineHeight={toolStyle.lineHeight}
           letterSpacing={toolStyle.letterSpacing}
-          textDecoration={toolStyle.isUnderline ? 'underline' : 'none'}
+          textDecoration={[toolStyle.isUnderline ? 'underline' : null, toolStyle.isStrikethrough ? 'line-through' : null].filter(Boolean).join(' ') || 'none'}
         />
         {editingShape && editingBox && (
           <InlineTextEditor
@@ -564,6 +571,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           setIsItalic={i => setSelectedProp('isItalic', i)}
           isUnderline={selectedStyle.isUnderline}
           setIsUnderline={u => setSelectedProp('isUnderline', u)}
+          isStrikethrough={selectedStyle.isStrikethrough}
+          setIsStrikethrough={s => setSelectedProp('isStrikethrough', s)}
           textAlign={selectedStyle.textAlign}
           setTextAlign={a => setSelectedProp('textAlign', a)}
           lineHeight={selectedStyle.lineHeight}
