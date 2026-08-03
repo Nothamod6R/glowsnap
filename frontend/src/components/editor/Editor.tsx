@@ -129,10 +129,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       const maxH = window.innerHeight * 0.75;
       const baseScale = Math.min(maxW / img.width, maxH / img.height, 1);
       const pad = background.enabled ? background.padding : 0;
-      setStageSize({
-        width: img.width * baseScale + pad * 2,
-        height: img.height * baseScale + pad * 2,
-      });
+
+      setStageSize({ width: img.width * baseScale + pad * 2, height: img.height * baseScale + pad * 2 });
       setImageTransform({
         x: pad,
         y: pad,
@@ -141,14 +139,22 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         rotation: 0,
       });
     };
-  }, [imageUrl, background.enabled, background.padding]);
+  }, [imageUrl]);
 
   useEffect(() => {
-    if (image) {
-      const pad = background.enabled ? background.padding : 0;
-      setImageTransform(prev => ({ ...prev, x: pad, y: pad }));
-    }
-  }, [background.padding, background.enabled, image]);
+    if (!image) return;
+    const pad = background.enabled ? background.padding : 0;
+    
+    setStageSize({
+      width: image.width * imageTransform.scaleX + pad * 2,
+      height: image.height * imageTransform.scaleY + pad * 2,
+    });
+    setImageTransform(prev => ({
+      ...prev,
+      x: pad,
+      y: pad,
+    }));
+  }, [background.enabled, background.padding, image, imageTransform.scaleX, imageTransform.scaleY]);
 
   useEffect(() => {
     if (!selectedId) return;
