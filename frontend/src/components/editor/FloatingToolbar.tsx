@@ -8,6 +8,7 @@ import {
   Layers,
   Bold,
   Italic,
+  Underline,
   Palette,
   PaintBucket,
   AlignLeft,
@@ -38,6 +39,8 @@ interface FloatingToolbarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  isUnderline: boolean;
+  setIsUnderline: (u: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
@@ -78,6 +81,8 @@ export default function FloatingToolbar({
   setIsBold,
   isItalic,
   setIsItalic,
+  isUnderline,
+  setIsUnderline,
   textAlign,
   setTextAlign,
   lineHeight,
@@ -228,6 +233,14 @@ export default function FloatingToolbar({
                     title="Italic"
                   >
                     <Italic size={12} />
+                  </Toggle>
+                  <Toggle
+                    pressed={isUnderline}
+                    onPressedChange={setIsUnderline}
+                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                    title="Underline"
+                  >
+                    <Underline size={12} />
                   </Toggle>
                   {(() => {
                     const AlignIcon = ALIGN_ICONS[textAlign];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Palette, Minus, Plus, Bold, Italic, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
+import { Palette, Minus, Plus, Bold, Italic, Underline, Layers, Type, PaintBucket, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Tool } from '@/types/types';
@@ -20,6 +20,8 @@ interface OptionsBarProps {
   setIsBold: (b: boolean) => void;
   isItalic: boolean;
   setIsItalic: (i: boolean) => void;
+  isUnderline: boolean;
+  setIsUnderline: (u: boolean) => void;
   textAlign: 'left' | 'center' | 'right';
   setTextAlign: (a: 'left' | 'center' | 'right') => void;
   lineHeight: number;
@@ -47,7 +49,7 @@ const numberInputClass =
 export default function OptionsBar({
   selectedTool, color, setColor, strokeWidth, setStrokeWidth, opacity, setOpacity,
   fontSize, setFontSize, fontFamily, setFontFamily, isBold, setIsBold, isItalic, setIsItalic,
-  textAlign, setTextAlign, lineHeight, setLineHeight,
+  isUnderline, setIsUnderline, textAlign, setTextAlign, lineHeight, setLineHeight,
   fillEnabled, setFillEnabled,
 }: OptionsBarProps) {
   if (selectedTool === 'select' || selectedTool === 'crop') return null;
@@ -162,6 +164,14 @@ export default function OptionsBar({
               title="Italic"
             >
               <Italic size={13} />
+            </Toggle>
+            <Toggle
+              pressed={isUnderline}
+              onPressedChange={setIsUnderline}
+              className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1.5"
+              title="Underline"
+            >
+              <Underline size={13} />
             </Toggle>
             {(() => {
               const AlignIcon = ALIGN_ICONS[textAlign];

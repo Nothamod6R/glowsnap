@@ -43,6 +43,7 @@ interface CanvasProps {
   onChangeTool?: (tool: Tool) => void;
   textAlign?: 'left' | 'center' | 'right';
   lineHeight?: number;
+  textDecoration?: string;
 }
 
 function snapToNearestAngle(angle: number): number {
@@ -72,6 +73,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   onChangeTool,
   textAlign,
   lineHeight,
+  textDecoration,
 }, ref) => {
   const stageRef = useRef<Konva.Stage>(null);
   const contentGroupRef = useRef<Konva.Group>(null);
@@ -482,6 +484,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         text, fill: fillColor, fillEnabled: true, fontSize, fontFamily, fontStyle: style, opacity,
         align: textAlign || 'left',
         lineHeight: lineHeight ?? 1,
+        textDecoration: textDecoration || 'none',
         width: measuredWidth,
         height: measuredHeight,
       };
@@ -582,6 +585,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             direction={shape.direction === 'rtl' ? 'rtl' : 'ltr'}
             align={shape.align || 'left'}
             lineHeight={shape.lineHeight ?? lineHeight ?? 1}
+            textDecoration={shape.textDecoration || textDecoration || 'none'}
             wrap="word"
             onDblClick={(e) => {
               e.cancelBubble = true;
