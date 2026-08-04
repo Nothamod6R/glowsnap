@@ -131,6 +131,7 @@ interface CanvasProps {
   imageTransform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number };
   onImageTransform: (attrs: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void;
   onChangeTool?: (tool: Tool) => void;
+  zoom?: number;
   textAlign?: 'left' | 'center' | 'right';
   lineHeight?: number;
   letterSpacing?: number;
@@ -184,6 +185,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   onTextDoubleClick, editingTextId,
   backgroundSettings, imageTransform, onImageTransform,
   onChangeTool,
+  zoom = 1,
   textAlign,
   lineHeight,
   letterSpacing,
@@ -210,7 +212,9 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     if (!stage) return null;
     const pos = stage.getPointerPosition();
     if (!pos) return null;
-    return { x: pos.x - groupOffsetX, y: pos.y - groupOffsetY };
+    const relative = stage.getRelativePointerPosition();
+    if (!relative) return null;
+    return { x: relative.x - groupOffsetX, y: relative.y - groupOffsetY };
   }, [groupOffsetX, groupOffsetY]);
 
   const getGradientEndPoint = () => {
@@ -770,6 +774,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       width={stageSize.width}
       height={stageSize.height}
       ref={stageRef}
+      scaleX={zoom}
+      scaleY={zoom}
+      x={(stageSize.width * (1 - zoom)) / 2}
+      y={(stageSize.height * (1 - zoom)) / 2}
       onClick={handleStageClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

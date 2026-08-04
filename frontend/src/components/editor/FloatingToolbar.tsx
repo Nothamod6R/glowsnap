@@ -27,6 +27,7 @@ interface FloatingToolbarProps {
   visible: boolean;
   stageContainerRect: DOMRect | null;
   stageSize: { width: number; height: number };
+  zoom?: number;
   onUpdateShape: (id: string, attrs: Partial<ShapeConfig>) => void;
   onDelete: (id: string) => void;
   onDuplicate: (shape: ShapeConfig) => void;
@@ -73,6 +74,7 @@ export default function FloatingToolbar({
   visible,
   stageContainerRect,
   stageSize,
+  zoom = 1,
   onUpdateShape,
   onDelete,
   onDuplicate,
@@ -112,8 +114,13 @@ export default function FloatingToolbar({
     const stageCenterX = window.innerWidth * 0.5;
     const stageLeft = stageCenterX - stageSize.width / 2;
     const stageTop = stageContainerRect.top;
-    setPosition({ x: stageLeft + anchorX, y: stageTop + anchorY });
-  }, [anchorX, anchorY, stageContainerRect, stageSize]);
+    const zoomOffsetX = (stageSize.width * (1 - zoom)) / 2;
+    const zoomOffsetY = (stageSize.height * (1 - zoom)) / 2;
+    setPosition({
+      x: stageLeft + zoomOffsetX + anchorX * zoom,
+      y: stageTop + zoomOffsetY + anchorY * zoom,
+    });
+  }, [anchorX, anchorY, stageContainerRect, stageSize, zoom]);
 
   const handleOpacityChange = (v: number | readonly number[]) => {
     if (!selectedShape) return;

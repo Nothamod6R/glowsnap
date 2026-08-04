@@ -31,6 +31,12 @@ interface ToolStyleState {
   fillEnabled: boolean;
 }
 
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 4;
+const ZOOM_STEP = 1.1;
+
+const clampZoom = (value: number) => Math.min(Math.max(value, MIN_ZOOM), MAX_ZOOM);
+
 const DEFAULT_STYLE: ToolStyleState = {
   color: '#ff3b30',
   strokeWidth: 3,
@@ -60,6 +66,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [toolStyle, setToolStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
   const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
   const [copied, setCopied] = useState(false);
+  const [zoom, setZoom] = useState(1);
 
   const setToolProp = useCallback(<K extends keyof ToolStyleState>(key: K, value: ToolStyleState[K]) => {
     setToolStyle(prev => ({ ...prev, [key]: value }));
@@ -282,11 +289,15 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     if (!editingShape || !stageRect) return null;
     const containerRect = canvasContainerRef.current?.getBoundingClientRect();
     if (!containerRect) return null;
+    const stageX = (stageSize.width * (1 - zoom)) / 2;
+    const stageY = (stageSize.height * (1 - zoom)) / 2;
+    const px = (imageTransform.x + (editingShape.x || 0)) * zoom + stageX;
+    const py = (imageTransform.y + (editingShape.y || 0)) * zoom + stageY;
     return {
-      left: stageRect.left - containerRect.left + imageTransform.x + (editingShape.x || 0),
-      top: stageRect.top - containerRect.top + imageTransform.y + (editingShape.y || 0),
+      left: stageRect.left - containerRect.left + px,
+      top: stageRect.top - containerRect.top + py,
     };
-  }, [editingShape, stageRect, imageTransform.x, imageTransform.y]);
+  }, [editingShape, stageRect, imageTransform.x, imageTransform.y, zoom, stageSize]);
 
   const handleDuplicate = useCallback((shape: ShapeConfig) => {
     const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -362,6 +373,23 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     setSelectedTool('select');
   };
 
+  const stageToDataURL = () => {
+    const stage = stageRef.current;
+    if (!stage) return null;
+    const prev = {
+      x: stage.x(),
+      y: stage.y(),
+      scaleX: stage.scaleX(),
+      scaleY: stage.scaleY(),
+    };
+    stage.position({ x: 0, y: 0 });
+    stage.scale({ x: 1, y: 1 });
+    const uri = stage.toDataURL({ pixelRatio: 2 });
+    stage.position({ x: prev.x, y: prev.y });
+    stage.scale({ x: prev.scaleX, y: prev.scaleY });
+    return uri;
+  };
+
   const exportImage = async () => {
     if (!stageRef.current) return;
 
@@ -371,7 +399,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
       if (!filePath) return;
 
-      const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+      const uri = stageToDataURL();
+      if (!uri) return;
 
       const response = await fetch(uri);
       const blob = await response.blob();
@@ -390,7 +419,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     if (!stageRef.current) return;
 
     try {
-      const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+      const uri = stageToDataURL();
+      if (!uri) return;
       const response = await fetch(uri);
       const blob = await response.blob();
       if (!navigator.clipboard || !window.ClipboardItem) {
@@ -408,6 +438,28 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       console.error('Copy failed:', err);
     }
   };
+
+  const zoomIn = useCallback(() => {
+    setZoom(z => clampZoom(z * ZOOM_STEP));
+  }, []);
+
+  const zoomOut = useCallback(() => {
+    setZoom(z => clampZoom(z / ZOOM_STEP));
+  }, []);
+
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      if (e.deltaY < 0) {
+        zoomIn();
+      } else {
+        zoomOut();
+      }
+    };
+    window.addEventListener('wheel', handleWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleWheel);
+  }, [zoomIn, zoomOut]);
 
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
@@ -466,6 +518,12 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           case 'deselect':
             setSelectedId(null);
             return true;
+          case 'zoom-in':
+            zoomIn();
+            return true;
+          case 'zoom-out':
+            zoomOut();
+            return true;
         }
         return false;
       };
@@ -480,7 +538,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, selectedTool, shapes, editingTextId, deleteShape, addShape, handleDuplicate, handleUndo, handleRedo, beginEditing, setSelectedTool, setSelectedId]);
+  }, [selectedId, selectedTool, shapes, editingTextId, deleteShape, addShape, handleDuplicate, handleUndo, handleRedo, beginEditing, setSelectedTool, setSelectedId, zoomIn, zoomOut]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
@@ -564,6 +622,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           imageTransform={imageTransform}
           onImageTransform={setImageTransform}
           onChangeTool={handleToolChange}
+          zoom={zoom}
           textAlign={toolStyle.textAlign}
           lineHeight={toolStyle.lineHeight}
           letterSpacing={toolStyle.letterSpacing}
@@ -598,6 +657,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           visible={selectedTool === 'select' && !!selectedId}
           stageContainerRect={stageContainerRect}
           stageSize={stageSize}
+          zoom={zoom}
           onUpdateShape={updateShape}
           onDelete={deleteShape}
           onDuplicate={handleDuplicate}
