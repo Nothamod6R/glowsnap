@@ -65,6 +65,28 @@ function getConstrainedPoint(start: { x: number; y: number }, current: { x: numb
   };
 }
 
+function getLineBounds(points: number[]): { cx: number; cy: number } {
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (let i = 0; i < points.length; i += 2) {
+    const px = points[i];
+    const py = points[i + 1];
+    if (px < minX) minX = px;
+    if (px > maxX) maxX = px;
+    if (py < minY) minY = py;
+    if (py > maxY) maxY = py;
+  }
+  if (!isFinite(minX)) {
+    minX = 0;
+    minY = 0;
+    maxX = 0;
+    maxY = 0;
+  }
+  return { cx: (minX + maxX) / 2, cy: (minY + maxY) / 2 };
+}
+
 const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   image, stageSize, selectedTool, shapes, selectedId, setSelectedId,
   addShape, updateShape, deleteShape, commitShapes, color, strokeWidth, opacity, fillEnabled,
@@ -212,7 +234,14 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       const h = shape.height || (shape.fontSize || 24) * 1.2;
       updateShape(id, { x: node.x() - w / 2, y: node.y() - h / 2 });
     } else {
-      updateShape(id, { x: node.x(), y: node.y() });
+      const pts = shape.points || [];
+      const { cx, cy } = getLineBounds(pts);
+      const dx = node.x() - cx;
+      const dy = node.y() - cy;
+      if (dx !== 0 || dy !== 0) {
+        const newPoints = pts.map((v, i) => (i % 2 === 0 ? v + dx : v + dy));
+        updateShape(id, { points: newPoints });
+      }
     }
   }, [shapes, updateShape]);
 
@@ -559,15 +588,21 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             onTransformEnd={handleTransformEnd}
           />
         );
-      case 'arrow':
+      case 'arrow': {
+        const { cx, cy } = getLineBounds(shape.points || []);
         return (
           <Arrow
             {...commonProps}
             points={shape.points!}
+            x={cx}
+            y={cy}
+            offsetX={cx}
+            offsetY={cy}
             rotation={rotation}
             onTransformEnd={handleTransformEnd}
           />
         );
+      }
       case 'text':
       case 'number': {
         const w = shape.width || 100;
@@ -605,11 +640,16 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
           />
         );
       }
-      case 'line':
+      case 'line': {
+        const { cx, cy } = getLineBounds(shape.points || []);
         return (
           <Line
             {...commonProps}
             points={shape.points!}
+            x={cx}
+            y={cy}
+            offsetX={cx}
+            offsetY={cy}
             tension={0.2}
             lineCap="round"
             lineJoin="round"
@@ -617,6 +657,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             onTransformEnd={handleTransformEnd}
           />
         );
+      }
       default:
         return null;
     }
