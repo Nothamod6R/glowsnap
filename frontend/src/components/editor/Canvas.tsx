@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { Stage, Layer, Group, Rect, Ellipse, Arrow, Text, Line, Image as KonvaImage, Transformer } from 'react-konva';
 import { ShapeConfig, Tool } from '@/types/types';
 import { BackgroundSettings } from '@/lib/hooks/useBackground';
+import { clampPan as clampPanFn, clampPanSoft, type Pan } from '@/lib/viewport';
 
 const HANDLE_ANCHOR_SIZE = 10;
 const BOUNDING_BOX_STROKE = '#4A90D9';
@@ -131,6 +132,9 @@ interface CanvasProps {
   imageTransform: { x: number; y: number; scaleX: number; scaleY: number; rotation: number };
   onImageTransform: (attrs: { x: number; y: number; scaleX: number; scaleY: number; rotation: number }) => void;
   onChangeTool?: (tool: Tool) => void;
+  zoom?: number;
+  pan?: { x: number; y: number };
+  onPanChange?: (pan: { x: number; y: number }) => void;
   textAlign?: 'left' | 'center' | 'right';
   lineHeight?: number;
   letterSpacing?: number;
@@ -184,6 +188,9 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   onTextDoubleClick, editingTextId,
   backgroundSettings, imageTransform, onImageTransform,
   onChangeTool,
+  zoom = 1,
+  pan = { x: 0, y: 0 },
+  onPanChange,
   textAlign,
   lineHeight,
   letterSpacing,
@@ -200,17 +207,52 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const cropStartPos = useRef<{ x: number; y: number } | null>(null);
   const activeCropHandle = useRef<CropHandle | null>(null);
   const justFinishedDrawing = useRef(false);
+  const isPanning = useRef(false);
+  const justPanned = useRef(false);
+  const panStartRef = useRef<{ pointerX: number; pointerY: number; panX: number; panY: number } | null>(null);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
   const groupOffsetX = imageTransform.x;
   const groupOffsetY = imageTransform.y;
+
+  const clampPan = useCallback((next: Pan) => {
+    return clampPanFn(
+      next,
+      {
+        contentWidth: image ? image.width * imageTransform.scaleX : stageSize.width,
+        contentHeight: image ? image.height * imageTransform.scaleY : stageSize.height,
+        stageWidth: stageSize.width,
+        stageHeight: stageSize.height,
+        zoom,
+        offsetX: groupOffsetX,
+        offsetY: groupOffsetY,
+      },
+    );
+  }, [image, imageTransform.scaleX, imageTransform.scaleY, zoom, stageSize.width, stageSize.height, groupOffsetX, groupOffsetY]);
+
+  useEffect(() => {
+    const clamped = clampPanSoft(pan, {
+      contentWidth: image ? image.width * imageTransform.scaleX : stageSize.width,
+      contentHeight: image ? image.height * imageTransform.scaleY : stageSize.height,
+      stageWidth: stageSize.width,
+      stageHeight: stageSize.height,
+      zoom,
+      offsetX: groupOffsetX,
+      offsetY: groupOffsetY,
+    });
+    if (clamped.x !== pan.x || clamped.y !== pan.y) {
+      onPanChange?.(clamped);
+    }
+  }, [image, imageTransform.scaleX, imageTransform.scaleY, zoom, stageSize.width, stageSize.height, groupOffsetX, groupOffsetY, pan, onPanChange]);
 
   const getRelativePointer = useCallback((): { x: number; y: number } | null => {
     const stage = stageRef.current;
     if (!stage) return null;
     const pos = stage.getPointerPosition();
     if (!pos) return null;
-    return { x: pos.x - groupOffsetX, y: pos.y - groupOffsetY };
+    const relative = stage.getRelativePointerPosition();
+    if (!relative) return null;
+    return { x: relative.x - groupOffsetX, y: relative.y - groupOffsetY };
   }, [groupOffsetX, groupOffsetY]);
 
   const getGradientEndPoint = () => {
@@ -439,6 +481,38 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     const pos = getRelativePointer();
     if (!pos) return;
 
+    const isMiddleButton = e.evt.button === 1;
+    const isLeftButton = e.evt.button === 0;
+
+    const isEmptyTarget = (() => {
+      if (!e.target) return true;
+      if (e.target.id()) return false;
+      let node: Konva.Node | null = e.target;
+      while (node) {
+        if (node.getClassName() === 'Transformer') return false;
+        node = node.getParent();
+      }
+      return true;
+    })();
+    const shouldPan =
+      isMiddleButton ||
+      (selectedTool === 'select' && isLeftButton && isEmptyTarget);
+
+    if (shouldPan) {
+      if (isMiddleButton) e.evt.preventDefault();
+      isPanning.current = true;
+      justPanned.current = false;
+      panStartRef.current = {
+        pointerX: e.evt.clientX,
+        pointerY: e.evt.clientY,
+        panX: pan.x,
+        panY: pan.y,
+      };
+      const el = stageRef.current?.container();
+      if (el) el.style.cursor = 'grabbing';
+      return;
+    }
+
     if (selectedTool === 'pen' || selectedTool === 'arrow') {
       isDrawing.current = true;
       startPointRef.current = { x: pos.x, y: pos.y };
@@ -476,9 +550,19 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     } else if (selectedTool === 'crop') {
       return;
     }
-  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, getRelativePointer]);
+  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, getRelativePointer, pan]);
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
+    if (isPanning.current && panStartRef.current) {
+      const start = panStartRef.current;
+      const dx = e.evt.clientX - start.pointerX;
+      const dy = e.evt.clientY - start.pointerY;
+      const next = clampPan({ x: start.panX + dx, y: start.panY + dy });
+      justPanned.current = true;
+      onPanChange?.(next);
+      return;
+    }
+
     const point = getRelativePointer();
     if (!point) return;
 
@@ -534,9 +618,15 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
         }
       }
     }
-  }, [selectedTool, updateShape, setCropRect, getRelativePointer, cropRect, image, imageTransform.scaleX, imageTransform.scaleY]);
+  }, [selectedTool, updateShape, setCropRect, getRelativePointer, cropRect, image, imageTransform.scaleX, imageTransform.scaleY, clampPan, onPanChange]);
 
   const handleMouseUp = useCallback(() => {
+    if (isPanning.current) {
+      isPanning.current = false;
+      panStartRef.current = null;
+      const el = stageRef.current?.container();
+      if (el) el.style.cursor = '';
+    }
     if (isDrawing.current && drawingRef.current) {
       const shape = drawingRef.current;
       const isRectOrCircle = shape.type === 'rect' || shape.type === 'circle';
@@ -570,6 +660,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     if (justFinishedDrawing.current) {
       justFinishedDrawing.current = false;
+      return;
+    }
+    if (justPanned.current) {
+      justPanned.current = false;
       return;
     }
     if (selectedTool === 'select') {
@@ -770,6 +864,10 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       width={stageSize.width}
       height={stageSize.height}
       ref={stageRef}
+      scaleX={zoom}
+      scaleY={zoom}
+      x={(stageSize.width * (1 - zoom)) / 2 + pan.x}
+      y={(stageSize.height * (1 - zoom)) / 2 + pan.y}
       onClick={handleStageClick}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}

@@ -23,7 +23,9 @@ export type EditorAction =
   | 'copy'
   | 'paste'
   | 'duplicate'
-  | 'deselect';
+  | 'deselect'
+  | 'zoom-in'
+  | 'zoom-out';
 
 export interface EditorShortcut extends ShortcutDef {
   category: 'editor';
@@ -125,6 +127,61 @@ export const EDITOR_SHORTCUTS: EditorShortcut[] = [
     label: 'Deselect all',
     keys: 'Escape',
     key: 'Escape',
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-in',
+    action: 'zoom-in',
+    label: 'Zoom in',
+    keys: 'Ctrl+=',
+    key: '=',
+    ctrl: true,
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-in-plus',
+    action: 'zoom-in',
+    label: 'Zoom in',
+    keys: 'Ctrl++',
+    key: '+',
+    ctrl: true,
+    shift: true,
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-in-plus-direct',
+    action: 'zoom-in',
+    label: 'Zoom in',
+    keys: 'Ctrl++',
+    key: '+',
+    ctrl: true,
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-in-numpad',
+    action: 'zoom-in',
+    label: 'Zoom in (numpad)',
+    keys: 'Ctrl+Num +',
+    key: 'Add',
+    ctrl: true,
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-out',
+    action: 'zoom-out',
+    label: 'Zoom out',
+    keys: 'Ctrl+-',
+    key: '-',
+    ctrl: true,
+    category: 'editor',
+  },
+  {
+    id: 'editor-zoom-out-numpad',
+    action: 'zoom-out',
+    label: 'Zoom out (numpad)',
+    keys: 'Ctrl+Num -',
+    key: 'Subtract',
+    ctrl: true,
     category: 'editor',
   },
 ];
