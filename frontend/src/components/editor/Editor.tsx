@@ -67,6 +67,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const handlePanChange = useCallback((p: { x: number; y: number }) => setPan(p), []);
 
   const setToolProp = useCallback(<K extends keyof ToolStyleState>(key: K, value: ToolStyleState[K]) => {
     setToolStyle(prev => ({ ...prev, [key]: value }));
@@ -294,10 +296,10 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     const px = (imageTransform.x + (editingShape.x || 0)) * zoom + stageX;
     const py = (imageTransform.y + (editingShape.y || 0)) * zoom + stageY;
     return {
-      left: stageRect.left - containerRect.left + px,
-      top: stageRect.top - containerRect.top + py,
+      left: stageRect.left - containerRect.left + px + pan.x,
+      top: stageRect.top - containerRect.top + py + pan.y,
     };
-  }, [editingShape, stageRect, imageTransform.x, imageTransform.y, zoom, stageSize]);
+  }, [editingShape, stageRect, imageTransform.x, imageTransform.y, zoom, stageSize, pan.x, pan.y]);
 
   const handleDuplicate = useCallback((shape: ShapeConfig) => {
     const newId = Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
@@ -623,6 +625,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           onImageTransform={setImageTransform}
           onChangeTool={handleToolChange}
           zoom={zoom}
+          pan={pan}
+          onPanChange={handlePanChange}
           textAlign={toolStyle.textAlign}
           lineHeight={toolStyle.lineHeight}
           letterSpacing={toolStyle.letterSpacing}
@@ -658,6 +662,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
           stageContainerRect={stageContainerRect}
           stageSize={stageSize}
           zoom={zoom}
+          pan={pan}
           onUpdateShape={updateShape}
           onDelete={deleteShape}
           onDuplicate={handleDuplicate}
