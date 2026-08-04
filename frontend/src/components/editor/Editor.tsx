@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Konva from 'konva';
-import { X, Download, Undo2, Redo2, Trash2 } from 'lucide-react';
+import { X, Download, Undo2, Redo2, Trash2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tool, EditorProps, ShapeConfig } from '@/types/types';
 import { useShapes } from '@/lib/hooks/useShapes';
@@ -59,6 +59,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [selectedTool, setSelectedTool] = useState<Tool>('select');
   const [toolStyle, setToolStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
   const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
+  const [copied, setCopied] = useState(false);
 
   const setToolProp = useCallback(<K extends keyof ToolStyleState>(key: K, value: ToolStyleState[K]) => {
     setToolStyle(prev => ({ ...prev, [key]: value }));
@@ -385,6 +386,29 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     }
   };
 
+  const copyImage = async () => {
+    if (!stageRef.current) return;
+
+    try {
+      const uri = stageRef.current.toDataURL({ pixelRatio: 2 });
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      if (!navigator.clipboard || !window.ClipboardItem) {
+        console.error('Clipboard API not supported in this environment');
+        return;
+      }
+      await navigator.clipboard.write([
+        new ClipboardItem({ [blob.type]: blob }),
+      ]);
+      
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+      console.log('Image copied to clipboard');
+    } catch (err) {
+      console.error('Copy failed:', err);
+    }
+  };
+
   const clipboardRef = useRef<ShapeConfig | null>(null);
 
   useEffect(() => {
@@ -473,6 +497,9 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
               <Trash2 size={16} />
             </button>
           )}
+          <button onClick={copyImage} title="Copy image" className="p-2 hover:bg-white/10 rounded">
+            {copied ? <Check size={16} className="text-green-400" /> : <Copy size={16} />}
+          </button>
           <button onClick={exportImage} className="p-2 hover:bg-white/10  rounded ">
             <Download size={16} />
           </button>
