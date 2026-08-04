@@ -104,17 +104,16 @@ export default function FloatingToolbar({
   const toolbarRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ x: 0, y: 0 });
 
+  const anchorX = selectedShape?.x ?? 0;
+  const anchorY = selectedShape?.y ?? 0;
+
   useEffect(() => {
     if (!selectedShape || !stageContainerRect) return;
     const stageCenterX = window.innerWidth * 0.5;
     const stageLeft = stageCenterX - stageSize.width / 2;
     const stageTop = stageContainerRect.top;
-    const shapeX = selectedShape.x || 0;
-    const shapeY = selectedShape.y || 0;
-    const viewportX = stageLeft + shapeX;
-    const viewportY = stageTop + shapeY;
-    setPosition({ x: viewportX, y: viewportY });
-  }, [selectedShape, stageContainerRect, stageSize]);
+    setPosition({ x: stageLeft + anchorX, y: stageTop + anchorY });
+  }, [anchorX, anchorY, stageContainerRect, stageSize]);
 
   const handleOpacityChange = (v: number | readonly number[]) => {
     if (!selectedShape) return;
@@ -202,12 +201,12 @@ export default function FloatingToolbar({
           className="absolute z-50"
           style={{
             left: position.x + 60,
-            top: position.y - 130,
-            transform: 'translateX(-50%)',
+            top: position.y - 160,
             pointerEvents: 'auto',
           }}
         >
-          <div className="flex items-center gap-1.5 backdrop-blur-xl  border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
+          <div className="-translate-x-1/2">
+            <div className="flex items-center gap-1.5 backdrop-blur-xl  border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
             <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1.5 py-1">
               <Palette size={12} className="text-white/50 shrink-0" />
               <input
@@ -462,6 +461,7 @@ export default function FloatingToolbar({
             >
               <Trash2 size={14} />
             </button>
+          </div>
           </div>
         </motion.div>
       )}
