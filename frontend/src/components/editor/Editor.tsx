@@ -14,6 +14,7 @@ import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
 import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
 import { EDITOR_SHORTCUTS, matchesShortcut, isEditableTarget, type EditorAction } from '@/lib/shortcut';
+import { clampPanSoft, panForPointerZoom } from '@/lib/viewport';
 
 interface ToolStyleState {
   color: string;
@@ -441,13 +442,35 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     }
   };
 
-  const zoomIn = useCallback(() => {
-    setZoom(z => clampZoom(z * ZOOM_STEP));
-  }, []);
+  const zoomAt = useCallback((factor: number) => {
+    const stage = stageRef.current;
+    let pointer = { x: stageSize.width / 2, y: stageSize.height / 2 };
+    const p = stage?.getPointerPosition();
+    if (p && p.x >= 0 && p.x <= stageSize.width && p.y >= 0 && p.y <= stageSize.height) {
+      pointer = { x: p.x, y: p.y };
+    }
 
-  const zoomOut = useCallback(() => {
-    setZoom(z => clampZoom(z / ZOOM_STEP));
-  }, []);
+    const newZoom = clampZoom(zoom * factor);
+    if (newZoom === zoom) return;
+
+    const newPan = panForPointerZoom(pointer, pan, zoom, newZoom, stageSize.width, stageSize.height);
+    const clampedPan = clampPanSoft(newPan, {
+      contentWidth: image ? image.width * imageTransform.scaleX : stageSize.width,
+      contentHeight: image ? image.height * imageTransform.scaleY : stageSize.height,
+      stageWidth: stageSize.width,
+      stageHeight: stageSize.height,
+      zoom: newZoom,
+      offsetX: imageTransform.x,
+      offsetY: imageTransform.y,
+    });
+
+    setZoom(newZoom);
+    setPan(clampedPan);
+  }, [zoom, pan, stageSize.width, stageSize.height, image, imageTransform]);
+
+  const zoomIn = useCallback(() => zoomAt(ZOOM_STEP), [zoomAt]);
+
+  const zoomOut = useCallback(() => zoomAt(1 / ZOOM_STEP), [zoomAt]);
 
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {

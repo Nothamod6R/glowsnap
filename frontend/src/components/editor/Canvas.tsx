@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { Stage, Layer, Group, Rect, Ellipse, Arrow, Text, Line, Image as KonvaImage, Transformer } from 'react-konva';
 import { ShapeConfig, Tool } from '@/types/types';
 import { BackgroundSettings } from '@/lib/hooks/useBackground';
+import { clampPan as clampPanFn, clampPanSoft, type Pan } from '@/lib/viewport';
 
 const HANDLE_ANCHOR_SIZE = 10;
 const BOUNDING_BOX_STROKE = '#4A90D9';
@@ -214,37 +215,35 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const groupOffsetX = imageTransform.x;
   const groupOffsetY = imageTransform.y;
 
-  const clampPan = useCallback((next: { x: number; y: number }) => {
-    const contentW = image ? image.width * imageTransform.scaleX : stageSize.width;
-    const contentH = image ? image.height * imageTransform.scaleY : stageSize.height;
-    const centerOffsetX = (stageSize.width * (1 - zoom)) / 2;
-    const centerOffsetY = (stageSize.height * (1 - zoom)) / 2;
-    let px = next.x;
-    let py = next.y;
-
-    if (contentW * zoom <= stageSize.width) {
-      px = 0;
-    } else {
-      const maxPx = stageSize.width - centerOffsetX - groupOffsetX * zoom;
-      const minPx = -centerOffsetX - (groupOffsetX + contentW) * zoom;
-      px = Math.min(Math.max(next.x, Math.min(minPx, maxPx)), Math.max(minPx, maxPx));
-    }
-    if (contentH * zoom <= stageSize.height) {
-      py = 0;
-    } else {
-      const maxPy = stageSize.height - centerOffsetY - groupOffsetY * zoom;
-      const minPy = -centerOffsetY - (groupOffsetY + contentH) * zoom;
-      py = Math.min(Math.max(next.y, Math.min(minPy, maxPy)), Math.max(minPy, maxPy));
-    }
-    return { x: px, y: py };
+  const clampPan = useCallback((next: Pan) => {
+    return clampPanFn(
+      next,
+      {
+        contentWidth: image ? image.width * imageTransform.scaleX : stageSize.width,
+        contentHeight: image ? image.height * imageTransform.scaleY : stageSize.height,
+        stageWidth: stageSize.width,
+        stageHeight: stageSize.height,
+        zoom,
+        offsetX: groupOffsetX,
+        offsetY: groupOffsetY,
+      },
+    );
   }, [image, imageTransform.scaleX, imageTransform.scaleY, zoom, stageSize.width, stageSize.height, groupOffsetX, groupOffsetY]);
 
   useEffect(() => {
-    const clamped = clampPan(pan);
+    const clamped = clampPanSoft(pan, {
+      contentWidth: image ? image.width * imageTransform.scaleX : stageSize.width,
+      contentHeight: image ? image.height * imageTransform.scaleY : stageSize.height,
+      stageWidth: stageSize.width,
+      stageHeight: stageSize.height,
+      zoom,
+      offsetX: groupOffsetX,
+      offsetY: groupOffsetY,
+    });
     if (clamped.x !== pan.x || clamped.y !== pan.y) {
       onPanChange?.(clamped);
     }
-  }, [clampPan, pan, onPanChange]);
+  }, [image, imageTransform.scaleX, imageTransform.scaleY, zoom, stageSize.width, stageSize.height, groupOffsetX, groupOffsetY, pan, onPanChange]);
 
   const getRelativePointer = useCallback((): { x: number; y: number } | null => {
     const stage = stageRef.current;
