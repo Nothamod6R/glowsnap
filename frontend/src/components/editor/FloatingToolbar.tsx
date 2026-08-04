@@ -206,7 +206,7 @@ export default function FloatingToolbar({
           }}
         >
           <div className="-translate-x-1/2">
-            <div className="flex items-center gap-1.5 backdrop-blur-xl  border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
+            <div className="flex items-center gap-1.5 backdrop-blur-xl bg-neutral-900/90 border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
             <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1.5 py-1">
               <Palette size={12} className="text-white/50 shrink-0" />
               <input
