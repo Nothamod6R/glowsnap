@@ -48,15 +48,9 @@ Turn raw code and screenshots into polished, professional assets in one click. P
 ### Visual Editor
 -  Free drawing
 -  Arrows and shapes
--  Number annotations
 -  Text editing
 -  Custom colors and opacity
 -  Crop tools
-
-### Recording
--  Experimental screen recording
--  Native Linux integration
--  More recording features coming soon
 
 ---
 
@@ -99,18 +93,17 @@ Coming soon on Flathub
 
 ## Roadmap
 
-### v1.0.0
-- [x] Screenshot capture
-- [x] Screenshot gallery
-- [x] Basic editor
-- [ ] MIT open-source release
-- [ ] Stable Linux release
-- [ ] Flatpak distribution
+### v1.1.0
+- [ ] Add screencast
+- [ ] Add settings
+- [ ] Add blur effect to the editor
+
+### v1.1.1
+- [ ] Add more fonts
 
 ### Future
-- Advanced image effects
-- Better annotation tools
-- Cloud-free sharing workflow
+- Screenshot
+- Advanced image editor
 - Productivity tools ecosystem
 - More native Linux integrations
 
