@@ -9,6 +9,96 @@ const BOUNDING_BOX_STROKE = '#4A90D9';
 const HANDLE_FILL = '#ffffff';
 const HANDLE_STROKE = '#4A90D9';
 
+const CROP_HANDLE_SIZE = 16;
+const MIN_CROP_SIZE = 20;
+
+type CropHandle = 'tl' | 'tr' | 'bl' | 'br';
+
+const clamp = (v: number, min: number, max: number) => Math.min(Math.max(v, min), Math.max(min, max));
+
+function getImageBounds(image: HTMLImageElement, scaleX: number, scaleY: number) {
+  return {
+    left: 0,
+    top: 0,
+    right: image.width * scaleX,
+    bottom: image.height * scaleY,
+  };
+}
+
+function resizeCrop(
+  handle: CropHandle,
+  pointer: { x: number; y: number },
+  rect: { x: number; y: number; width: number; height: number },
+  bounds: { left: number; top: number; right: number; bottom: number },
+): { x: number; y: number; width: number; height: number } {
+  const min = MIN_CROP_SIZE;
+  const left = bounds.left;
+  const top = bounds.top;
+  const rightEdge = rect.x + rect.width;
+  const bottomEdge = rect.y + rect.height;
+
+  switch (handle) {
+    case 'tl': {
+      const x = clamp(pointer.x, left, Math.max(left, rightEdge - min));
+      const y = clamp(pointer.y, top, Math.max(top, bottomEdge - min));
+      return { x, y, width: Math.max(min, rightEdge - x), height: Math.max(min, bottomEdge - y) };
+    }
+    case 'tr': {
+      const x = rect.x;
+      const y = clamp(pointer.y, top, Math.max(top, bottomEdge - min));
+      return {
+        x,
+        y,
+        width: Math.max(min, clamp(pointer.x, x + min, bounds.right) - x),
+        height: Math.max(min, bottomEdge - y),
+      };
+    }
+    case 'bl': {
+      const x = clamp(pointer.x, left, Math.max(left, rightEdge - min));
+      const y = rect.y;
+      return {
+        x,
+        y,
+        width: Math.max(min, rightEdge - x),
+        height: Math.max(min, clamp(pointer.y, y + min, bounds.bottom) - y),
+      };
+    }
+    case 'br':
+    default: {
+      const x = rect.x;
+      const y = rect.y;
+      return {
+        x,
+        y,
+        width: Math.max(min, clamp(pointer.x, x + min, bounds.right) - x),
+        height: Math.max(min, clamp(pointer.y, y + min, bounds.bottom) - y),
+      };
+    }
+  }
+}
+
+function cropDimRects(
+  c: { x: number; y: number; width: number; height: number },
+  stageW: number,
+  stageH: number,
+): Array<{ x: number; y: number; width: number; height: number }> {
+  const out: Array<{ x: number; y: number; width: number; height: number }> = [];
+  const right = c.x + c.width;
+  const bottom = c.y + c.height;
+  if (c.y > 0) out.push({ x: 0, y: 0, width: stageW, height: c.y });
+  if (bottom < stageH) out.push({ x: 0, y: bottom, width: stageW, height: stageH - bottom });
+  if (c.x > 0) out.push({ x: 0, y: c.y, width: c.x, height: c.height });
+  if (right < stageW) out.push({ x: right, y: c.y, width: stageW - right, height: c.height });
+  return out;
+}
+
+const HANDLE_DEFS: Array<{ type: CropHandle; cursor: string }> = [
+  { type: 'tl', cursor: 'nwse-resize' },
+  { type: 'tr', cursor: 'nesw-resize' },
+  { type: 'bl', cursor: 'nesw-resize' },
+  { type: 'br', cursor: 'nwse-resize' },
+];
+
 interface CanvasProps {
   image: HTMLImageElement | null;
   stageSize: { width: number; height: number };
@@ -108,6 +198,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   const isShiftPressed = useRef(false);
   const startPointRef = useRef<{ x: number; y: number } | null>(null);
   const cropStartPos = useRef<{ x: number; y: number } | null>(null);
+  const activeCropHandle = useRef<CropHandle | null>(null);
   const justFinishedDrawing = useRef(false);
 
   useImperativeHandle(ref, () => stageRef.current as Konva.Stage);
@@ -383,15 +474,24 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       };
       addShape(drawingRef.current, false, false);
     } else if (selectedTool === 'crop') {
-      setCropMode(true);
-      cropStartPos.current = { x: pos.x, y: pos.y };
-      setCropRect({ x: pos.x, y: pos.y, width: 0, height: 0 });
+      return;
     }
-  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, setCropMode, setCropRect, getRelativePointer]);
+  }, [selectedTool, color, strokeWidth, opacity, fillEnabled, addShape, getRelativePointer]);
 
   const handleMouseMove = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
     const point = getRelativePointer();
     if (!point) return;
+
+    if (activeCropHandle.current && cropRect && image) {
+      const next = resizeCrop(
+        activeCropHandle.current,
+        point,
+        cropRect,
+        getImageBounds(image, imageTransform.scaleX, imageTransform.scaleY),
+      );
+      setCropRect(next);
+      return;
+    }
 
     if (isDrawing.current && drawingRef.current) {
       const startPoint = startPointRef.current;
@@ -433,16 +533,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
           updateShape(drawingRef.current.id, { points: newPoints }, false);
         }
       }
-    } else if (selectedTool === 'crop' && cropStartPos.current) {
-      const start = cropStartPos.current;
-      setCropRect({
-        x: Math.min(point.x, start.x),
-        y: Math.min(point.y, start.y),
-        width: Math.abs(point.x - start.x),
-        height: Math.abs(point.y - start.y),
-      });
     }
-  }, [selectedTool, updateShape, setCropRect, getRelativePointer]);
+  }, [selectedTool, updateShape, setCropRect, getRelativePointer, cropRect, image, imageTransform.scaleX, imageTransform.scaleY]);
 
   const handleMouseUp = useCallback(() => {
     if (isDrawing.current && drawingRef.current) {
@@ -472,6 +564,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       justFinishedDrawing.current = true;
     }
     cropStartPos.current = null;
+    activeCropHandle.current = null;
   }, [commitShapes, setSelectedId, onChangeTool, deleteShape]);
 
   const handleStageClick = useCallback((e: Konva.KonvaEventObject<MouseEvent>) => {
@@ -663,6 +756,15 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
     }
   };
 
+  const cropStage = cropMode && cropRect
+    ? {
+        x: cropRect.x + imageTransform.x,
+        y: cropRect.y + imageTransform.y,
+        width: cropRect.width,
+        height: cropRect.height,
+      }
+    : null;
+
   return (
     <Stage
       width={stageSize.width}
@@ -734,18 +836,61 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
             }}
           />
         </Group>
-        {cropMode && cropRect && (
-          <Rect
-            {...cropRect}
-            fill="rgba(0,0,0,0.3)"
-            stroke="#fff"
-            strokeWidth={2}
-            dash={[10, 5]}
-            draggable
-            onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) =>
-              setCropRect(prev => prev ? { ...prev, x: e.target.x(), y: e.target.y() } : null)
-            }
-          />
+        {cropStage && (
+          <>
+            {cropDimRects(cropStage, stageSize.width, stageSize.height).map((r, i) => (
+              <Rect
+                key={`crop-dim-${i}`}
+                {...r}
+                fill="rgba(0,0,0,0.55)"
+                listening={false}
+              />
+            ))}
+
+            <Rect
+              {...cropStage}
+              fill="rgba(255,255,255,0.04)"
+              stroke="#4A90D9"
+              strokeWidth={2}
+              draggable
+              cursor="move"
+              onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+                if (!image) return;
+                const stagePos = e.target.position();
+                const imgW = image.width * imageTransform.scaleX;
+                const imgH = image.height * imageTransform.scaleY;
+                const x = clamp(stagePos.x - imageTransform.x, 0, Math.max(0, imgW - cropStage.width));
+                const y = clamp(stagePos.y - imageTransform.y, 0, Math.max(0, imgH - cropStage.height));
+                setCropRect(prev => prev ? { ...prev, x, y } : prev);
+              }}
+              onDragEnd={() => {
+                const el = stageRef.current?.container?.();
+                if (el) el.style.cursor = '';
+              }}
+            />
+
+            {HANDLE_DEFS.map(h => (
+              <Rect
+                key={h.type}
+                x={h.type === 'tl' || h.type === 'bl' ? cropStage.x : cropStage.x + cropStage.width}
+                y={h.type === 'tl' || h.type === 'tr' ? cropStage.y : cropStage.y + cropStage.height}
+                width={CROP_HANDLE_SIZE}
+                height={CROP_HANDLE_SIZE}
+                offsetX={CROP_HANDLE_SIZE / 2}
+                offsetY={CROP_HANDLE_SIZE / 2}
+                fill="#ffffff"
+                stroke="#4A90D9"
+                strokeWidth={2}
+                cornerRadius={3}
+                cursor={h.cursor}
+                onMouseDown={(e) => {
+                  activeCropHandle.current = h.type;
+                  e.cancelBubble = true;
+                  e.evt.preventDefault();
+                }}
+              />
+            ))}
+          </>
         )}
       </Layer>
     </Stage>

@@ -157,6 +157,17 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   }, [background.enabled, background.padding, image, imageTransform.scaleX, imageTransform.scaleY]);
 
   useEffect(() => {
+    if (cropMode && image && !cropRect) {
+      setCropRect({
+        x: 0,
+        y: 0,
+        width: image.width * imageTransform.scaleX,
+        height: image.height * imageTransform.scaleY,
+      });
+    }
+  }, [cropMode, image, cropRect, imageTransform.scaleX, imageTransform.scaleY]);
+
+  useEffect(() => {
     if (!selectedId) return;
     const shape = shapes.find(s => s.id === selectedId);
     if (!shape) return;
