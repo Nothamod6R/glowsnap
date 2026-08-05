@@ -171,6 +171,20 @@ func (a *App) CancelRecording() error {
 	return a.screenCastService.CancelRecording()
 }
 
+func (a *App) SetMicEnabled(enabled bool) error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.SetMicEnabled(enabled)
+}
+
+func (a *App) SetSystemEnabled(enabled bool) error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.SetSystemEnabled(enabled)
+}
+
 func (a *App) GetVideosDir() string {
 	dir, err := screencast.VideosDir()
 	if err != nil {

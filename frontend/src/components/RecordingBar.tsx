@@ -3,8 +3,10 @@ import { motion } from 'framer-motion';
 import { Pause, Play, Square, X, Mic, Volume2 } from 'lucide-react';
 import { RecordingBarProps } from '@/types/types';
 
-export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused }: RecordingBarProps) {
+export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused, onToggleMic, onToggleSystem }: RecordingBarProps) {
   const [seconds, setSeconds] = useState(0);
+  const [micOn, setMicOn] = useState(true);
+  const [systemOn, setSystemOn] = useState(true);
   const timerRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -22,6 +24,18 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const toggleMic = () => {
+    const next = !micOn;
+    onToggleMic(next);
+    setMicOn(next);
+  };
+
+  const toggleSystem = () => {
+    const next = !systemOn;
+    onToggleSystem(next);
+    setSystemOn(next);
   };
 
   return (
@@ -62,14 +76,22 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
 
       <div className="h-6 w-px bg-white/20" />
 
-      <div className="flex items-center gap-1.5 text-xs text-white/70">
-        <Mic size={14}  />
+      <button
+        onClick={toggleMic}
+        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${micOn ? 'text-white text-red-400' : 'text-white/35 line-through'}`}
+        title={micOn ? 'Mute microphone' : 'Unmute microphone'}
+      >
+        <Mic size={14} />
         <span>Mic</span>
-      </div>
-      <div className="flex items-center gap-1.5 text-xs text-white/70">
-        <Volume2 size={14}  />
+      </button>
+      <button
+        onClick={toggleSystem}
+        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${systemOn ? 'text-white text-red-400' : 'text-white/35 line-through'}`}
+        title={systemOn ? 'Mute system audio' : 'Unmute system audio'}
+      >
+        <Volume2 size={14} />
         <span>System</span>
-      </div>
+      </button>
     </motion.div>
   );
 }

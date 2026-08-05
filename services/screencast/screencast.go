@@ -15,16 +15,22 @@ type StreamInfo struct {
 }
 
 type ScreenCastService struct {
-	conn          *dbus.Conn
-	recorder      Recorder
-	sessionHandle dbus.ObjectPath
-	videoNode     uint32
-	recording     bool
-	stopRequested bool
-	outputPath    string
-	finished      chan struct{}
-	mu            chan struct{}
+	conn           *dbus.Conn
+	recorder       Recorder
+	sessionHandle  dbus.ObjectPath
+	videoNode      uint32
+	recording      bool
+	stopRequested  bool
+	outputPath     string
+	finished       chan struct{}
+	mu             chan struct{}
 	onRecordingEnd func()
+	captureMic     bool
+	captureSystem  bool
+	micDevice      string
+	systemDevice   string
+	micEnabled     bool
+	systemEnabled  bool
 }
 
 func NewScreenCastService(conn *dbus.Conn) *ScreenCastService {
@@ -51,6 +57,36 @@ func (s *ScreenCastService) notifyRecordingEnd() {
 	if fn != nil {
 		fn()
 	}
+}
+
+func (s *ScreenCastService) SetMicEnabled(enabled bool) error {
+	s.lock()
+	recording := s.recording
+	captureMic := s.captureMic
+	device := s.micDevice
+	s.unlock()
+	if !recording || !captureMic {
+		return fmt.Errorf("no microphone recording active")
+	}
+	if device == "" {
+		return fmt.Errorf("microphone device unavailable")
+	}
+	return setSourceMute(device, !enabled)
+}
+
+func (s *ScreenCastService) SetSystemEnabled(enabled bool) error {
+	s.lock()
+	recording := s.recording
+	captureSystem := s.captureSystem
+	device := s.systemDevice
+	s.unlock()
+	if !recording || !captureSystem {
+		return fmt.Errorf("no system audio recording active")
+	}
+	if device == "" {
+		return fmt.Errorf("system audio device unavailable")
+	}
+	return setSourceMute(device, !enabled)
 }
 
 func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDevice string) (string, error) {
@@ -118,6 +154,12 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 	s.recording = true
 	s.stopRequested = false
 	s.finished = make(chan struct{})
+	s.captureMic = opts.CaptureMic
+	s.captureSystem = opts.CaptureSystem
+	s.micDevice = opts.MicDevice
+	s.systemDevice = opts.SystemDevice
+	s.micEnabled = opts.CaptureMic
+	s.systemEnabled = opts.CaptureSystem
 	finished := s.finished
 	s.unlock()
 
@@ -137,6 +179,12 @@ func (s *ScreenCastService) monitor(finished chan struct{}) {
 	s.videoNode = 0
 	s.outputPath = ""
 	s.finished = nil
+	s.captureMic = false
+	s.captureSystem = false
+	s.micDevice = ""
+	s.systemDevice = ""
+	s.micEnabled = false
+	s.systemEnabled = false
 	close(finished)
 	s.unlock()
 

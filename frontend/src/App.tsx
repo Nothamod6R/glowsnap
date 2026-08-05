@@ -12,6 +12,8 @@ import {
   StopRecording,
   CancelRecording,
   SaveMicrophone,
+  SetMicEnabled,
+  SetSystemEnabled,
 } from '../wailsjs/go/main/App';
 import { AnimatePresence } from 'framer-motion';
 import Palette from './components/Palette';
@@ -87,6 +89,13 @@ export default function App() {
     }
   };
 
+  const handleToggleMic = (enabled: boolean) => {
+    SetMicEnabled(enabled).catch(err => console.error('SetMicEnabled failed:', err));
+  };
+  const handleToggleSystem = (enabled: boolean) => {
+    SetSystemEnabled(enabled).catch(err => console.error('SetSystemEnabled failed:', err));
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
@@ -150,6 +159,8 @@ export default function App() {
             onResume={handleResume}
             onStop={handleStop}
             onCancel={handleCancel}
+            onToggleMic={handleToggleMic}
+            onToggleSystem={handleToggleSystem}
           />
         )}
       </AnimatePresence>
