@@ -69,19 +69,21 @@ export default function App() {
     try {
       const path = await StopRecording();
       console.log('Recording saved:', path);
-      setIsPaused(false);
-      switchToPalette();
     } catch (err) {
       console.error('StopRecording failed:', err);
+    } finally {
+      setIsPaused(false);
+      switchToPalette();
     }
   };
   const handleCancel = async () => {
     try {
       await CancelRecording();
-      setIsPaused(false);
-      switchToPalette();
     } catch (err) {
       console.error('CancelRecording failed:', err);
+    } finally {
+      setIsPaused(false);
+      switchToPalette();
     }
   };
 
@@ -106,6 +108,14 @@ export default function App() {
 
   useEffect(() => {
     const unsub = EventsOn('toggle-palette', switchToPalette);
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    const unsub = EventsOn('recording-ended', () => {
+      setIsPaused(false);
+      switchToPalette();
+    });
     return unsub;
   }, []);
 

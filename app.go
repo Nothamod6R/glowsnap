@@ -45,6 +45,9 @@ func (a *App) startup(ctx context.Context) {
 
 	a.screenshotService = screenshot.NewService(conn)
 	a.screenCastService = screencast.NewScreenCastService(conn)
+	a.screenCastService.SetOnRecordingEnd(func() {
+		runtime.EventsEmit(a.ctx, "recording-ended")
+	})
 
 	home, _ := os.UserHomeDir()
 	screenshotsDir := filepath.Join(home, "Pictures", "Screenshots")

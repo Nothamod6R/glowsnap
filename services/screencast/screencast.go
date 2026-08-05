@@ -24,6 +24,7 @@ type ScreenCastService struct {
 	outputPath    string
 	finished      chan struct{}
 	mu            chan struct{}
+	onRecordingEnd func()
 }
 
 func NewScreenCastService(conn *dbus.Conn) *ScreenCastService {
@@ -36,6 +37,21 @@ func NewScreenCastService(conn *dbus.Conn) *ScreenCastService {
 
 func (s *ScreenCastService) lock()   { s.mu <- struct{}{} }
 func (s *ScreenCastService) unlock() { <-s.mu }
+
+func (s *ScreenCastService) SetOnRecordingEnd(fn func()) {
+	s.lock()
+	s.onRecordingEnd = fn
+	s.unlock()
+}
+
+func (s *ScreenCastService) notifyRecordingEnd() {
+	s.lock()
+	fn := s.onRecordingEnd
+	s.unlock()
+	if fn != nil {
+		fn()
+	}
+}
 
 func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDevice string) (string, error) {
 	s.lock()
@@ -129,6 +145,8 @@ func (s *ScreenCastService) monitor(finished chan struct{}) {
 	if recording && !stopRequested && waitErr != nil {
 		fmt.Printf("screencast: gst-launch exited unexpectedly: %v\n", waitErr)
 	}
+
+	s.notifyRecordingEnd()
 }
 
 func (s *ScreenCastService) PauseRecording() error {
