@@ -94,12 +94,12 @@ Coming soon on Flathub
 ## Roadmap
 
 ### v1.1.0
-- [ ] Add screencast
+- [X] Add screencast ( BETA )
 - [ ] Add settings
-- [ ] Add blur effect to the editor
 
 ### v1.1.1
 - [ ] Add more fonts
+- [ ] Add blur effect to the editor
 
 ### Future
 - Screenshot
