@@ -3,18 +3,21 @@ import { EventsOn } from '../wailsjs/runtime/runtime';
 import {
   ResizeToPalette,
   ResizeToStudio,
+  ResizeToSettings,
   TakeScreenshot,
   TakeAreaScreenshot,
   StartRecording,
   PauseRecording,
   ResumeRecording,
   StopRecording,
-  GetHomeDir,
+  CancelRecording,
+  SaveMicrophone,
 } from '../wailsjs/go/main/App';
 import { AnimatePresence } from 'framer-motion';
 import Palette from './components/Palette';
 import Studio from './components/Studio';
 import RecordingBar from './components/RecordingBar';
+import RecordingSettings from './components/RecordingSettings';
 import { APP_SHORTCUTS, matchesShortcut, isEditableTarget } from './lib/shortcut';
 import { WindowMode } from './types/types';
 
@@ -39,16 +42,19 @@ export default function App() {
     try { await TakeAreaScreenshot(); } catch (err) { console.error(err); }
   };
 
-  const handleStartRecording = async () => {
-    try {
-      const home = await GetHomeDir();
-      const outPath = `${home}/Videos/recording.webm`;
-      await StartRecording(outPath, true, true);
-      setMode('recording');
-      setIsPaused(false);
-    } catch (err) {
-      console.error('StartRecording failed:', err);
+  const openRecordingSettings = () => {
+    setMode('settings');
+    ResizeToSettings();
+  };
+
+  const handleStartFromSettings = async (micOn: boolean, systemOn: boolean, micDevice: string) => {
+    if (micOn && micDevice) {
+      await SaveMicrophone(micDevice);
     }
+    await StartRecording(micOn, systemOn, micDevice);
+    setIsPaused(false);
+    setMode('recording');
+    ResizeToPalette();
   };
 
   const handlePause = async () => {
@@ -64,9 +70,18 @@ export default function App() {
       const path = await StopRecording();
       console.log('Recording saved:', path);
       setIsPaused(false);
-      setMode('palette');
+      switchToPalette();
     } catch (err) {
       console.error('StopRecording failed:', err);
+    }
+  };
+  const handleCancel = async () => {
+    try {
+      await CancelRecording();
+      setIsPaused(false);
+      switchToPalette();
+    } catch (err) {
+      console.error('CancelRecording failed:', err);
     }
   };
 
@@ -103,12 +118,19 @@ export default function App() {
             onTakeAreaScreenshot={handleTakeAreaScreenshot}
             onSwitchToStudio={switchToStudio}
             onClose={() => setMode('closed')}
-            onStartRecording={handleStartRecording}
+            onStartRecording={openRecordingSettings}
           />
         )}
 
         {mode === 'studio' && (
           <Studio onBackToPalette={switchToPalette} />
+        )}
+
+        {mode === 'settings' && (
+          <RecordingSettings
+            onBack={switchToPalette}
+            onStart={handleStartFromSettings}
+          />
         )}
 
         {mode === 'recording' && (
@@ -117,6 +139,7 @@ export default function App() {
             onPause={handlePause}
             onResume={handleResume}
             onStop={handleStop}
+            onCancel={handleCancel}
           />
         )}
       </AnimatePresence>

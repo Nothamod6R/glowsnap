@@ -1,0 +1,258 @@
+package screencast
+
+import (
+	"fmt"
+	"os"
+	"os/exec"
+	"sync"
+	"syscall"
+	"time"
+)
+
+type RecordingOptions struct {
+	OutputPath    string
+	CaptureMic    bool
+	MicDevice     string
+	CaptureSystem bool
+	SystemDevice  string
+}
+
+type Recorder interface {
+	Start(videoNode uint32, opts RecordingOptions) error
+	Stop() error
+	Cancel() error
+	Pause() error
+	Resume() error
+	WaitDone() <-chan struct{}
+	WaitErr() error
+	IsRunning() bool
+}
+
+type gstLauncher struct {
+	mu      sync.Mutex
+	cmd     *exec.Cmd
+	paused  bool
+	done    chan struct{}
+	waitErr error
+	waitSet bool
+}
+
+func NewGstLauncher() Recorder {
+	return &gstLauncher{}
+}
+
+func (g *gstLauncher) Start(videoNode uint32, opts RecordingOptions) error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	if g.cmd != nil {
+		return fmt.Errorf("recording already active")
+	}
+
+	args, err := buildPipelineArgs(videoNode, opts)
+	if err != nil {
+		return err
+	}
+
+	cmd := exec.Command("gst-launch-1.0", args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start gst-launch: %w", err)
+	}
+
+	g.cmd = cmd
+	g.paused = false
+	done := make(chan struct{})
+	g.done = done
+
+	go func() {
+		waitErr := cmd.Wait()
+		g.mu.Lock()
+		g.waitErr = waitErr
+		g.waitSet = true
+		g.mu.Unlock()
+		close(done)
+	}()
+
+	return nil
+}
+
+func (g *gstLauncher) Stop() error {
+	if err := g.signalStop(); err != nil {
+		return err
+	}
+	return g.awaitExit(5 * time.Second)
+}
+
+func (g *gstLauncher) Cancel() error {
+	g.mu.Lock()
+	var proc *os.Process
+	if g.cmd != nil && g.cmd.Process != nil {
+		proc = g.cmd.Process
+	}
+	g.mu.Unlock()
+	if proc != nil {
+		proc.Kill()
+	}
+	return g.awaitExit(2 * time.Second)
+}
+
+func (g *gstLauncher) Pause() error {
+	g.mu.Lock()
+	if g.cmd == nil || g.cmd.Process == nil {
+		g.mu.Unlock()
+		return fmt.Errorf("no active recording")
+	}
+	if g.paused {
+		g.mu.Unlock()
+		return nil
+	}
+	g.paused = true
+	proc := g.cmd.Process
+	g.mu.Unlock()
+	return proc.Signal(syscall.SIGSTOP)
+}
+
+func (g *gstLauncher) Resume() error {
+	g.mu.Lock()
+	if g.cmd == nil || g.cmd.Process == nil {
+		g.mu.Unlock()
+		return fmt.Errorf("no active recording")
+	}
+	if !g.paused {
+		g.mu.Unlock()
+		return nil
+	}
+	g.paused = false
+	proc := g.cmd.Process
+	g.mu.Unlock()
+	return proc.Signal(syscall.SIGCONT)
+}
+
+func (g *gstLauncher) WaitDone() <-chan struct{} {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.done == nil {
+		closed := make(chan struct{})
+		close(closed)
+		return closed
+	}
+	return g.done
+}
+
+func (g *gstLauncher) WaitErr() error {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	if g.waitSet {
+		return g.waitErr
+	}
+	return fmt.Errorf("recorder still running")
+}
+
+func (g *gstLauncher) IsRunning() bool {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.cmd != nil && g.cmd.Process != nil
+}
+
+func (g *gstLauncher) signalStop() error {
+	g.mu.Lock()
+	if g.cmd == nil || g.cmd.Process == nil {
+		g.mu.Unlock()
+		return fmt.Errorf("no active recording")
+	}
+	paused := g.paused
+	g.paused = false
+	proc := g.cmd.Process
+	g.mu.Unlock()
+
+	if paused {
+		proc.Signal(syscall.SIGCONT)
+		time.Sleep(100 * time.Millisecond)
+	}
+	return proc.Signal(os.Interrupt)
+}
+
+func (g *gstLauncher) awaitExit(timeout time.Duration) error {
+	done := g.WaitDone()
+	select {
+	case <-done:
+		return g.WaitErr()
+	case <-time.After(timeout):
+		g.mu.Lock()
+		var proc *os.Process
+		if g.cmd != nil && g.cmd.Process != nil {
+			proc = g.cmd.Process
+		}
+		g.mu.Unlock()
+		if proc != nil {
+			proc.Kill()
+		}
+		<-done
+		return g.WaitErr()
+	}
+}
+
+func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error) {
+	if opts.OutputPath == "" {
+		return nil, fmt.Errorf("output path is required")
+	}
+
+	args := []string{
+		"-e",
+		"pipewiresrc", fmt.Sprintf("path=%d", videoNode),
+		"!", "videoconvert",
+		"!", "openh264enc",
+		"!", "h264parse",
+		"!", "queue", "max-size-time=2000000000",
+		"!", "mp4mux", "name=mux",
+		"!", "filesink", "location=" + opts.OutputPath,
+	}
+
+	var audioSources []string
+	if opts.CaptureMic && opts.MicDevice != "" {
+		audioSources = append(audioSources, opts.MicDevice)
+	}
+	if opts.CaptureSystem && opts.SystemDevice != "" {
+		audioSources = append(audioSources, opts.SystemDevice)
+	}
+
+	if len(audioSources) == 1 {
+		args = append(args,
+			"pulsesrc", "device="+audioSources[0], "provide-clock=false",
+			"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0", "leaky=2",
+			"!", "audioconvert",
+			"!", "audioresample",
+			"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
+			"!", "avenc_aac", "bitrate=128000",
+			"!", "aacparse",
+			"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
+			"!", "mux.audio_0")
+	} else if len(audioSources) > 1 {
+		for idx, src := range audioSources {
+			if idx == 0 {
+				args = append(args,
+					"pulsesrc", "device="+src, "provide-clock=false",
+					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0", "leaky=2",
+					"!", "audioconvert",
+					"!", "audioresample",
+					"!", "audiomixer", "name=mix", "start-time-selection=zero", "alignment-threshold=40000000",
+					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
+					"!", "avenc_aac", "bitrate=128000",
+					"!", "aacparse",
+					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
+					"!", "mux.audio_0")
+			} else {
+				args = append(args,
+					"pulsesrc", "device="+src, "provide-clock=false",
+					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0", "leaky=2",
+					"!", "audioconvert",
+					"!", "audioresample",
+					"!", "mix.")
+			}
+		}
+	}
+
+	return args, nil
+}

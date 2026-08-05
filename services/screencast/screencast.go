@@ -3,9 +3,6 @@ package screencast
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"sync"
-	"syscall"
 	"time"
 
 	"github.com/godbus/dbus/v5"
@@ -13,231 +10,226 @@ import (
 
 type StreamInfo struct {
 	NodeID     uint32
-	MediaType  uint32 
+	MediaType  uint32
 	Properties map[string]dbus.Variant
 }
 
 type ScreenCastService struct {
 	conn          *dbus.Conn
+	recorder      Recorder
 	sessionHandle dbus.ObjectPath
-	cmd           *exec.Cmd
+	videoNode     uint32
+	recording     bool
+	stopRequested bool
 	outputPath    string
-	isPaused      bool
-
-	mu       sync.Mutex 
-	done     chan struct{}
-	waitDone chan error
+	finished      chan struct{}
+	mu            chan struct{}
 }
 
 func NewScreenCastService(conn *dbus.Conn) *ScreenCastService {
-	return &ScreenCastService{conn: conn}
+	return &ScreenCastService{
+		conn:     conn,
+		recorder: NewGstLauncher(),
+		mu:       make(chan struct{}, 1),
+	}
 }
 
-func (s *ScreenCastService) StartRecording(outputPath string, captureMic bool, captureSystemAudio bool) error {
-	_ = captureMic
-	_ = captureSystemAudio
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *ScreenCastService) lock()   { s.mu <- struct{}{} }
+func (s *ScreenCastService) unlock() { <-s.mu }
 
-	if s.cmd != nil {
-		return fmt.Errorf("recording already active")
+func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDevice string) (string, error) {
+	s.lock()
+	if s.recording {
+		s.unlock()
+		return "", fmt.Errorf("a recording is already active")
+	}
+	s.unlock()
+
+	outPath, err := NewOutputPath()
+	if err != nil {
+		return "", fmt.Errorf("unable to resolve videos directory: %w", err)
 	}
 
 	portal := s.conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
 
+	s.closeStaleSession()
 	sessionHandle, err := s.createSession(portal)
 	if err != nil {
-		return fmt.Errorf("CreateSession error: %w", err)
+		return "", fmt.Errorf("CreateSession error: %w", err)
 	}
 	s.sessionHandle = sessionHandle
 
 	if err := s.selectSources(portal, sessionHandle); err != nil {
 		s.closeSession()
-		return fmt.Errorf("SelectSources error: %w", err)
+		return "", fmt.Errorf("SelectSources error: %w", err)
 	}
 
 	streams, err := s.startSession(portal, sessionHandle)
 	if err != nil {
 		s.closeSession()
-		return fmt.Errorf("Start error: %w", err)
+		return "", fmt.Errorf("Start error: %w", err)
 	}
 
-	args, err := s.buildPipelineArgs(streams, outputPath)
+	videoNode, err := findVideoNode(streams)
 	if err != nil {
 		s.closeSession()
-		return err
+		return "", err
 	}
 
-	cmd := exec.Command("gst-launch-1.0", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	if err := cmd.Start(); err != nil {
+	opts := RecordingOptions{OutputPath: outPath}
+	if captureMic {
+		if micDevice == "" {
+			micDevice = DefaultMicrophone()
+		}
+		opts.CaptureMic = true
+		opts.MicDevice = micDevice
+	}
+	if captureSystem {
+		if device, err := SystemAudioDevice(); err == nil {
+			opts.CaptureSystem = true
+			opts.SystemDevice = device
+		}
+	}
+
+	if err := s.recorder.Start(videoNode, opts); err != nil {
 		s.closeSession()
-		return fmt.Errorf("failed to start gst-launch: %w", err)
+		return "", err
 	}
 
-	s.cmd = cmd
-	s.outputPath = outputPath
-	s.isPaused = false
-	s.done = make(chan struct{})
-	s.waitDone = make(chan error, 1)
+	s.lock()
+	s.videoNode = videoNode
+	s.outputPath = outPath
+	s.recording = true
+	s.stopRequested = false
+	s.finished = make(chan struct{})
+	finished := s.finished
+	s.unlock()
 
-	go func() {
-		waitErr := cmd.Wait()
-		s.mu.Lock()
+	go s.monitor(finished)
 
-		select {
-		case <-s.done:
-			s.waitDone <- waitErr
-			s.mu.Unlock()
-		default:
-			if waitErr != nil {
-				fmt.Printf("gst-launch exited unexpectedly: %v\n", waitErr)
-			}
-			s.cmd = nil
-			s.outputPath = ""
-			s.done = nil
-			s.waitDone = nil
-			s.mu.Unlock()
-			s.closeSession()
-		}
-	}()
-
-	return nil
+	return outPath, nil
 }
 
-func (s *ScreenCastService) PauseRecording() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+func (s *ScreenCastService) monitor(finished chan struct{}) {
+	<-s.recorder.WaitDone()
+	waitErr := s.recorder.WaitErr()
 
-	if s.cmd == nil || s.cmd.Process == nil {
-		return fmt.Errorf("no active recording")
-	}
-	if s.isPaused {
-		return nil
-	}
-	if err := s.cmd.Process.Signal(syscall.SIGSTOP); err != nil {
-		return fmt.Errorf("pause failed: %w", err)
-	}
-	s.isPaused = true
-	return nil
-}
-
-func (s *ScreenCastService) ResumeRecording() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.cmd == nil || s.cmd.Process == nil {
-		return fmt.Errorf("no active recording")
-	}
-	if !s.isPaused {
-		return nil
-	}
-	if err := s.cmd.Process.Signal(syscall.SIGCONT); err != nil {
-		return fmt.Errorf("resume failed: %w", err)
-	}
-	s.isPaused = false
-	return nil
-}
-
-func (s *ScreenCastService) StopRecording() (string, error) {
-	s.mu.Lock()
-	if s.cmd == nil || s.cmd.Process == nil {
-		s.mu.Unlock()
-		return "", fmt.Errorf("no active recording")
-	}
-
-	if s.isPaused {
-		s.cmd.Process.Signal(syscall.SIGCONT)
-		s.isPaused = false
-		time.Sleep(100 * time.Millisecond)
-	}
-
-	if err := s.cmd.Process.Signal(os.Interrupt); err != nil {
-		s.mu.Unlock()
-		return "", fmt.Errorf("failed to send interrupt: %w", err)
-	}
-
-	if s.done != nil {
-		select {
-		case <-s.done:
-		default:
-			close(s.done)
-		}
-	}
-
-	waitCh := s.waitDone
-	path := s.outputPath
-	s.mu.Unlock()
-
-	var waitErr error
-	select {
-	case waitErr = <-waitCh:
-	case <-time.After(5 * time.Second):
-		s.mu.Lock()
-		if s.cmd != nil && s.cmd.Process != nil {
-			s.cmd.Process.Kill()
-		}
-		s.mu.Unlock()
-		waitErr = <-waitCh
-	}
-
-	s.mu.Lock()
-	s.cmd = nil
+	s.lock()
+	recording := s.recording
+	stopRequested := s.stopRequested
+	s.recording = false
+	s.videoNode = 0
 	s.outputPath = ""
-	s.isPaused = false
-	s.done = nil
-	s.waitDone = nil
-	s.mu.Unlock()
+	s.finished = nil
+	close(finished)
+	s.unlock()
 
 	s.closeSession()
 
-	if waitErr != nil {
-		return "", fmt.Errorf("gst-launch exited with error: %w", waitErr)
+	if recording && !stopRequested && waitErr != nil {
+		fmt.Printf("screencast: gst-launch exited unexpectedly: %v\n", waitErr)
+	}
+}
+
+func (s *ScreenCastService) PauseRecording() error {
+	s.lock()
+	recording := s.recording
+	s.unlock()
+	if !recording {
+		return fmt.Errorf("no active recording")
+	}
+	return s.recorder.Pause()
+}
+
+func (s *ScreenCastService) ResumeRecording() error {
+	s.lock()
+	recording := s.recording
+	s.unlock()
+	if !recording {
+		return fmt.Errorf("no active recording")
+	}
+	return s.recorder.Resume()
+}
+
+func (s *ScreenCastService) StopRecording() (string, error) {
+	s.lock()
+	if !s.recording {
+		s.unlock()
+		return "", fmt.Errorf("no active recording")
+	}
+	path := s.outputPath
+	finished := s.finished
+	s.stopRequested = true
+	s.unlock()
+
+	if err := s.recorder.Stop(); err != nil {
+		return "", fmt.Errorf("failed to stop recording: %w", err)
+	}
+
+	if finished != nil {
+		<-finished
 	}
 	return path, nil
 }
 
-func (s *ScreenCastService) Cleanup() {
-	s.mu.Lock()
-	if s.cmd == nil {
-		s.mu.Unlock()
-		return
+func (s *ScreenCastService) CancelRecording() error {
+	s.lock()
+	if !s.recording {
+		s.unlock()
+		return fmt.Errorf("no active recording")
+	}
+	path := s.outputPath
+	finished := s.finished
+	s.stopRequested = true
+	s.unlock()
+
+	if err := s.recorder.Cancel(); err != nil {
+		return err
 	}
 
-	if s.cmd.Process != nil {
-		s.cmd.Process.Kill()
+	if finished != nil {
+		<-finished
 	}
-
-	if s.done != nil {
-		select {
-		case <-s.done:
-		default:
-			close(s.done)
-		}
+	if path != "" {
+		os.Remove(path)
 	}
-
-	waitCh := s.waitDone
-	s.mu.Unlock()
-
-	if waitCh != nil {
-		select {
-		case <-waitCh:
-		case <-time.After(2 * time.Second):
-		}
-	}
-
-	s.mu.Lock()
-	s.cmd = nil
-	s.outputPath = ""
-	s.isPaused = false
-	s.done = nil
-	s.waitDone = nil
-	s.mu.Unlock()
-
-	s.closeSession()
+	return nil
 }
 
+func (s *ScreenCastService) Cleanup() {
+	s.lock()
+	if !s.recording {
+		s.unlock()
+		return
+	}
+	path := s.outputPath
+	finished := s.finished
+	s.stopRequested = true
+	s.unlock()
+
+	if s.recorder != nil {
+		s.recorder.Cancel()
+	}
+	if finished != nil {
+		<-finished
+	}
+	if path != "" {
+		os.Remove(path)
+	}
+}
+
+func findVideoNode(streams []StreamInfo) (uint32, error) {
+	for _, st := range streams {
+		if st.MediaType == 1 {
+			return st.NodeID, nil
+		}
+	}
+	return 0, fmt.Errorf("no video stream found")
+}
+
+func (s *ScreenCastService) closeStaleSession() {
+	s.closeSession()
+}
 
 func (s *ScreenCastService) createSession(portal dbus.BusObject) (dbus.ObjectPath, error) {
 	token := fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())
@@ -354,50 +346,21 @@ func (s *ScreenCastService) startSession(portal dbus.BusObject, sessionHandle db
 }
 
 func (s *ScreenCastService) closeSession() {
+	s.lock()
 	if s.sessionHandle == "" {
+		s.unlock()
 		return
 	}
-	sessionObj := s.conn.Object("org.freedesktop.portal.Desktop", s.sessionHandle)
+	handle := s.sessionHandle
+	s.sessionHandle = ""
+	s.unlock()
+
+	sessionObj := s.conn.Object("org.freedesktop.portal.Desktop", handle)
 	call := sessionObj.Call("org.freedesktop.portal.Session.Close", 0)
 	if call.Err != nil {
 		fmt.Printf("Warning: failed to close portal session: %v\n", call.Err)
 	}
-	s.sessionHandle = ""
 }
-
-
-func (s *ScreenCastService) buildPipelineArgs(streams []StreamInfo, outputPath string) ([]string, error) {
-	var videoNode uint32
-	for _, st := range streams {
-		if st.MediaType == 1 {
-			videoNode = st.NodeID
-			break
-		}
-	}
-	if videoNode == 0 {
-		return nil, fmt.Errorf("no video stream found")
-	}
-
-	args := []string{
-		"-e",
-		"pipewiresrc",
-		fmt.Sprintf("path=%d", videoNode),
-		"!",
-		"videoconvert",
-		"!",
-		"vp8enc",
-		"deadline=1",
-		"cpu-used=8",
-		"target-bitrate=5000000",
-		"!",
-		"webmmux",
-		"!",
-		"filesink",
-		"location=" + outputPath,
-	}
-	return args, nil
-}
-
 
 func (s *ScreenCastService) waitForResponse(requestPath dbus.ObjectPath, timeout time.Duration) (*dbus.Signal, error) {
 	matchRule := fmt.Sprintf("type='signal',interface='org.freedesktop.portal.Request',member='Response',path='%s'", requestPath)

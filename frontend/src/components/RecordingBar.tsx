@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Pause, Play, Square, Mic, Volume2 } from 'lucide-react';
+import { Pause, Play, Square, X, Mic, Volume2 } from 'lucide-react';
 import { RecordingBarProps } from '@/types/types';
 
-export default function RecordingBar({ onStop, onPause, onResume, isPaused }: RecordingBarProps) {
+export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused }: RecordingBarProps) {
   const [seconds, setSeconds] = useState(0);
   const timerRef = useRef<number | null>(null);
 
@@ -50,6 +50,14 @@ export default function RecordingBar({ onStop, onPause, onResume, isPaused }: Re
         title="Stop"
       >
         <Square size={16} />
+      </button>
+
+      <button
+        onClick={onCancel}
+        className="p-2 rounded-xl hover:bg-white/10 transition-colors text-white/60"
+        title="Cancel recording"
+      >
+        <X size={16} />
       </button>
 
       <div className="h-6 w-px bg-white/20" />
