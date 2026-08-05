@@ -19,6 +19,9 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
             case 'select-area':
               onTakeAreaScreenshot();
               break;
+            case 'record':
+              onStartRecording();
+              break;
             case 'studio':
               onSwitchToStudio();
               break;
@@ -43,7 +46,7 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
     >
       <ToolButton icon={<Camera size={18} />} label="Full Screen" shortcut={shortcutFor('full-screen')} onClick={onTakeScreenshot} />
       <ToolButton icon={<Crop size={18} />} label="Select Area" shortcut={shortcutFor('select-area')} onClick={onTakeAreaScreenshot} />
-      <ToolButton icon={<Video size={18} />} label="Record" onClick={onStartRecording} />
+      <ToolButton icon={<Video size={18} />} label="Record" shortcut={shortcutFor('record')} onClick={onStartRecording} />
       {/* Commented-out buttons intentionally get no shortcut.
       <ToolButton icon={<Type size={18} />} label="OCR Text" />
       <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" /> */}
