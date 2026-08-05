@@ -37,6 +37,8 @@ type gstLauncher struct {
 	waitSet bool
 }
 
+var gstLaunchBinary = "gst-launch-1.0"
+
 func NewGstLauncher() Recorder {
 	return &gstLauncher{}
 }
@@ -54,7 +56,7 @@ func (g *gstLauncher) Start(videoNode uint32, opts RecordingOptions) error {
 		return err
 	}
 
-	cmd := exec.Command("gst-launch-1.0", args...)
+	cmd := exec.Command(gstLaunchBinary, args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
@@ -71,6 +73,9 @@ func (g *gstLauncher) Start(videoNode uint32, opts RecordingOptions) error {
 		g.mu.Lock()
 		g.waitErr = waitErr
 		g.waitSet = true
+		g.cmd = nil
+		g.paused = false
+		g.done = nil
 		g.mu.Unlock()
 		close(done)
 	}()

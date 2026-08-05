@@ -74,6 +74,14 @@ export function SaveMicrophone(arg1) {
   return window['go']['main']['App']['SaveMicrophone'](arg1);
 }
 
+export function SetMicEnabled(arg1) {
+  return window['go']['main']['App']['SetMicEnabled'](arg1);
+}
+
+export function SetSystemEnabled(arg1) {
+  return window['go']['main']['App']['SetSystemEnabled'](arg1);
+}
+
 export function StartRecording(arg1, arg2, arg3) {
   return window['go']['main']['App']['StartRecording'](arg1, arg2, arg3);
 }

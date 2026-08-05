@@ -45,6 +45,9 @@ func (a *App) startup(ctx context.Context) {
 
 	a.screenshotService = screenshot.NewService(conn)
 	a.screenCastService = screencast.NewScreenCastService(conn)
+	a.screenCastService.SetOnRecordingEnd(func() {
+		runtime.EventsEmit(a.ctx, "recording-ended")
+	})
 
 	home, _ := os.UserHomeDir()
 	screenshotsDir := filepath.Join(home, "Pictures", "Screenshots")
@@ -166,6 +169,20 @@ func (a *App) CancelRecording() error {
 		return fmt.Errorf("recording service not initialized")
 	}
 	return a.screenCastService.CancelRecording()
+}
+
+func (a *App) SetMicEnabled(enabled bool) error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.SetMicEnabled(enabled)
+}
+
+func (a *App) SetSystemEnabled(enabled bool) error {
+	if a.screenCastService == nil {
+		return fmt.Errorf("recording service not initialized")
+	}
+	return a.screenCastService.SetSystemEnabled(enabled)
 }
 
 func (a *App) GetVideosDir() string {

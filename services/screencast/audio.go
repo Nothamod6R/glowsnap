@@ -32,6 +32,18 @@ func pactlOutput(args ...string) ([]byte, error) {
 	return exec.Command("pactl", args...).Output()
 }
 
+func setSourceMute(name string, muted bool) error {
+	value := "0"
+	if muted {
+		value = "1"
+	}
+	cmd := exec.Command("pactl", "set-source-mute", name, value)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("pactl set-source-mute %s %s: %v (%s)", name, value, err, strings.TrimSpace(string(out)))
+	}
+	return nil
+}
+
 func listSources() ([]pactlSource, error) {
 	out, err := pactlOutput("list", "sources")
 	if err != nil {
