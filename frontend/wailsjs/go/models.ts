@@ -27,3 +27,36 @@ export namespace main {
 
 }
 
+export namespace screencast {
+	
+	export class AudioDevice {
+	    name: string;
+	    description: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new AudioDevice(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.description = source["description"];
+	    }
+	}
+	export class SystemAudioInfo {
+	    supported: boolean;
+	    message: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SystemAudioInfo(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.supported = source["supported"];
+	        this.message = source["message"];
+	    }
+	}
+
+}
+

@@ -1,7 +1,8 @@
 import Konva from 'konva';
-import type { main } from '../../wailsjs/go/models';
+import type { main, screencast } from '../../wailsjs/go/models';
 
 export type Screenshot = main.ScreenshotInfo;
+export type AudioDevice = screencast.AudioDevice;
 
 
 export interface PaletteProps {
@@ -22,7 +23,7 @@ export interface ToolButtonProps {
   onClick?: () => void;
 }
 
-export type WindowMode = 'palette' | 'studio' | 'closed' | 'recording';
+export type WindowMode = 'palette' | 'studio' | 'closed' | 'recording' | 'settings';
 export interface PaletteProps {
   onTakeScreenshot: () => void;
   onTakeAreaScreenshot: () => void;
@@ -39,7 +40,13 @@ export interface RecordingBarProps {
   onStop: () => void;
   onPause: () => void;
   onResume: () => void;
+  onCancel: () => void;
   isPaused: boolean;
+}
+
+export interface RecordingSettingsProps {
+  onBack: () => void;
+  onStart: (micOn: boolean, systemOn: boolean, micDevice: string) => Promise<void>;
 }
 
 

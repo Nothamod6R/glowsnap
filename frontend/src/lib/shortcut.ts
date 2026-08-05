@@ -228,7 +228,7 @@ export const TOOL_SHORTCUTS: ToolShortcut[] = (Object.keys(TOOL_SHORTCUT_KEYS) a
   }
 );
 
-export type PaletteAction = 'full-screen' | 'select-area' | 'studio';
+export type PaletteAction = 'full-screen' | 'select-area' | 'record' | 'studio';
 
 export interface PaletteShortcut extends ShortcutDef {
   category: 'palette';
@@ -255,11 +255,21 @@ export const PALETTE_SHORTCUTS: PaletteShortcut[] = [
     category: 'palette',
   },
   {
+    id: 'palette-record',
+    action: 'record',
+    label: 'Take a record from screen',
+    keys: 'Alt+3',
+    key: '3',
+    alt: true,
+    category: 'palette',
+  }
+  ,
+  {
     id: 'palette-studio',
     action: 'studio',
     label: 'Open Studio',
-    keys: 'Alt+3',
-    key: '3',
+    keys: 'Alt+4',
+    key: '4',
     alt: true,
     category: 'palette',
   },
