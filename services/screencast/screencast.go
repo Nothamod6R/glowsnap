@@ -129,23 +129,29 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 	}
 
 	opts := RecordingOptions{OutputPath: outPath}
-	if captureMic {
-		if micDevice == "" {
-			micDevice = DefaultMicrophone()
-		}
+
+	if micDevice == "" {
+		micDevice = DefaultMicrophone()
+	}
+	if micDevice != "" {
 		opts.CaptureMic = true
 		opts.MicDevice = micDevice
 	}
-	if captureSystem {
-		if device, err := SystemAudioDevice(); err == nil {
-			opts.CaptureSystem = true
-			opts.SystemDevice = device
-		}
+	if device, err := SystemAudioDevice(); err == nil && device != "" {
+		opts.CaptureSystem = true
+		opts.SystemDevice = device
 	}
 
 	if err := s.recorder.Start(videoNode, opts); err != nil {
 		s.closeSession()
 		return "", err
+	}
+
+	if opts.CaptureMic && !captureMic {
+		_ = setSourceMute(opts.MicDevice, true)
+	}
+	if opts.CaptureSystem && !captureSystem {
+		_ = setSourceMute(opts.SystemDevice, true)
 	}
 
 	s.lock()
@@ -158,8 +164,8 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 	s.captureSystem = opts.CaptureSystem
 	s.micDevice = opts.MicDevice
 	s.systemDevice = opts.SystemDevice
-	s.micEnabled = opts.CaptureMic
-	s.systemEnabled = opts.CaptureSystem
+	s.micEnabled = captureMic
+	s.systemEnabled = captureSystem
 	finished := s.finished
 	s.unlock()
 
