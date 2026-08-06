@@ -26,6 +26,8 @@ import { WindowMode } from './types/types';
 export default function App() {
   const [mode, setMode] = useState<WindowMode>('palette');
   const [isPaused, setIsPaused] = useState(false);
+  const [recMicEnabled, setRecMicEnabled] = useState(true);
+  const [recSystemEnabled, setRecSystemEnabled] = useState(true);
 
   const switchToPalette = () => {
     setMode('palette');
@@ -55,6 +57,8 @@ export default function App() {
     }
     await StartRecording(micOn, systemOn, micDevice);
     setIsPaused(false);
+    setRecMicEnabled(micOn);
+    setRecSystemEnabled(systemOn);
     setMode('recording');
     ResizeToPalette();
   };
@@ -155,6 +159,8 @@ export default function App() {
         {mode === 'recording' && (
           <RecordingBar
             isPaused={isPaused}
+            micEnabled={recMicEnabled}
+            systemEnabled={recSystemEnabled}
             onPause={handlePause}
             onResume={handleResume}
             onStop={handleStop}

@@ -42,6 +42,8 @@ export interface RecordingBarProps {
   onResume: () => void;
   onCancel: () => void;
   isPaused: boolean;
+  micEnabled: boolean;
+  systemEnabled: boolean;
   onToggleMic: (enabled: boolean) => void;
   onToggleSystem: (enabled: boolean) => void;
 }
