@@ -1,65 +1,42 @@
-#!/bin/bash
-# Exit immediately if a command exits with a non-zero status
-# to run this file, write in the bash
-# chmod +x build.sh
-# ./build.sh
-set -e
-APP_NAME="glowsnap"
-BUILD_DIR="glowsnap.AppDir"
-OUTPUT_DIR="build/AppImage"
+#!/usr/bin/env bash
+#
+# build.sh - Build production application.
+#
+# Compiles the React/TypeScript frontend and then builds the Go/Wails backend
+# into build/bin/glowsnap. The frontend is built explicitly here so this works
+# independently of the Wails frontend hooks; -clean ensures a fresh binary.
+#
+# This script intentionally does NOT run 'go mod tidy' so dependency state is
+# never modified unexpectedly - use the exact dependencies already resolved in
+# go.mod / go.sum.
+#
+# Usage:
+#   ./scripts/build.sh
+#
+set -euo pipefail
 
-echo "Welcome to GlowSnap build..."
-echo "Building Wails application with webkit2_41 tag..."
-wails build -tags webkit2_41
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$ROOT_DIR"
 
-echo "Creating AppDir folder structure..."
-rm -rf $BUILD_DIR
-mkdir -p $BUILD_DIR/usr/bin
-
-echo "Copying binary executable and icon..."
-cp build/bin/$APP_NAME $BUILD_DIR/usr/bin/$APP_NAME
-
-if [ -f "build/appicon.png" ]; then
-    cp build/appicon.png $BUILD_DIR/$APP_NAME.png
-elif [ -f "build/appicon.svg" ]; then
-    cp build/appicon.svg $BUILD_DIR/$APP_NAME.png
-else
-    echo "Warning: Application icon not found in build directory!"
+if [ ! -d "frontend" ]; then
+    echo "ERROR: 'frontend' directory not found under $ROOT_DIR" >&2
+    exit 1
 fi
+echo "Building React/TypeScript frontend..."
+(cd frontend && npm run build)
 
-echo "Creating AppRun script..."
-cat << 'EOF' > $BUILD_DIR/AppRun
-#!/bin/sh
-SELF=$(readlink -f "$0")
-HERE=${SELF%/*}
-EXEC="${HERE}/usr/bin/glowsnap"
-exec "${EXEC}" "$@"
-EOF
-chmod +x $BUILD_DIR/AppRun
-echo "Creating .desktop file..."
-cat << EOF > $BUILD_DIR/$APP_NAME.desktop
-[Desktop Entry]
-Name=Glowsnap
-Exec=$APP_NAME
-Icon=$APP_NAME
-Type=Application
-Categories=Utility;
-EOF
-
-echo "Downloading appimagetool if not present..."
-if [ ! -f "appimagetool-x86_64.AppImage" ]; then
-    wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
-    chmod +x appimagetool-x86_64.AppImage
+if ! command -v wails >/dev/null 2>&1; then
+    echo "ERROR: 'wails' CLI not found in PATH." >&2
+    echo "Install it with: go install github.com/wailsapp/wails/v2/cmd/wails@latest" >&2
+    exit 1
 fi
+echo "Building Wails application (WebKitGTK 4.1)..."
+wails build -tags webkit2_41 -clean
 
-echo "Packaging application into AppImage..."
-APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool-x86_64.AppImage $BUILD_DIR
-
-echo "Moving AppImage to output directory..."
-mkdir -p $OUTPUT_DIR
-mv Glowsnap-x86_64.AppImage $OUTPUT_DIR/
-
-echo "Cleaning up temporary AppDir directory..."
-rm -rf $BUILD_DIR
-
-echo "Build successful! The AppImage file is saved in: $OUTPUT_DIR/Glowsnap-x86_64.AppImage"
+APP_BIN="build/bin/glowsnap"
+if [ ! -f "$APP_BIN" ]; then
+    echo "ERROR: expected binary not found at $APP_BIN" >&2
+    exit 1
+fi
+echo "Build successful. Binary: $(pwd)/$APP_BIN"
