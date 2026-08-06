@@ -249,15 +249,15 @@ func (s *ScreenCastService) CancelRecording() error {
 	s.stopRequested = true
 	s.unlock()
 
-	if err := s.recorder.Cancel(); err != nil {
-		return err
-	}
+	_ = s.recorder.Cancel()
 
 	if finished != nil {
 		<-finished
 	}
 	if path != "" {
-		os.Remove(path)
+		if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("failed to discard canceled recording: %w", err)
+		}
 	}
 	return nil
 }
