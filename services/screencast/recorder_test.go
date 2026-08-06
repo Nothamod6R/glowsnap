@@ -92,3 +92,40 @@ func TestRecorderRejectsConcurrentStart(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestCancelRecordingDiscardsOutputFile(t *testing.T) {
+	withFakeGstLaunch(t)
+
+	s := &ScreenCastService{
+		recorder: NewGstLauncher(),
+		mu:       make(chan struct{}, 1),
+	}
+
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "out.mp4")
+
+	if err := s.recorder.Start(1, RecordingOptions{OutputPath: outPath}); err != nil {
+		t.Fatalf("recorder Start failed: %v", err)
+	}
+
+	s.recording = true
+	s.outputPath = outPath
+	s.finished = make(chan struct{})
+	go s.monitor(s.finished)
+
+	if err := os.WriteFile(outPath, []byte("partial-data"), 0644); err != nil {
+		t.Fatalf("write partial output failed: %v", err)
+	}
+
+	if err := s.CancelRecording(); err != nil {
+		t.Fatalf("CancelRecording returned error: %v", err)
+	}
+
+	if _, err := os.Stat(outPath); !os.IsNotExist(err) {
+		t.Fatalf("expected canceled recording output file to be removed, but it still exists (stat err=%v)", err)
+	}
+	if s.recording {
+		t.Fatal("expected recording flag to be cleared after cancel")
+	}
+}
+
