@@ -7,5 +7,4 @@ AppDir/
 squashfs-root/
 appimagetool-*.AppImage
 
-# Local release artifacts
 release/
