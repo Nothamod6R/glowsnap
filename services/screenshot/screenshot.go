@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"glowsnap/services/settings"
+
 	"github.com/godbus/dbus/v5"
 )
 
@@ -24,11 +26,7 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 		return "", fmt.Errorf("D-Bus connection not initialized")
 	}
 
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("failed to get home directory: %w", err)
-	}
-	screenshotsDir := filepath.Join(homeDir, "Pictures", "Screenshots")
+	screenshotsDir := settings.Load().ScreenshotSaveDir()
 	if err := os.MkdirAll(screenshotsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create Screenshots directory: %w", err)
 	}
@@ -43,7 +41,7 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 	}
 
 	var handle dbus.ObjectPath
-	err = portalObj.Call("org.freedesktop.portal.Screenshot.Screenshot", 0, "", options).Store(&handle)
+	err := portalObj.Call("org.freedesktop.portal.Screenshot.Screenshot", 0, "", options).Store(&handle)
 	if err != nil {
 		return "", fmt.Errorf("failed to call Screenshot portal: %w", err)
 	}

@@ -10,6 +10,10 @@ export function DeleteScreenshot(arg1) {
   return window['go']['main']['App']['DeleteScreenshot'](arg1);
 }
 
+export function GetAppVersion() {
+  return window['go']['main']['App']['GetAppVersion']();
+}
+
 export function GetHomeDir() {
   return window['go']['main']['App']['GetHomeDir']();
 }
@@ -20,6 +24,10 @@ export function GetSavedMicrophone() {
 
 export function GetScreenshotsBaseURL() {
   return window['go']['main']['App']['GetScreenshotsBaseURL']();
+}
+
+export function GetSettings() {
+  return window['go']['main']['App']['GetSettings']();
 }
 
 export function GetSystemAudioSupported() {
@@ -50,8 +58,16 @@ export function RenameScreenshot(arg1, arg2) {
   return window['go']['main']['App']['RenameScreenshot'](arg1, arg2);
 }
 
+export function ResetSettings() {
+  return window['go']['main']['App']['ResetSettings']();
+}
+
 export function ResizeToPalette() {
   return window['go']['main']['App']['ResizeToPalette']();
+}
+
+export function ResizeToPreferences() {
+  return window['go']['main']['App']['ResizeToPreferences']();
 }
 
 export function ResizeToSettings() {
@@ -72,6 +88,10 @@ export function SaveFileDialog(arg1) {
 
 export function SaveMicrophone(arg1) {
   return window['go']['main']['App']['SaveMicrophone'](arg1);
+}
+
+export function SelectDirectory(arg1) {
+  return window['go']['main']['App']['SelectDirectory'](arg1);
 }
 
 export function SetMicEnabled(arg1) {
@@ -96,6 +116,10 @@ export function TakeAreaScreenshot() {
 
 export function TakeScreenshot() {
   return window['go']['main']['App']['TakeScreenshot']();
+}
+
+export function UpdateSettings(arg1) {
+  return window['go']['main']['App']['UpdateSettings'](arg1);
 }
 
 export function WriteFile(arg1, arg2) {

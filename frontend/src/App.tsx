@@ -4,6 +4,7 @@ import {
   ResizeToPalette,
   ResizeToStudio,
   ResizeToSettings,
+  ResizeToPreferences,
   TakeScreenshot,
   TakeAreaScreenshot,
   StartRecording,
@@ -20,6 +21,7 @@ import Palette from './components/Palette';
 import Studio from './components/Studio';
 import RecordingBar from './components/RecordingBar';
 import RecordingSettings from './components/RecordingSettings';
+import SettingsPanel from './components/SettingsPanel';
 import { APP_SHORTCUTS, matchesShortcut, isEditableTarget } from './lib/shortcut';
 import { WindowMode } from './types/types';
 
@@ -38,6 +40,11 @@ export default function App() {
   const switchToStudio = () => {
     setMode('studio');
     ResizeToStudio();
+  };
+
+  const switchToPreferences = () => {
+    setMode('preferences');
+    ResizeToPreferences();
   };
 
   const handleTakeScreenshot = async () => {
@@ -154,6 +161,7 @@ export default function App() {
             onSwitchToStudio={switchToStudio}
             onClose={() => setMode('closed')}
             onStartRecording={openRecordingSettings}
+            onOpenSettings={switchToPreferences}
           />
         )}
 
@@ -166,6 +174,10 @@ export default function App() {
             onBack={switchToPalette}
             onStart={handleStartFromSettings}
           />
+        )}
+
+        {mode === 'preferences' && (
+          <SettingsPanel onBack={switchToPalette} />
         )}
 
         {mode === 'recording' && (

@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Camera, Crop, Type, EyeOff, Video, X } from 'lucide-react';
+import { Camera, Crop, Type, EyeOff, Video, X, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import ToolButton from './ToolButton';
 import { PALETTE_SHORTCUTS, matchesShortcut, isEditableTarget } from '@/lib/shortcut';
 
-export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording }: any) {
+export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording, onOpenSettings }: any) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
@@ -56,6 +56,11 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
       <Button onClick={onSwitchToStudio}>
         <span>Studio</span>
       </Button>
+
+      <Button variant="outline" onClick={onOpenSettings} title="Settings">
+        <Settings size={15} />
+      </Button>
+
 
       {/*<Button variant="outline" onClick={onClose}>
         <X size={14} />
