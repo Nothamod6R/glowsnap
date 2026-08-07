@@ -3,15 +3,20 @@ import { motion } from 'framer-motion';
 import { Pause, Play, Square, X, Mic, Volume2 } from 'lucide-react';
 import { RecordingBarProps } from '@/types/types';
 
-export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused, micEnabled, systemEnabled, onToggleMic, onToggleSystem }: RecordingBarProps) {
+export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused, started, micEnabled, systemEnabled, onToggleMic, onToggleSystem }: RecordingBarProps) {
   const [seconds, setSeconds] = useState(0);
   const [micOn, setMicOn] = useState(micEnabled);
   const [systemOn, setSystemOn] = useState(systemEnabled);
   const timerRef = useRef<number | null>(null);
+  const startedRef = useRef(started);
+
+  useEffect(() => {
+    startedRef.current = started;
+  }, [started]);
 
   useEffect(() => {
     timerRef.current = window.setInterval(() => {
-      if (!isPaused) {
+      if (startedRef.current && !isPaused) {
         setSeconds(s => s + 1);
       }
     }, 1000);

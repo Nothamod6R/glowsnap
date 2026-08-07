@@ -26,6 +26,7 @@ import { WindowMode } from './types/types';
 export default function App() {
   const [mode, setMode] = useState<WindowMode>('palette');
   const [isPaused, setIsPaused] = useState(false);
+  const [recStarted, setRecStarted] = useState(false);
   const [recMicEnabled, setRecMicEnabled] = useState(true);
   const [recSystemEnabled, setRecSystemEnabled] = useState(true);
 
@@ -56,6 +57,7 @@ export default function App() {
       await SaveMicrophone(micDevice);
     }
     await StartRecording(micOn, systemOn, micDevice);
+    setRecStarted(false);
     setIsPaused(false);
     setRecMicEnabled(micOn);
     setRecSystemEnabled(systemOn);
@@ -78,6 +80,7 @@ export default function App() {
     } catch (err) {
       console.error('StopRecording failed:', err);
     } finally {
+      setRecStarted(false);
       setIsPaused(false);
       switchToPalette();
     }
@@ -88,6 +91,7 @@ export default function App() {
     } catch (err) {
       console.error('CancelRecording failed:', err);
     } finally {
+      setRecStarted(false);
       setIsPaused(false);
       switchToPalette();
     }
@@ -125,7 +129,15 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const unsub = EventsOn('recording-started', () => {
+      setRecStarted(true);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
     const unsub = EventsOn('recording-ended', () => {
+      setRecStarted(false);
       setIsPaused(false);
       switchToPalette();
     });
@@ -159,6 +171,7 @@ export default function App() {
         {mode === 'recording' && (
           <RecordingBar
             isPaused={isPaused}
+            started={recStarted}
             micEnabled={recMicEnabled}
             systemEnabled={recSystemEnabled}
             onPause={handlePause}

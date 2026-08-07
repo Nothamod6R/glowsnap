@@ -15,22 +15,23 @@ type StreamInfo struct {
 }
 
 type ScreenCastService struct {
-	conn           *dbus.Conn
-	recorder       Recorder
-	sessionHandle  dbus.ObjectPath
-	videoNode      uint32
-	recording      bool
-	stopRequested  bool
-	outputPath     string
-	finished       chan struct{}
-	mu             chan struct{}
-	onRecordingEnd func()
-	captureMic     bool
-	captureSystem  bool
-	micDevice      string
-	systemDevice   string
-	micEnabled     bool
-	systemEnabled  bool
+	conn             *dbus.Conn
+	recorder         Recorder
+	sessionHandle    dbus.ObjectPath
+	videoNode        uint32
+	recording        bool
+	stopRequested    bool
+	outputPath       string
+	finished         chan struct{}
+	mu               chan struct{}
+	onRecordingEnd   func()
+	onRecordingStart func()
+	captureMic       bool
+	captureSystem    bool
+	micDevice        string
+	systemDevice     string
+	micEnabled       bool
+	systemEnabled    bool
 }
 
 func NewScreenCastService(conn *dbus.Conn) *ScreenCastService {
@@ -50,10 +51,29 @@ func (s *ScreenCastService) SetOnRecordingEnd(fn func()) {
 	s.unlock()
 }
 
+func (s *ScreenCastService) SetOnRecordingStart(fn func()) {
+	s.lock()
+	s.onRecordingStart = fn
+	s.unlock()
+}
+
 func (s *ScreenCastService) notifyRecordingEnd() {
 	s.lock()
 	fn := s.onRecordingEnd
 	s.unlock()
+	if fn != nil {
+		fn()
+	}
+}
+
+func (s *ScreenCastService) notifyRecordingStart() {
+	s.lock()
+	recording := s.recording
+	fn := s.onRecordingStart
+	s.unlock()
+	if !recording {
+		return
+	}
 	if fn != nil {
 		fn()
 	}
@@ -170,8 +190,34 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 	s.unlock()
 
 	go s.monitor(finished)
+	go s.monitorCaptureStart(outPath)
 
 	return outPath, nil
+}
+
+func (s *ScreenCastService) monitorCaptureStart(outputPath string) {
+	const pollInterval = 50 * time.Millisecond
+	const timeout = 30 * time.Second
+
+	deadline := time.Now().Add(timeout)
+	var lastSize int64 = -1
+
+	for time.Now().Before(deadline) {
+		if info, err := os.Stat(outputPath); err == nil {
+			size := info.Size()
+			if lastSize == -1 {
+				lastSize = size
+			} else if size > lastSize {
+				s.notifyRecordingStart()
+				return
+			} else {
+				lastSize = size
+			}
+		}
+		time.Sleep(pollInterval)
+	}
+
+	s.notifyRecordingStart()
 }
 
 func (s *ScreenCastService) monitor(finished chan struct{}) {
