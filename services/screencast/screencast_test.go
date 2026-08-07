@@ -1,6 +1,8 @@
 package screencast
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -100,5 +102,75 @@ func TestBuildPipelineArgsBoth(t *testing.T) {
 func TestBuildPipelineArgsEmptyPath(t *testing.T) {
 	if _, err := buildPipelineArgs(1, RecordingOptions{}); err == nil {
 		t.Fatal("expected error for empty output path")
+	}
+}
+
+func TestMonitorCaptureStartNotifiesWhenFileGrows(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "out.mp4")
+
+	notified := make(chan struct{}, 1)
+	s := &ScreenCastService{
+		recording:        true,
+		mu:               make(chan struct{}, 1),
+		onRecordingStart: func() { notified <- struct{}{} },
+	}
+
+	go s.monitorCaptureStart(outPath)
+
+	if err := os.WriteFile(outPath, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(100 * time.Millisecond)
+
+	f, err := os.OpenFile(outPath, os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.Write([]byte("video-data")); err != nil {
+		f.Close()
+		t.Fatal(err)
+	}
+	f.Close()
+
+	select {
+	case <-notified:
+		// success
+	case <-time.After(2 * time.Second):
+		t.Fatal("expected start notification once the output file began growing")
+	}
+}
+
+func TestMonitorCaptureStartSuppressedWhenNotRecording(t *testing.T) {
+	dir := t.TempDir()
+	outPath := filepath.Join(dir, "out.mp4")
+
+	notified := make(chan struct{}, 1)
+	s := &ScreenCastService{
+		recording: false, 
+		mu:        make(chan struct{}, 1),
+		onRecordingStart: func() {
+			select {
+			case notified <- struct{}{}:
+			default:
+			}
+		},
+	}
+
+	go s.monitorCaptureStart(outPath)
+
+	if err := os.WriteFile(outPath, nil, 0644); err != nil {
+		t.Fatal(err)
+	}
+	time.Sleep(100 * time.Millisecond)
+	if err := os.WriteFile(outPath, []byte("data"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case <-notified:
+		t.Fatal("start notification should be suppressed when recording is no longer active")
+	case <-time.After(300 * time.Millisecond):
+		// success
 	}
 }
