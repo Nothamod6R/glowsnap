@@ -128,4 +128,3 @@ func TestCancelRecordingDiscardsOutputFile(t *testing.T) {
 		t.Fatal("expected recording flag to be cleared after cancel")
 	}
 }
-
