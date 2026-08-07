@@ -39,7 +39,7 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 	portalObj := s.conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
 	options := map[string]dbus.Variant{
 		"handle_token": dbus.MakeVariant(fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())),
-		"interactive":  dbus.MakeVariant(interactive), 
+		"interactive":  dbus.MakeVariant(interactive),
 	}
 
 	var handle dbus.ObjectPath
@@ -63,7 +63,7 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 	select {
 	case sig := <-signalCh:
 		respSignal = sig
-	case <-time.After(30 * time.Second): 
+	case <-time.After(30 * time.Second):
 		return "", fmt.Errorf("timeout waiting for Screenshot portal response")
 	}
 

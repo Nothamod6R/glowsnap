@@ -17,9 +17,9 @@ func main() {
 
 	err := wails.Run(&options.App{
 		Title:  "GlowSnap",
-		Width:  520, 
+		Width:  520,
 		Height: 100,
-	
+
 		Frameless:        true,
 		AlwaysOnTop:      true,
 		BackgroundColour: &options.RGBA{R: 0, G: 0, B: 0, A: 0},
@@ -27,8 +27,8 @@ func main() {
 			Assets: assets,
 		},
 		Linux: &linux.Options{
-					WindowIsTranslucent: true, 
-					WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,
+			WindowIsTranslucent: true,
+			WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,
 		},
 		OnStartup: app.startup,
 		Bind: []interface{}{
