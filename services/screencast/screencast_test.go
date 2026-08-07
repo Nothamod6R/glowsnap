@@ -147,7 +147,7 @@ func TestMonitorCaptureStartSuppressedWhenNotRecording(t *testing.T) {
 
 	notified := make(chan struct{}, 1)
 	s := &ScreenCastService{
-		recording: false, 
+		recording: false,
 		mu:        make(chan struct{}, 1),
 		onRecordingStart: func() {
 			select {
