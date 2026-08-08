@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { ArrowLeft, Image as ImageIcon, RefreshCw, X, Search, Star } from 'lucide-react';
 import { StudioProps, Screenshot } from '@/types/types';
-import { ListScreenshots, GetScreenshotsBaseURL, RenameScreenshot, DeleteScreenshot } from '../../wailsjs/go/main/App';
+import { ListScreenshots, GetScreenshotsBaseURL, RenameScreenshot, DeleteScreenshot, GetSettings } from '../../wailsjs/go/main/App';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Editor from '@/components/editor/Editor';
 import { Button } from './ui/button';
@@ -181,6 +181,11 @@ export default function Studio({ onBackToPalette }: StudioProps) {
 
   const handleDelete = useCallback(async (fileName: string) => {
     try {
+      const cfg = await GetSettings();
+      const shouldConfirm = cfg.general?.confirmDelete ?? true;
+      if (shouldConfirm && !window.confirm(`Delete ${fileName}?`)) {
+        return;
+      }
       await DeleteScreenshot(fileName);
       setFavorites(prev => {
         const newSet = new Set(prev);

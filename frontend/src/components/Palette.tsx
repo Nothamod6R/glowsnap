@@ -1,15 +1,20 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Crop, Type, EyeOff, Video, X, Settings } from 'lucide-react';
 import { Button } from './ui/button';
 import ToolButton from './ToolButton';
-import { PALETTE_SHORTCUTS, matchesShortcut, isEditableTarget } from '@/lib/shortcut';
+import { PALETTE_SHORTCUTS, matchesShortcut, isEditableTarget, applyShortcutOverrides } from '@/lib/shortcut';
 
-export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording, onOpenSettings }: any) {
+export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording, onOpenSettings, customShortcuts }: any) {
+  const shortcuts = useMemo(
+    () => applyShortcutOverrides(PALETTE_SHORTCUTS, customShortcuts),
+    [customShortcuts]
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
-      for (const shortcut of PALETTE_SHORTCUTS) {
+      for (const shortcut of shortcuts) {
         if (matchesShortcut(shortcut, e)) {
           e.preventDefault();
           switch (shortcut.action) {
@@ -32,9 +37,9 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio]);
+  }, [onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, shortcuts]);
 
-  const shortcutFor = (action: string) => PALETTE_SHORTCUTS.find(s => s.action === action)?.keys;
+  const shortcutFor = (action: string) => shortcuts.find(s => s.action === action)?.keys;
 
   return (
     <motion.div

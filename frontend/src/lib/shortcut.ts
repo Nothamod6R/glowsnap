@@ -317,8 +317,100 @@ export function matchesShortcut(shortcut: ShortcutDef, e: KeyboardEvent): boolea
     e.ctrlKey === !!shortcut.ctrl &&
     e.shiftKey === !!shortcut.shift &&
     e.metaKey === !!shortcut.meta &&
-    e.key.toLowerCase() === shortcut.key.toLowerCase()
+    normalizeCompareKey(e.key) === normalizeCompareKey(shortcut.key)
   );
+}
+
+function normalizeCompareKey(key: string): string {
+  return key === ' ' ? 'space' : key.toLowerCase();
+}
+
+const IGNORED_RECORD_KEYS = new Set([
+  'Control',
+  'Alt',
+  'Shift',
+  'Meta',
+  'CapsLock',
+  'Tab',
+  'OS',
+  'Escape',
+  'F1',
+  'F2',
+  'F3',
+  'F4',
+  'F5',
+  'F6',
+  'F7',
+  'F8',
+  'F9',
+  'F10',
+  'F11',
+  'F12',
+]);
+
+function canonicalKeyFromEvent(e: KeyboardEvent): string {
+  if (e.key === ' ') return 'Space';
+  if (e.key.length === 1) return e.key.toUpperCase();
+  return e.key;
+}
+
+export function comboFromEvent(e: KeyboardEvent): string {
+  if (IGNORED_RECORD_KEYS.has(e.key)) return '';
+  const key = canonicalKeyFromEvent(e);
+  const parts: string[] = [];
+  if (e.ctrlKey) parts.push('Ctrl');
+  if (e.altKey) parts.push('Alt');
+  if (e.shiftKey) parts.push('Shift');
+  if (e.metaKey) parts.push('Meta');
+  parts.push(key);
+  return parts.join('+');
+}
+
+export interface ComboMatch {
+  key: string;
+  alt: boolean;
+  ctrl: boolean;
+  shift: boolean;
+  meta: boolean;
+}
+
+export function parseCombo(combo: string): ComboMatch {
+  const parts = combo
+    .split('+')
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const result: ComboMatch = { key: '', alt: false, ctrl: false, shift: false, meta: false };
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    if (lower === 'ctrl' || lower === 'control' || lower === '⌃') result.ctrl = true;
+    else if (lower === 'alt' || lower === 'option' || lower === '⌥') result.alt = true;
+    else if (lower === 'shift' || lower === '⇧') result.shift = true;
+    else if (lower === 'meta' || lower === 'cmd' || lower === 'command' || lower === 'super' || lower === 'win' || lower === '⌘') result.meta = true;
+    else result.key = part;
+  }
+  return result;
+}
+
+export function applyShortcutOverrides<T extends ShortcutDef>(
+  defs: T[],
+  overrides?: Record<string, string>
+): T[] {
+  if (!overrides) return defs;
+  return defs.map((d): T => {
+    const combo = overrides[d.id];
+    if (!combo) return d;
+    const parsed = parseCombo(combo);
+    if (!parsed.key) return d;
+    return {
+      ...d,
+      keys: combo,
+      key: parsed.key,
+      alt: parsed.alt,
+      ctrl: parsed.ctrl,
+      shift: parsed.shift,
+      meta: parsed.meta,
+    };
+  });
 }
 
 export function isEditableTarget(target: EventTarget | null): boolean {

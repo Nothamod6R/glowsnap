@@ -6,6 +6,7 @@ import {
   GetSystemAudioSupported,
   GetVideosDir,
   GetSavedMicrophone,
+  GetSettings,
 } from '../../wailsjs/go/main/App';
 import type { AudioDevice, RecordingSettingsProps } from '@/types/types';
 
@@ -69,17 +70,20 @@ export default function RecordingSettings({ onBack, onStart }: RecordingSettings
     let active = true;
     (async () => {
       try {
-        const [micList, sysInfo, dir, saved] = await Promise.all([
+        const [micList, sysInfo, dir, saved, cfg] = await Promise.all([
           ListMicrophones(),
           GetSystemAudioSupported(),
           GetVideosDir(),
           GetSavedMicrophone(),
+          GetSettings(),
         ]);
         if (!active) return;
         setMics(micList);
         setSystemSupported(sysInfo.supported);
         setSystemMessage(sysInfo.message);
         setVideosDir(dir);
+        setMicOn(cfg.recording?.micEnabledByDefault ?? true);
+        setSystemOn(cfg.recording?.systemEnabledByDefault ?? true);
         if (saved && micList.some((m) => m.name === saved)) {
           setSelectedMic(saved);
         } else if (micList.length === 1) {

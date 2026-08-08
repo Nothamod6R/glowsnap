@@ -50,6 +50,12 @@ func (a *App) startup(ctx context.Context) {
 	a.screenCastService = screencast.NewScreenCastService(conn)
 	a.screenCastService.SetOnRecordingEnd(func() {
 		runtime.EventsEmit(a.ctx, "recording-ended")
+		if settings.Load().Recording.NotifyOnRecordingEnd {
+			runtime.SendNotification(a.ctx, runtime.NotificationOptions{
+				Title: "GlowSnap",
+				Body:  "Recording saved.",
+			})
+		}
 	})
 	a.screenCastService.SetOnRecordingStart(func() {
 		runtime.EventsEmit(a.ctx, "recording-started")
@@ -123,12 +129,9 @@ func (a *App) TakeScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-	path, err := a.screenshotService.CaptureFullScreen()
-	if err != nil {
-		runtime.LogError(a.ctx, "Screenshot failed: "+err.Error())
-		return
-	}
-	runtime.LogInfo(a.ctx, "Screenshot saved: "+path)
+	a.captureAndHandle("Screenshot", func() (string, error) {
+		return a.screenshotService.CaptureFullScreen()
+	})
 }
 
 func (a *App) TakeAreaScreenshot() {
@@ -136,12 +139,43 @@ func (a *App) TakeAreaScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-	path, err := a.screenshotService.CaptureArea()
+	a.captureAndHandle("Area screenshot", func() (string, error) {
+		return a.screenshotService.CaptureArea()
+	})
+}
+
+func (a *App) captureAndHandle(label string, capture func() (string, error)) {
+	cfg := settings.Load()
+
+	if cfg.Screenshot.DelaySeconds > 0 {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("Capturing %s in %ds", label, cfg.Screenshot.DelaySeconds))
+		time.Sleep(time.Duration(cfg.Screenshot.DelaySeconds) * time.Second)
+	}
+
+	path, err := capture()
 	if err != nil {
-		runtime.LogError(a.ctx, "Area screenshot failed: "+err.Error())
+		runtime.LogError(a.ctx, label+" failed: "+err.Error())
 		return
 	}
-	runtime.LogInfo(a.ctx, "Area screenshot saved: "+path)
+	runtime.LogInfo(a.ctx, label+" saved: "+path)
+
+	if cfg.Screenshot.OpenAfterCapture {
+		if err := exec.Command("xdg-open", path).Start(); err != nil {
+			a.verboseLogf("failed to open screenshot: %v", err)
+		}
+	}
+	if cfg.Screenshot.NotifyOnCapture {
+		runtime.SendNotification(a.ctx, runtime.NotificationOptions{
+			Title: "GlowSnap",
+			Body:  label + " saved.",
+		})
+	}
+}
+
+func (a *App) verboseLogf(format string, args ...interface{}) {
+	if settings.Load().Advanced.VerboseLogging {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("[verbose] "+format, args...))
+	}
 }
 
 func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, micDevice string) (string, error) {

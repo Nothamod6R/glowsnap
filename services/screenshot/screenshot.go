@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"glowsnap/services/settings"
@@ -26,18 +27,22 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 		return "", fmt.Errorf("D-Bus connection not initialized")
 	}
 
-	screenshotsDir := settings.Load().ScreenshotSaveDir()
+	cfg := settings.Load()
+
+	screenshotsDir := cfg.ScreenshotSaveDir()
 	if err := os.MkdirAll(screenshotsDir, 0755); err != nil {
 		return "", fmt.Errorf("failed to create Screenshots directory: %w", err)
 	}
 
-	timestamp := time.Now().Format("2006-01-02_15-04-05")
-	destPath := filepath.Join(screenshotsDir, fmt.Sprintf("screenshot_%s.png", timestamp))
+	destPath := filepath.Join(screenshotsDir, buildScreenshotName(cfg.Screenshot.FilenamePattern)+".png")
 
 	portalObj := s.conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
 	options := map[string]dbus.Variant{
 		"handle_token": dbus.MakeVariant(fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())),
 		"interactive":  dbus.MakeVariant(interactive),
+	}
+	if cfg.Screenshot.CopyToClipboard {
+		options["copy_to_clipboard"] = dbus.MakeVariant(true)
 	}
 
 	var handle dbus.ObjectPath
@@ -121,6 +126,25 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 
 func (s *Service) CaptureFullScreen() (string, error) {
 	return s.commonCapture(false)
+}
+
+func buildScreenshotName(pattern string) string {
+	ts := time.Now().Format("2006-01-02_15-04-05")
+	if strings.TrimSpace(pattern) == "" {
+		pattern = "screenshot_{date}"
+	}
+	name := strings.ReplaceAll(pattern, "{date}", ts)
+	name = strings.Map(func(r rune) rune {
+		switch r {
+		case '/', '\\', ':', '*', '?', '"', '<', '>', '|':
+			return '_'
+		}
+		return r
+	}, name)
+	if strings.TrimSpace(name) == "" {
+		name = "screenshot_" + ts
+	}
+	return name
 }
 
 func (s *Service) CaptureArea() (string, error) {

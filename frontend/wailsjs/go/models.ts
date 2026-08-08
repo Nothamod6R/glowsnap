@@ -62,9 +62,59 @@ export namespace screencast {
 
 export namespace settings {
 	
+	export class Advanced {
+	    verboseLogging: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new Advanced(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.verboseLogging = source["verboseLogging"];
+	    }
+	}
+	export class Editor {
+	    defaultTool: string;
+	    defaultFont: string;
+	    defaultFontSize: number;
+	    defaultColor: string;
+	    defaultStrokeWidth: number;
+	    defaultOpacity: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new Editor(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.defaultTool = source["defaultTool"];
+	        this.defaultFont = source["defaultFont"];
+	        this.defaultFontSize = source["defaultFontSize"];
+	        this.defaultColor = source["defaultColor"];
+	        this.defaultStrokeWidth = source["defaultStrokeWidth"];
+	        this.defaultOpacity = source["defaultOpacity"];
+	    }
+	}
+	export class General {
+	    confirmDelete: boolean;
+	
+	    static createFrom(source: any = {}) {
+	        return new General(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.confirmDelete = source["confirmDelete"];
+	    }
+	}
 	export class Recording {
 	    saveDir: string;
 	    microphone: string;
+	    micEnabledByDefault: boolean;
+	    systemEnabledByDefault: boolean;
+	    quality: string;
+	    notifyOnRecordingEnd: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Recording(source);
@@ -74,10 +124,19 @@ export namespace settings {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.saveDir = source["saveDir"];
 	        this.microphone = source["microphone"];
+	        this.micEnabledByDefault = source["micEnabledByDefault"];
+	        this.systemEnabledByDefault = source["systemEnabledByDefault"];
+	        this.quality = source["quality"];
+	        this.notifyOnRecordingEnd = source["notifyOnRecordingEnd"];
 	    }
 	}
 	export class Screenshot {
 	    saveDir: string;
+	    filenamePattern: string;
+	    delaySeconds: number;
+	    copyToClipboard: boolean;
+	    openAfterCapture: boolean;
+	    notifyOnCapture: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Screenshot(source);
@@ -86,11 +145,43 @@ export namespace settings {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.saveDir = source["saveDir"];
+	        this.filenamePattern = source["filenamePattern"];
+	        this.delaySeconds = source["delaySeconds"];
+	        this.copyToClipboard = source["copyToClipboard"];
+	        this.openAfterCapture = source["openAfterCapture"];
+	        this.notifyOnCapture = source["notifyOnCapture"];
+	    }
+	}
+	export class Shortcuts {
+	    takeScreenshot: string;
+	    startRecording: string;
+	    stopRecording: string;
+	    openPalette: string;
+	    openEditor: string;
+	    cancel: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Shortcuts(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.takeScreenshot = source["takeScreenshot"];
+	        this.startRecording = source["startRecording"];
+	        this.stopRecording = source["stopRecording"];
+	        this.openPalette = source["openPalette"];
+	        this.openEditor = source["openEditor"];
+	        this.cancel = source["cancel"];
 	    }
 	}
 	export class Settings {
+	    general: General;
 	    screenshot: Screenshot;
 	    recording: Recording;
+	    editor: Editor;
+	    advanced: Advanced;
+	    shortcuts: Shortcuts;
+	    customShortcuts: Record<string, string>;
 	
 	    static createFrom(source: any = {}) {
 	        return new Settings(source);
@@ -98,8 +189,13 @@ export namespace settings {
 	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.general = this.convertValues(source["general"], General);
 	        this.screenshot = this.convertValues(source["screenshot"], Screenshot);
 	        this.recording = this.convertValues(source["recording"], Recording);
+	        this.editor = this.convertValues(source["editor"], Editor);
+	        this.advanced = this.convertValues(source["advanced"], Advanced);
+	        this.shortcuts = this.convertValues(source["shortcuts"], Shortcuts);
+	        this.customShortcuts = source["customShortcuts"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

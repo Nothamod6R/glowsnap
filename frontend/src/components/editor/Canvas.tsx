@@ -139,6 +139,8 @@ interface CanvasProps {
   lineHeight?: number;
   letterSpacing?: number;
   textDecoration?: string;
+  fontSize?: number;
+  fontFamily?: string;
 }
 
 function snapToNearestAngle(angle: number): number {
@@ -195,6 +197,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
   lineHeight,
   letterSpacing,
   textDecoration,
+  fontSize = 24,
+  fontFamily = 'Inter',
 }, ref) => {
   const stageRef = useRef<Konva.Stage>(null);
   const contentGroupRef = useRef<Konva.Group>(null);
@@ -680,10 +684,8 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(({
       const text = selectedTool === 'number'
         ? (shapes.filter(s => s.type === 'number').length + 1).toString()
         : 'Text';
-      const fillColor = selectedTool === 'number' ? '#ff3b30' : color;
+      const fillColor = color;
       const style = selectedTool === 'number' ? 'bold' : '';
-      const fontSize = 24;
-      const fontFamily = 'Inter';
       
       const measureNode = new Konva.Text({
         text,

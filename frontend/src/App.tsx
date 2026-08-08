@@ -15,6 +15,7 @@ import {
   SaveMicrophone,
   SetMicEnabled,
   SetSystemEnabled,
+  GetSettings,
 } from '../wailsjs/go/main/App';
 import { AnimatePresence } from 'framer-motion';
 import Palette from './components/Palette';
@@ -22,7 +23,7 @@ import Studio from './components/Studio';
 import RecordingBar from './components/RecordingBar';
 import RecordingSettings from './components/RecordingSettings';
 import SettingsPanel from './components/SettingsPanel';
-import { APP_SHORTCUTS, matchesShortcut, isEditableTarget } from './lib/shortcut';
+import { APP_SHORTCUTS, matchesShortcut, isEditableTarget, applyShortcutOverrides } from './lib/shortcut';
 import { WindowMode } from './types/types';
 
 export default function App() {
@@ -31,6 +32,7 @@ export default function App() {
   const [recStarted, setRecStarted] = useState(false);
   const [recMicEnabled, setRecMicEnabled] = useState(true);
   const [recSystemEnabled, setRecSystemEnabled] = useState(true);
+  const [customShortcuts, setCustomShortcuts] = useState<Record<string, string>>({});
 
   const switchToPalette = () => {
     setMode('palette');
@@ -112,9 +114,22 @@ export default function App() {
   };
 
   useEffect(() => {
+    let active = true;
+    GetSettings()
+      .then((cfg) => {
+        if (active) setCustomShortcuts(cfg.customShortcuts || {});
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
-      for (const shortcut of APP_SHORTCUTS) {
+      const shortcuts = applyShortcutOverrides(APP_SHORTCUTS, customShortcuts);
+      for (const shortcut of shortcuts) {
         if (matchesShortcut(shortcut, e)) {
           e.preventDefault();
           switch (shortcut.action) {
@@ -128,7 +143,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [switchToPalette]);
+  }, [switchToPalette, customShortcuts]);
 
   useEffect(() => {
     const unsub = EventsOn('toggle-palette', switchToPalette);
@@ -162,6 +177,7 @@ export default function App() {
             onClose={() => setMode('closed')}
             onStartRecording={openRecordingSettings}
             onOpenSettings={switchToPreferences}
+            customShortcuts={customShortcuts}
           />
         )}
 

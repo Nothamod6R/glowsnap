@@ -3,6 +3,7 @@ import Konva from 'konva';
 import { X, Download, Undo2, Redo2, Trash2, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tool, EditorProps, ShapeConfig } from '@/types/types';
+import type { AppSettings } from '@/types/types';
 import { useShapes } from '@/lib/hooks/useShapes';
 import { useTextEditing } from '@/lib/hooks/useTextEditing';
 import { useBackground } from '@/lib/hooks/useBackground';
@@ -12,8 +13,8 @@ import BackgroundControls from './BackgroundControls';
 import InlineTextEditor from './InlineTextEditor';
 import Canvas from './Canvas';
 import FloatingToolbar from './FloatingToolbar';
-import { SaveFileDialog, WriteFile } from '../../../wailsjs/go/main/App';
-import { EDITOR_SHORTCUTS, matchesShortcut, isEditableTarget, type EditorAction } from '@/lib/shortcut';
+import { SaveFileDialog, WriteFile, GetSettings } from '../../../wailsjs/go/main/App';
+import { EDITOR_SHORTCUTS, TOOL_SHORTCUTS, matchesShortcut, isEditableTarget, applyShortcutOverrides, type EditorAction } from '@/lib/shortcut';
 import { clampPanSoft, panForPointerZoom } from '@/lib/viewport';
 
 interface ToolStyleState {
@@ -54,6 +55,30 @@ const DEFAULT_STYLE: ToolStyleState = {
   fillEnabled: false,
 };
 
+function normalizeTool(value: string | undefined): Tool {
+  const allowed: Tool[] = ['select', 'crop', 'arrow', 'text', 'number', 'pen', 'rectangle', 'circle'];
+  return allowed.includes(value as Tool) ? (value as Tool) : 'select';
+}
+
+function styleFromSettings(settings: AppSettings | null): ToolStyleState {
+  const editor = settings?.editor;
+  return {
+    color: editor?.defaultColor || DEFAULT_STYLE.color,
+    strokeWidth: editor?.defaultStrokeWidth || DEFAULT_STYLE.strokeWidth,
+    opacity: typeof editor?.defaultOpacity === 'number' ? editor.defaultOpacity : DEFAULT_STYLE.opacity,
+    fontSize: editor?.defaultFontSize || DEFAULT_STYLE.fontSize,
+    fontFamily: editor?.defaultFont || DEFAULT_STYLE.fontFamily,
+    isBold: DEFAULT_STYLE.isBold,
+    isItalic: DEFAULT_STYLE.isItalic,
+    isUnderline: DEFAULT_STYLE.isUnderline,
+    isStrikethrough: DEFAULT_STYLE.isStrikethrough,
+    textAlign: DEFAULT_STYLE.textAlign,
+    lineHeight: DEFAULT_STYLE.lineHeight,
+    letterSpacing: DEFAULT_STYLE.letterSpacing,
+    fillEnabled: DEFAULT_STYLE.fillEnabled,
+  };
+}
+
 export default function Editor({ imageUrl, onBack }: EditorProps) {
   const stageRef = useRef<Konva.Stage>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -64,8 +89,8 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [stageRect, setStageRect] = useState<DOMRect | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [selectedTool, setSelectedTool] = useState<Tool>('select');
-  const [toolStyle, setToolStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
-  const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>({ ...DEFAULT_STYLE });
+  const [toolStyle, setToolStyle] = useState<ToolStyleState>(() => styleFromSettings(null));
+  const [selectedStyle, setSelectedStyle] = useState<ToolStyleState>(() => styleFromSettings(null));
   const [copied, setCopied] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -83,6 +108,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
   const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
   const [imageTransform, setImageTransform] = useState({ x: 0, y: 0, scaleX: 1, scaleY: 1, rotation: 0 });
+  const [customShortcuts, setCustomShortcuts] = useState<Record<string, string>>({});
 
   const {
     background,
@@ -105,6 +131,26 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
     startEditing, updateEditingText,
     commitEditing, cancelEditing,
   } = useTextEditing(updateShape);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const cfg = await GetSettings();
+        if (!active) return;
+        const nextStyle = styleFromSettings(cfg);
+        setSelectedTool(normalizeTool(cfg.editor?.defaultTool));
+        setToolStyle(nextStyle);
+        setSelectedStyle(nextStyle);
+        setCustomShortcuts(cfg.customShortcuts || {});
+      } catch (err) {
+        console.error('Failed to load editor defaults:', err);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const beginEditing = useCallback((shape: ShapeConfig) => {
     selectAllOnMountRef.current = !shape.text || shape.text === 'Text';
@@ -553,9 +599,19 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         return false;
       };
 
-      for (const shortcut of EDITOR_SHORTCUTS) {
+      const editorShortcuts = applyShortcutOverrides(EDITOR_SHORTCUTS, customShortcuts);
+      for (const shortcut of editorShortcuts) {
         if (matchesShortcut(shortcut, e) && runAction(shortcut.action)) {
           e.preventDefault();
+          break;
+        }
+      }
+
+      const toolShortcuts = applyShortcutOverrides(TOOL_SHORTCUTS, customShortcuts);
+      for (const shortcut of toolShortcuts) {
+        if (matchesShortcut(shortcut, e)) {
+          e.preventDefault();
+          setSelectedTool(shortcut.tool);
           break;
         }
       }
@@ -563,7 +619,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedId, selectedTool, shapes, editingTextId, deleteShape, addShape, handleDuplicate, handleUndo, handleRedo, beginEditing, setSelectedTool, setSelectedId, zoomIn, zoomOut]);
+  }, [selectedId, selectedTool, shapes, editingTextId, deleteShape, addShape, handleDuplicate, handleUndo, handleRedo, beginEditing, setSelectedTool, setSelectedId, zoomIn, zoomOut, customShortcuts]);
 
   return (
     <div className="w-full h-screen flex flex-col bg-black/95 backdrop-blur-3xl rounded-3xl border border-white/10 overflow-hidden text-white">
