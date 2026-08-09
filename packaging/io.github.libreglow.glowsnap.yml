@@ -34,31 +34,31 @@ modules:
 
     build-commands:
       - |
-          set -eux
+        set -eux
 
-          export PATH=/usr/lib/sdk/golang/bin:/usr/lib/sdk/node22/bin:$PATH
-          export GOFLAGS="-mod=vendor"
+        export PATH=/usr/lib/sdk/golang/bin:/usr/lib/sdk/node22/bin:$PATH
+        export GOFLAGS="-mod=vendor"
 
-          npm install --prefix frontend
+        npm install --prefix frontend
 
-          npm run build --prefix frontend
+        npm run build --prefix frontend
 
-          go run -mod=vendor github.com/wailsapp/wails/v2/cmd/wails \
-            build \
-            -tags webkit2gtk_4_1 \
-            -clean
+        go run -mod=vendor github.com/wailsapp/wails/v2/cmd/wails \
+          build \
+          -tags webkit2gtk_4_1 \
+          -clean
 
-          install -Dm755 build/bin/glowsnap \
-            /app/bin/glowsnap
+        install -Dm755 build/bin/glowsnap \
+          /app/bin/glowsnap
 
-          install -Dm644 \
-            packaging/io.github.libreglow.glowsnap.desktop \
-            /app/share/applications/io.github.libreglow.glowsnap.desktop
+        install -Dm644 \
+          packaging/io.github.libreglow.glowsnap.desktop \
+          /app/share/applications/io.github.libreglow.glowsnap.desktop
 
-          install -Dm644 \
-            packaging/io.github.libreglow.glowsnap.metainfo.xml \
-            /app/share/metainfo/io.github.libreglow.glowsnap.metainfo.xml
+        install -Dm644 \
+          packaging/io.github.libreglow.glowsnap.metainfo.xml \
+          /app/share/metainfo/io.github.libreglow.glowsnap.metainfo.xml
 
-          install -Dm644 \
-            packaging/io.github.libreglow.glowsnap.png \
-            /app/share/icons/hicolor/512x512/apps/io.github.libreglow.glowsnap.png
+        install -Dm644 \
+          packaging/io.github.libreglow.glowsnap.png \
+          /app/share/icons/hicolor/512x512/apps/io.github.libreglow.glowsnap.png

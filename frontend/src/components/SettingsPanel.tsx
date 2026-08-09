@@ -1,15 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { X, Loader2, RotateCcw, Check } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { X, Loader2, RotateCcw, Check } from "lucide-react";
 import {
   GetSettings,
   UpdateSettings,
   ResetSettings,
   GetAppVersion,
   SelectDirectory,
-} from '../../wailsjs/go/main/App';
-import { settings } from '../../wailsjs/go/models';
-import type { AppSettings, SettingsPanelProps } from '@/types/types';
+} from "../../wailsjs/go/main/App";
+import { settings } from "../../wailsjs/go/models";
+import type { AppSettings, SettingsPanelProps } from "@/types/types";
 import {
   GeneralSection,
   ScreenshotSection,
@@ -19,37 +19,43 @@ import {
   ShortcutsSection,
   AdvancedSection,
   AboutSection,
-} from './settings/sections';
+} from "./settings/sections";
 
 type Category =
-  | 'general'
-  | 'screenshot'
-  | 'recording'
-  | 'microphone'
-  | 'editor'
-  | 'shortcuts'
-  | 'advanced'
-  | 'about';
+  | "general"
+  | "screenshot"
+  | "recording"
+  | "microphone"
+  | "editor"
+  | "shortcuts"
+  | "advanced"
+  | "about";
 
 const CATEGORIES: { id: Category; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'screenshot', label: 'Screenshots' },
-  { id: 'recording', label: 'Recording' },
-  { id: 'microphone', label: 'Microphone' },
-  { id: 'editor', label: 'Editor' },
-  { id: 'shortcuts', label: 'Shortcuts' },
-  { id: 'advanced', label: 'Advanced' },
-  { id: 'about', label: 'About' },
+  { id: "general", label: "General" },
+  { id: "screenshot", label: "Screenshots" },
+  { id: "recording", label: "Recording" },
+  { id: "microphone", label: "Microphone" },
+  { id: "editor", label: "Editor" },
+  { id: "shortcuts", label: "Shortcuts" },
+  { id: "advanced", label: "Advanced" },
+  { id: "about", label: "About" },
 ];
 
-export type GroupKey = 'general' | 'screenshot' | 'recording' | 'editor' | 'advanced' | 'customShortcuts';
+export type GroupKey =
+  | "general"
+  | "screenshot"
+  | "recording"
+  | "editor"
+  | "advanced"
+  | "customShortcuts";
 
 export default function SettingsPanel({ onBack }: SettingsPanelProps) {
   const [config, setConfig] = useState<AppSettings | null>(null);
-  const [version, setVersion] = useState('');
-  const [active, setActive] = useState<Category>('general');
+  const [version, setVersion] = useState("");
+  const [active, setActive] = useState<Category>("general");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [savedFlash, setSavedFlash] = useState(false);
 
   useEffect(() => {
@@ -61,7 +67,7 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
         setConfig(cfg);
         setVersion(ver);
       } catch {
-        if (activeFlag) setError('Failed to load settings.');
+        if (activeFlag) setError("Failed to load settings.");
       } finally {
         if (activeFlag) setLoading(false);
       }
@@ -80,10 +86,10 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
     try {
       const saved = await UpdateSettings(settings.Settings.createFrom(next));
       setConfig(saved);
-      setError('');
+      setError("");
       showSaved();
     } catch {
-      setError('Failed to save settings. Please try again.');
+      setError("Failed to save settings. Please try again.");
     }
   };
 
@@ -93,16 +99,16 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
     plain[group] = { ...(plain[group] as Record<string, any>), ...patch };
     const next = settings.Settings.createFrom(plain);
     setConfig(next);
-        void persist(next);
+    void persist(next);
   };
 
-  const pickDir = async (group: 'screenshot' | 'recording', title: string) => {
+  const pickDir = async (group: "screenshot" | "recording", title: string) => {
     try {
       const path = await SelectDirectory(title);
       if (!path) return;
       updateGroup(group, { saveDir: path });
     } catch {
-      setError('Failed to open the directory picker.');
+      setError("Failed to open the directory picker.");
     }
   };
 
@@ -110,43 +116,43 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
     try {
       const defaults = await ResetSettings();
       setConfig(defaults);
-      setError('');
+      setError("");
       showSaved();
     } catch {
-      setError('Failed to reset settings.');
+      setError("Failed to reset settings.");
     }
   };
 
   const renderSection = () => {
     if (!config) return null;
     switch (active) {
-      case 'general':
+      case "general":
         return <GeneralSection config={config} updateGroup={updateGroup} />;
-      case 'screenshot':
+      case "screenshot":
         return (
           <ScreenshotSection
             config={config}
             updateGroup={updateGroup}
-            onPickDir={(title) => pickDir('screenshot', title)}
+            onPickDir={(title) => pickDir("screenshot", title)}
           />
         );
-      case 'recording':
+      case "recording":
         return (
           <RecordingSection
             config={config}
             updateGroup={updateGroup}
-            onPickDir={(title) => pickDir('recording', title)}
+            onPickDir={(title) => pickDir("recording", title)}
           />
         );
-      case 'microphone':
+      case "microphone":
         return <MicrophoneSection config={config} updateGroup={updateGroup} />;
-      case 'editor':
+      case "editor":
         return <EditorSection config={config} updateGroup={updateGroup} />;
-      case 'shortcuts':
+      case "shortcuts":
         return <ShortcutsSection config={config} updateGroup={updateGroup} />;
-      case 'advanced':
+      case "advanced":
         return <AdvancedSection config={config} updateGroup={updateGroup} />;
-      case 'about':
+      case "about":
         return <AboutSection config={config} version={version} />;
       default:
         return null;
@@ -186,7 +192,9 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
               key={c.id}
               onClick={() => setActive(c.id)}
               className={`text-left px-3 py-1.5 rounded-[10px] text-xs transition-colors ${
-                active === c.id ? 'bg-white/15 text-white font-medium' : 'text-white/60 hover:bg-white/5'
+                active === c.id
+                  ? "bg-white/15 text-white font-medium"
+                  : "text-white/60 hover:bg-white/5"
               }`}
             >
               {c.label}
@@ -220,9 +228,10 @@ export default function SettingsPanel({ onBack }: SettingsPanelProps) {
           <RotateCcw size={13} />
           <span>Reset to Defaults</span>
         </button>
-        <span className="text-[11px] text-white/40">Changes are saved automatically</span>
+        <span className="text-[11px] text-white/40">
+          Changes are saved automatically
+        </span>
       </div>
-        </motion.div>
+    </motion.div>
   );
 }
-

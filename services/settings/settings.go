@@ -18,21 +18,21 @@ type General struct {
 }
 
 type Screenshot struct {
-	SaveDir string `json:"saveDir"`
-	FilenamePattern string `json:"filenamePattern"`
-	DelaySeconds int `json:"delaySeconds"`
-	CopyToClipboard bool `json:"copyToClipboard"`
-	OpenAfterCapture bool `json:"openAfterCapture"`
-	NotifyOnCapture bool `json:"notifyOnCapture"`
+	SaveDir          string `json:"saveDir"`
+	FilenamePattern  string `json:"filenamePattern"`
+	DelaySeconds     int    `json:"delaySeconds"`
+	CopyToClipboard  bool   `json:"copyToClipboard"`
+	OpenAfterCapture bool   `json:"openAfterCapture"`
+	NotifyOnCapture  bool   `json:"notifyOnCapture"`
 }
 
 type Recording struct {
-	SaveDir string `json:"saveDir"`
-	Microphone string `json:"microphone"`
-	MicEnabledByDefault bool `json:"micEnabledByDefault"`
-	SystemEnabledByDefault bool `json:"systemEnabledByDefault"`
-	Quality string `json:"quality"`
-	NotifyOnRecordingEnd bool `json:"notifyOnRecordingEnd"`
+	SaveDir                string `json:"saveDir"`
+	Microphone             string `json:"microphone"`
+	MicEnabledByDefault    bool   `json:"micEnabledByDefault"`
+	SystemEnabledByDefault bool   `json:"systemEnabledByDefault"`
+	Quality                string `json:"quality"`
+	NotifyOnRecordingEnd   bool   `json:"notifyOnRecordingEnd"`
 }
 
 type Editor struct {
@@ -51,19 +51,19 @@ type Advanced struct {
 type Shortcuts struct {
 	TakeScreenshot string `json:"takeScreenshot"`
 	StartRecording string `json:"startRecording"`
-	StopRecording string `json:"stopRecording"`
-	OpenPalette string `json:"openPalette"`
-	OpenEditor string `json:"openEditor"`
-	Cancel string `json:"cancel"`
+	StopRecording  string `json:"stopRecording"`
+	OpenPalette    string `json:"openPalette"`
+	OpenEditor     string `json:"openEditor"`
+	Cancel         string `json:"cancel"`
 }
 
 type Settings struct {
-	General    General    `json:"general"`
-	Screenshot Screenshot `json:"screenshot"`
-	Recording  Recording  `json:"recording"`
-	Editor     Editor     `json:"editor"`
-	Advanced   Advanced   `json:"advanced"`
-	Shortcuts  Shortcuts  `json:"shortcuts"`
+	General         General           `json:"general"`
+	Screenshot      Screenshot        `json:"screenshot"`
+	Recording       Recording         `json:"recording"`
+	Editor          Editor            `json:"editor"`
+	Advanced        Advanced          `json:"advanced"`
+	Shortcuts       Shortcuts         `json:"shortcuts"`
 	CustomShortcuts map[string]string `json:"customShortcuts"`
 }
 

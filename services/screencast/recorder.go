@@ -271,7 +271,7 @@ func qualityBitrates(q string) (video int, audio int) {
 		return 5000000, 192000
 	case "low":
 		return 800000, 96000
-	default: 
+	default:
 		return 2000000, 128000
 	}
 }

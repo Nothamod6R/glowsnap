@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { EventsOn } from '../wailsjs/runtime/runtime';
+import React, { useState, useEffect, useRef } from "react";
+import { EventsOn } from "../wailsjs/runtime/runtime";
 import {
   ResizeToPalette,
   ResizeToStudio,
@@ -16,52 +16,71 @@ import {
   SetMicEnabled,
   SetSystemEnabled,
   GetSettings,
-} from '../wailsjs/go/main/App';
-import { AnimatePresence } from 'framer-motion';
-import Palette from './components/Palette';
-import Studio from './components/Studio';
-import RecordingBar from './components/RecordingBar';
-import RecordingSettings from './components/RecordingSettings';
-import SettingsPanel from './components/SettingsPanel';
-import { APP_SHORTCUTS, matchesShortcut, isEditableTarget, applyShortcutOverrides } from './lib/shortcut';
-import { WindowMode } from './types/types';
+} from "../wailsjs/go/main/App";
+import { AnimatePresence } from "framer-motion";
+import Palette from "./components/Palette";
+import Studio from "./components/Studio";
+import RecordingBar from "./components/RecordingBar";
+import RecordingSettings from "./components/RecordingSettings";
+import SettingsPanel from "./components/SettingsPanel";
+import {
+  APP_SHORTCUTS,
+  matchesShortcut,
+  isEditableTarget,
+  applyShortcutOverrides,
+} from "./lib/shortcut";
+import { WindowMode } from "./types/types";
 
 export default function App() {
-  const [mode, setMode] = useState<WindowMode>('palette');
+  const [mode, setMode] = useState<WindowMode>("palette");
   const [isPaused, setIsPaused] = useState(false);
   const [recStarted, setRecStarted] = useState(false);
   const [recMicEnabled, setRecMicEnabled] = useState(true);
   const [recSystemEnabled, setRecSystemEnabled] = useState(true);
-  const [customShortcuts, setCustomShortcuts] = useState<Record<string, string>>({});
+  const [customShortcuts, setCustomShortcuts] = useState<
+    Record<string, string>
+  >({});
 
   const switchToPalette = () => {
-    setMode('palette');
+    setMode("palette");
     ResizeToPalette();
   };
 
   const switchToStudio = () => {
-    setMode('studio');
+    setMode("studio");
     ResizeToStudio();
   };
 
   const switchToPreferences = () => {
-    setMode('preferences');
+    setMode("preferences");
     ResizeToPreferences();
   };
 
   const handleTakeScreenshot = async () => {
-    try { await TakeScreenshot(); } catch (err) { console.error(err); }
+    try {
+      await TakeScreenshot();
+    } catch (err) {
+      console.error(err);
+    }
   };
   const handleTakeAreaScreenshot = async () => {
-    try { await TakeAreaScreenshot(); } catch (err) { console.error(err); }
+    try {
+      await TakeAreaScreenshot();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const openRecordingSettings = () => {
-    setMode('settings');
+    setMode("settings");
     ResizeToSettings();
   };
 
-  const handleStartFromSettings = async (micOn: boolean, systemOn: boolean, micDevice: string) => {
+  const handleStartFromSettings = async (
+    micOn: boolean,
+    systemOn: boolean,
+    micDevice: string,
+  ) => {
     if (micOn && micDevice) {
       await SaveMicrophone(micDevice);
     }
@@ -70,7 +89,7 @@ export default function App() {
     setIsPaused(false);
     setRecMicEnabled(micOn);
     setRecSystemEnabled(systemOn);
-    setMode('recording');
+    setMode("recording");
     ResizeToPalette();
   };
 
@@ -85,9 +104,9 @@ export default function App() {
   const handleStop = async () => {
     try {
       const path = await StopRecording();
-      console.log('Recording saved:', path);
+      console.log("Recording saved:", path);
     } catch (err) {
-      console.error('StopRecording failed:', err);
+      console.error("StopRecording failed:", err);
     } finally {
       setRecStarted(false);
       setIsPaused(false);
@@ -98,7 +117,7 @@ export default function App() {
     try {
       await CancelRecording();
     } catch (err) {
-      console.error('CancelRecording failed:', err);
+      console.error("CancelRecording failed:", err);
     } finally {
       setRecStarted(false);
       setIsPaused(false);
@@ -107,10 +126,14 @@ export default function App() {
   };
 
   const handleToggleMic = (enabled: boolean) => {
-    SetMicEnabled(enabled).catch(err => console.error('SetMicEnabled failed:', err));
+    SetMicEnabled(enabled).catch((err) =>
+      console.error("SetMicEnabled failed:", err),
+    );
   };
   const handleToggleSystem = (enabled: boolean) => {
-    SetSystemEnabled(enabled).catch(err => console.error('SetSystemEnabled failed:', err));
+    SetSystemEnabled(enabled).catch((err) =>
+      console.error("SetSystemEnabled failed:", err),
+    );
   };
 
   useEffect(() => {
@@ -129,8 +152,9 @@ export default function App() {
   useEffect(() => {
     const prev = prevModeRef.current;
     prevModeRef.current = mode;
-    const changedInSettings = prev === 'preferences' || prev === 'settings';
-    const nowInUse = mode === 'palette' || mode === 'studio' || mode === 'recording';
+    const changedInSettings = prev === "preferences" || prev === "settings";
+    const nowInUse =
+      mode === "palette" || mode === "studio" || mode === "recording";
     if (changedInSettings && nowInUse) {
       GetSettings()
         .then((cfg) => setCustomShortcuts(cfg.customShortcuts || {}))
@@ -146,7 +170,7 @@ export default function App() {
         if (matchesShortcut(shortcut, e)) {
           e.preventDefault();
           switch (shortcut.action) {
-            case 'toggle-palette':
+            case "toggle-palette":
               switchToPalette();
               break;
           }
@@ -154,24 +178,24 @@ export default function App() {
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [switchToPalette, customShortcuts]);
 
   useEffect(() => {
-    const unsub = EventsOn('toggle-palette', switchToPalette);
+    const unsub = EventsOn("toggle-palette", switchToPalette);
     return unsub;
   }, []);
 
   useEffect(() => {
-    const unsub = EventsOn('recording-started', () => {
+    const unsub = EventsOn("recording-started", () => {
       setRecStarted(true);
     });
     return unsub;
   }, []);
 
   useEffect(() => {
-    const unsub = EventsOn('recording-ended', () => {
+    const unsub = EventsOn("recording-ended", () => {
       setRecStarted(false);
       setIsPaused(false);
       switchToPalette();
@@ -182,34 +206,30 @@ export default function App() {
   return (
     <div className="w-full wails-drag h-full flex items-center justify-center bg-transparent select-none overflow-hidden">
       <AnimatePresence mode="wait">
-        {mode === 'palette' && (
+        {mode === "palette" && (
           <Palette
             onTakeScreenshot={handleTakeScreenshot}
             onTakeAreaScreenshot={handleTakeAreaScreenshot}
             onSwitchToStudio={switchToStudio}
-            onClose={() => setMode('closed')}
+            onClose={() => setMode("closed")}
             onStartRecording={openRecordingSettings}
             onOpenSettings={switchToPreferences}
             customShortcuts={customShortcuts}
           />
         )}
 
-        {mode === 'studio' && (
-          <Studio onBackToPalette={switchToPalette} />
-        )}
+        {mode === "studio" && <Studio onBackToPalette={switchToPalette} />}
 
-        {mode === 'settings' && (
+        {mode === "settings" && (
           <RecordingSettings
             onBack={switchToPalette}
             onStart={handleStartFromSettings}
           />
         )}
 
-        {mode === 'preferences' && (
-          <SettingsPanel onBack={switchToPalette} />
-        )}
+        {mode === "preferences" && <SettingsPanel onBack={switchToPalette} />}
 
-        {mode === 'recording' && (
+        {mode === "recording" && (
           <RecordingBar
             isPaused={isPaused}
             started={recStarted}

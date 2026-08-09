@@ -1,10 +1,9 @@
-import Konva from 'konva';
-import type { main, screencast, settings } from '../../wailsjs/go/models';
+import Konva from "konva";
+import type { main, screencast, settings } from "../../wailsjs/go/models";
 
 export type Screenshot = main.ScreenshotInfo;
 export type AudioDevice = screencast.AudioDevice;
 export type AppSettings = settings.Settings;
-
 
 export interface PaletteProps {
   onTakeScreenshot: () => void;
@@ -12,7 +11,6 @@ export interface PaletteProps {
   onSwitchToStudio: () => void;
   onClose: () => void;
 }
-
 
 export interface StudioProps {
   onBackToPalette: () => void;
@@ -24,7 +22,8 @@ export interface ToolButtonProps {
   onClick?: () => void;
 }
 
-export type WindowMode = 'palette' | 'studio' | 'closed' | 'recording' | 'settings' | 'preferences';
+export type WindowMode =
+  "palette" | "studio" | "closed" | "recording" | "settings" | "preferences";
 
 export interface SettingsPanelProps {
   onBack: () => void;
@@ -56,16 +55,26 @@ export interface RecordingBarProps {
 
 export interface RecordingSettingsProps {
   onBack: () => void;
-  onStart: (micOn: boolean, systemOn: boolean, micDevice: string) => Promise<void>;
+  onStart: (
+    micOn: boolean,
+    systemOn: boolean,
+    micDevice: string,
+  ) => Promise<void>;
 }
 
-
-
-export type Tool = 'select' | 'crop' | 'arrow' | 'text' | 'number' | 'pen' | 'rectangle' | 'circle';
+export type Tool =
+  | "select"
+  | "crop"
+  | "arrow"
+  | "text"
+  | "number"
+  | "pen"
+  | "rectangle"
+  | "circle";
 
 export interface ShapeConfig {
   id: string;
-  type: 'rect' | 'circle' | 'arrow' | 'text' | 'number' | 'line';
+  type: "rect" | "circle" | "arrow" | "text" | "number" | "line";
   x: number;
   y: number;
   width?: number;
@@ -79,8 +88,8 @@ export interface ShapeConfig {
   fontSize?: number;
   fontFamily?: string;
   fontStyle?: string;
-  direction?: 'ltr' | 'rtl';
-  align?: 'left' | 'center' | 'right';
+  direction?: "ltr" | "rtl";
+  align?: "left" | "center" | "right";
   lineHeight?: number;
   letterSpacing?: number;
   textDecoration?: string;

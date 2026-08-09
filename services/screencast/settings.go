@@ -1,4 +1,5 @@
 package screencast
+
 import "glowsnap/services/settings"
 
 func LoadSettings() settings.Settings {

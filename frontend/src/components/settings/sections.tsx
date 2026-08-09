@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import type { AppSettings, Tool } from '@/types/types';
+import React, { useState, useEffect } from "react";
+import { X } from "lucide-react";
+import type { AppSettings, Tool } from "@/types/types";
 import {
   SectionHeader,
   SettingRow,
@@ -8,10 +8,16 @@ import {
   Select,
   NumberInput,
   PathPicker,
-} from './primitives';
-import { ALL_SHORTCUTS, comboFromEvent } from '@/lib/shortcut';
+} from "./primitives";
+import { ALL_SHORTCUTS, comboFromEvent } from "@/lib/shortcut";
 
-export type GroupKey = 'general' | 'screenshot' | 'recording' | 'editor' | 'advanced' | 'customShortcuts';
+export type GroupKey =
+  | "general"
+  | "screenshot"
+  | "recording"
+  | "editor"
+  | "advanced"
+  | "customShortcuts";
 
 interface SectionProps {
   config: AppSettings;
@@ -31,7 +37,7 @@ export function GeneralSection({ config, updateGroup }: SectionProps) {
       >
         <Toggle
           checked={config.general.confirmDelete}
-          onChange={(v) => updateGroup('general', { confirmDelete: v })}
+          onChange={(v) => updateGroup("general", { confirmDelete: v })}
         />
       </SettingRow>
     </div>
@@ -42,11 +48,18 @@ interface ScreenshotSectionProps extends SectionProps {
   onPickDir: (title: string) => void;
 }
 
-export function ScreenshotSection({ config, updateGroup, onPickDir }: ScreenshotSectionProps) {
+export function ScreenshotSection({
+  config,
+  updateGroup,
+  onPickDir,
+}: ScreenshotSectionProps) {
   const sh = config.screenshot;
   return (
     <div className="flex flex-col gap-0.5">
-      <SectionHeader title="Screenshots" description="Defaults used when capturing." />
+      <SectionHeader
+        title="Screenshots"
+        description="Defaults used when capturing."
+      />
       <SettingRow
         label="Save location"
         description="Where new screenshots are stored."
@@ -54,7 +67,7 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
         <PathPicker
           value={sh.saveDir}
           title="Choose screenshot save location"
-          onPick={() => onPickDir('Choose Screenshot Save Location')}
+          onPick={() => onPickDir("Choose Screenshot Save Location")}
         />
       </SettingRow>
       <SettingRow
@@ -64,7 +77,9 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
         <input
           type="text"
           value={sh.filenamePattern}
-          onChange={(e) => updateGroup('screenshot', { filenamePattern: e.target.value })}
+          onChange={(e) =>
+            updateGroup("screenshot", { filenamePattern: e.target.value })
+          }
           className="w-40 bg-white/10 hover:bg-white/15 text-xs text-white/90 rounded-[10px] px-2 py-1.5 border border-white/10 outline-none"
         />
       </SettingRow>
@@ -77,7 +92,7 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
           min={0}
           max={60}
           suffix="s"
-          onChange={(v) => updateGroup('screenshot', { delaySeconds: v })}
+          onChange={(v) => updateGroup("screenshot", { delaySeconds: v })}
         />
       </SettingRow>
       <SettingRow
@@ -86,7 +101,7 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
       >
         <Toggle
           checked={sh.copyToClipboard}
-          onChange={(v) => updateGroup('screenshot', { copyToClipboard: v })}
+          onChange={(v) => updateGroup("screenshot", { copyToClipboard: v })}
         />
       </SettingRow>
       <SettingRow
@@ -95,7 +110,7 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
       >
         <Toggle
           checked={sh.openAfterCapture}
-          onChange={(v) => updateGroup('screenshot', { openAfterCapture: v })}
+          onChange={(v) => updateGroup("screenshot", { openAfterCapture: v })}
         />
       </SettingRow>
       <SettingRow
@@ -104,7 +119,7 @@ export function ScreenshotSection({ config, updateGroup, onPickDir }: Screenshot
       >
         <Toggle
           checked={sh.notifyOnCapture}
-                    onChange={(v) => updateGroup('screenshot', { notifyOnCapture: v })}
+          onChange={(v) => updateGroup("screenshot", { notifyOnCapture: v })}
         />
       </SettingRow>
     </div>
@@ -116,30 +131,43 @@ interface RecordingSectionProps extends SectionProps {
 }
 
 const QUALITY_OPTIONS = [
-  { value: 'sd', label: 'Standard Definition (480p)' },
-  { value: 'hd', label: 'High Definition (720p)' },
-  { value: 'fhd', label: 'Full HD (1080p)' },
-  { value: 'qhd', label: 'Quad HD (1440p)' },
-  { value: 'uhd', label: 'Ultra HD (4K)' },
+  { value: "sd", label: "Standard Definition (480p)" },
+  { value: "hd", label: "High Definition (720p)" },
+  { value: "fhd", label: "Full HD (1080p)" },
+  { value: "qhd", label: "Quad HD (1440p)" },
+  { value: "uhd", label: "Ultra HD (4K)" },
 ];
 
-export function RecordingSection({ config, updateGroup, onPickDir }: RecordingSectionProps) {
+export function RecordingSection({
+  config,
+  updateGroup,
+  onPickDir,
+}: RecordingSectionProps) {
   const rc = config.recording;
   return (
     <div className="flex flex-col gap-0.5">
-      <SectionHeader title="Recording" description="Defaults used when recording the screen." />
-      <SettingRow label="Save location" description="Where new recordings are stored.">
+      <SectionHeader
+        title="Recording"
+        description="Defaults used when recording the screen."
+      />
+      <SettingRow
+        label="Save location"
+        description="Where new recordings are stored."
+      >
         <PathPicker
           value={rc.saveDir}
           title="Choose recording save location"
-          onPick={() => onPickDir('Choose Recording Save Location')}
+          onPick={() => onPickDir("Choose Recording Save Location")}
         />
       </SettingRow>
-      <SettingRow label="Quality" description="Output resolution for recordings.">
+      <SettingRow
+        label="Quality"
+        description="Output resolution for recordings."
+      >
         <Select
           value={rc.quality}
           options={QUALITY_OPTIONS}
-          onChange={(v) => updateGroup('recording', { quality: v })}
+          onChange={(v) => updateGroup("recording", { quality: v })}
         />
       </SettingRow>
       <SettingRow
@@ -148,7 +176,9 @@ export function RecordingSection({ config, updateGroup, onPickDir }: RecordingSe
       >
         <Toggle
           checked={rc.systemEnabledByDefault}
-          onChange={(v) => updateGroup('recording', { systemEnabledByDefault: v })}
+          onChange={(v) =>
+            updateGroup("recording", { systemEnabledByDefault: v })
+          }
         />
       </SettingRow>
       <SettingRow
@@ -157,7 +187,9 @@ export function RecordingSection({ config, updateGroup, onPickDir }: RecordingSe
       >
         <Toggle
           checked={rc.notifyOnRecordingEnd}
-          onChange={(v) => updateGroup('recording', { notifyOnRecordingEnd: v })}
+          onChange={(v) =>
+            updateGroup("recording", { notifyOnRecordingEnd: v })
+          }
         />
       </SettingRow>
     </div>
@@ -166,7 +198,10 @@ export function RecordingSection({ config, updateGroup, onPickDir }: RecordingSe
 
 export interface MicrophoneSectionProps extends SectionProps {}
 
-export function MicrophoneSection({ config, updateGroup }: MicrophoneSectionProps) {
+export function MicrophoneSection({
+  config,
+  updateGroup,
+}: MicrophoneSectionProps) {
   const rc = config.recording;
   return (
     <div className="flex flex-col gap-0.5">
@@ -174,7 +209,10 @@ export function MicrophoneSection({ config, updateGroup }: MicrophoneSectionProp
         title="Microphone"
         description="Default microphone for recordings. The device is chosen when starting a recording."
       />
-      <SettingRow label="Default microphone" description="Currently saved default device.">
+      <SettingRow
+        label="Default microphone"
+        description="Currently saved default device."
+      >
         <span className="text-[11px] text-white/60 font-mono break-all max-w-[200px] text-right">
           {rc.microphone || <i className="opacity-50">none selected</i>}
         </span>
@@ -183,9 +221,9 @@ export function MicrophoneSection({ config, updateGroup }: MicrophoneSectionProp
         label="Enable microphone by default"
         description="Start new recordings with the microphone enabled."
       >
-                <Toggle
+        <Toggle
           checked={rc.micEnabledByDefault}
-          onChange={(v) => updateGroup('recording', { micEnabledByDefault: v })}
+          onChange={(v) => updateGroup("recording", { micEnabledByDefault: v })}
         />
       </SettingRow>
     </div>
@@ -193,90 +231,121 @@ export function MicrophoneSection({ config, updateGroup }: MicrophoneSectionProp
 }
 
 const TOOL_OPTIONS: { value: Tool; label: string }[] = [
-  { value: 'select', label: 'Select' },
-  { value: 'crop', label: 'Crop' },
-  { value: 'arrow', label: 'Arrow' },
-  { value: 'text', label: 'Text' },
-  { value: 'number', label: 'Number' },
-  { value: 'pen', label: 'Pen' },
-  { value: 'rectangle', label: 'Rectangle' },
-  { value: 'circle', label: 'Circle' },
+  { value: "select", label: "Select" },
+  { value: "crop", label: "Crop" },
+  { value: "arrow", label: "Arrow" },
+  { value: "text", label: "Text" },
+  { value: "number", label: "Number" },
+  { value: "pen", label: "Pen" },
+  { value: "rectangle", label: "Rectangle" },
+  { value: "circle", label: "Circle" },
 ];
 
 export function EditorSection({ config, updateGroup }: SectionProps) {
   const ed = config.editor;
   return (
     <div className="flex flex-col gap-0.5">
-      <SectionHeader title="Editor" description="Defaults applied when opening the editor." />
-      <SettingRow label="Default tool" description="Tool selected when the editor opens.">
+      <SectionHeader
+        title="Editor"
+        description="Defaults applied when opening the editor."
+      />
+      <SettingRow
+        label="Default tool"
+        description="Tool selected when the editor opens."
+      >
         <Select
           value={ed.defaultTool}
           options={TOOL_OPTIONS}
-          onChange={(v) => updateGroup('editor', { defaultTool: v })}
+          onChange={(v) => updateGroup("editor", { defaultTool: v })}
         />
       </SettingRow>
-      <SettingRow label="Default font" description="Font family for new text shapes.">
+      <SettingRow
+        label="Default font"
+        description="Font family for new text shapes."
+      >
         <input
           type="text"
           value={ed.defaultFont}
-          onChange={(e) => updateGroup('editor', { defaultFont: e.target.value })}
+          onChange={(e) =>
+            updateGroup("editor", { defaultFont: e.target.value })
+          }
           className="w-32 bg-white/10 hover:bg-white/15 text-xs text-white/90 rounded-[10px] px-2 py-1.5 border border-white/10 outline-none"
         />
       </SettingRow>
-      <SettingRow label="Default font size" description="Size in pixels for new text.">
+      <SettingRow
+        label="Default font size"
+        description="Size in pixels for new text."
+      >
         <NumberInput
           value={ed.defaultFontSize}
           min={4}
           max={120}
           suffix="px"
-          onChange={(v) => updateGroup('editor', { defaultFontSize: v })}
+          onChange={(v) => updateGroup("editor", { defaultFontSize: v })}
         />
       </SettingRow>
-      <SettingRow label="Default color" description="Fill/stroke color for new shapes.">
+      <SettingRow
+        label="Default color"
+        description="Fill/stroke color for new shapes."
+      >
         <div className="flex items-center gap-1.5">
           <input
             type="color"
             value={ed.defaultColor}
-            onChange={(e) => updateGroup('editor', { defaultColor: e.target.value })}
+            onChange={(e) =>
+              updateGroup("editor", { defaultColor: e.target.value })
+            }
             className="w-7 h-5 p-0.5 rounded cursor-pointer bg-transparent"
           />
           <input
             type="text"
             value={ed.defaultColor}
-            onChange={(e) => updateGroup('editor', { defaultColor: e.target.value })}
+            onChange={(e) =>
+              updateGroup("editor", { defaultColor: e.target.value })
+            }
             className="w-16 bg-white/10 hover:bg-white/15 text-[10px] text-white/80 rounded-[10px] px-2 py-1 border border-white/10 outline-none font-mono"
           />
         </div>
       </SettingRow>
-      <SettingRow label="Default stroke width" description="Stroke width for new shapes.">
+      <SettingRow
+        label="Default stroke width"
+        description="Stroke width for new shapes."
+      >
         <NumberInput
           value={ed.defaultStrokeWidth}
           min={1}
           max={50}
           suffix="px"
-          onChange={(v) => updateGroup('editor', { defaultStrokeWidth: v })}
+          onChange={(v) => updateGroup("editor", { defaultStrokeWidth: v })}
         />
       </SettingRow>
-            <SettingRow label="Default opacity" description="Opacity applied to new shapes.">
+      <SettingRow
+        label="Default opacity"
+        description="Opacity applied to new shapes."
+      >
         <NumberInput
           value={Math.round((ed.defaultOpacity ?? 1) * 100)}
           min={0}
           max={100}
           suffix="%"
-          onChange={(v) => updateGroup('editor', { defaultOpacity: Math.max(0, Math.min(100, v)) / 100 })}
+          onChange={(v) =>
+            updateGroup("editor", {
+              defaultOpacity: Math.max(0, Math.min(100, v)) / 100,
+            })
+          }
         />
       </SettingRow>
     </div>
   );
 }
 
-type ShortcutCategory = 'editor' | 'tool' | 'palette' | 'app';
+type ShortcutCategory = "editor" | "tool" | "palette" | "app";
 
 const SHORTCUT_CATEGORIES: { id: ShortcutCategory; label: string }[] = [
-  { id: 'palette', label: 'Palette' },
-  { id: 'tool', label: 'Tools' },
-  { id: 'editor', label: 'Editor' },
-  { id: 'app', label: 'Application' },
+  { id: "palette", label: "Palette" },
+  { id: "tool", label: "Tools" },
+  { id: "editor", label: "Editor" },
+  { id: "app", label: "Application" },
 ];
 
 export function ShortcutsSection({ config, updateGroup }: SectionProps) {
@@ -287,17 +356,17 @@ export function ShortcutsSection({ config, updateGroup }: SectionProps) {
     const handler = (e: KeyboardEvent) => {
       e.preventDefault();
       e.stopPropagation();
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         setRecordingId(null);
         return;
       }
       const combo = comboFromEvent(e);
       if (!combo) return;
-      updateGroup('customShortcuts', { [recordingId]: combo });
+      updateGroup("customShortcuts", { [recordingId]: combo });
       setRecordingId(null);
     };
-    window.addEventListener('keydown', handler, true);
-    return () => window.removeEventListener('keydown', handler, true);
+    window.addEventListener("keydown", handler, true);
+    return () => window.removeEventListener("keydown", handler, true);
   }, [recordingId, updateGroup]);
 
   const overrides: Record<string, string> = config.customShortcuts || {};
@@ -326,13 +395,17 @@ export function ShortcutsSection({ config, updateGroup }: SectionProps) {
                     key={s.id}
                     className="flex items-center justify-between gap-2 px-2 py-1 rounded-[10px] hover:bg-white/5"
                   >
-                    <span className="text-xs text-white/80 min-w-0 truncate">{s.label}</span>
+                    <span className="text-xs text-white/80 min-w-0 truncate">
+                      {s.label}
+                    </span>
                     <div className="flex items-center gap-1 shrink-0">
                       {isOverridden && (
                         <button
                           type="button"
                           title="Reset to default"
-                          onClick={() => updateGroup('customShortcuts', { [s.id]: '' })}
+                          onClick={() =>
+                            updateGroup("customShortcuts", { [s.id]: "" })
+                          }
                           className="p-1 rounded text-white/40 hover:text-red-400 hover:bg-white/10 transition-colors"
                         >
                           <X size={12} />
@@ -340,14 +413,16 @@ export function ShortcutsSection({ config, updateGroup }: SectionProps) {
                       )}
                       <button
                         type="button"
-                        onClick={() => setRecordingId(isRecording ? null : s.id)}
+                        onClick={() =>
+                          setRecordingId(isRecording ? null : s.id)
+                        }
                         className={`text-[11px] font-mono px-2 py-1 rounded min-w-[86px] text-center border transition-colors ${
                           isRecording
-                            ? 'bg-red-500/20 border-red-400/50 text-red-300 animate-pulse'
-                            : 'bg-white/5 border-white/10 text-white/70 hover:bg-white/10'
+                            ? "bg-red-500/20 border-red-400/50 text-red-300 animate-pulse"
+                            : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10"
                         }`}
                       >
-                        {isRecording ? 'Press keys…' : combo}
+                        {isRecording ? "Press keys…" : combo}
                       </button>
                     </div>
                   </div>
@@ -374,14 +449,20 @@ export function AdvancedSection({ config, updateGroup }: SectionProps) {
       >
         <Toggle
           checked={config.advanced.verboseLogging}
-          onChange={(v) => updateGroup('advanced', { verboseLogging: v })}
+          onChange={(v) => updateGroup("advanced", { verboseLogging: v })}
         />
       </SettingRow>
     </div>
   );
 }
 
-export function AboutSection({ config, version }: { config: AppSettings; version: string }) {
+export function AboutSection({
+  config,
+  version,
+}: {
+  config: AppSettings;
+  version: string;
+}) {
   return (
     <div className="flex flex-col gap-3">
       <SectionHeader title="About Glowsnap" />
@@ -393,20 +474,25 @@ export function AboutSection({ config, version }: { config: AppSettings; version
         </div>
         <div>
           <div className="text-xs font-medium">Glowsnap</div>
-          <div className="text-[11px] text-white/50">Version {version || '—'}</div>
+          <div className="text-[11px] text-white/50">
+            Version {version || "—"}
+          </div>
         </div>
       </div>
       <div className="flex flex-col gap-1 text-[11px] text-white/60">
         <div className="flex justify-between px-1">
           <span>Save dir (screenshots)</span>
-          <span className="font-mono break-all">{config.screenshot.saveDir}</span>
+          <span className="font-mono break-all">
+            {config.screenshot.saveDir}
+          </span>
         </div>
         <div className="flex justify-between px-1">
           <span>Save dir (recordings)</span>
-          <span className="font-mono break-all">{config.recording.saveDir}</span>
+          <span className="font-mono break-all">
+            {config.recording.saveDir}
+          </span>
         </div>
       </div>
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 # Contributing to GlowSnap
 
-Thank you for your interest in contributing to GlowSnap! 
+Thank you for your interest in contributing to GlowSnap!
 
 GlowSnap is an open-source productivity tool for Linux. Everyone is welcome to contribute, whether you are fixing bugs, improving the UI, adding features, or helping with documentation.
 
@@ -15,7 +15,7 @@ Create your own fork of the repository on GitHub.
 ```bash
 git clone https://github.com/YOUR_USERNAME/glowsnap.git
 cd glowsnap
-````
+```
 
 ### 3. Install dependencies
 
@@ -63,12 +63,12 @@ glowsnap/
 
 You can contribute by:
 
-* Adding new features
-* Fixing bugs
-* Improving performance
-* Refactoring code
-* Improving accessibility
-* Adding tests
+- Adding new features
+- Fixing bugs
+- Improving performance
+- Refactoring code
+- Improving accessibility
+- Adding tests
 
 ## UI/UX Contributions
 
@@ -76,18 +76,18 @@ GlowSnap focuses on a clean and minimal experience.
 
 Design contributions are welcome:
 
-* Better animations
-* Improved workflows
-* Better icons
-* Interface improvements
+- Better animations
+- Improved workflows
+- Better icons
+- Interface improvements
 
 ## Documentation
 
 You can help by:
 
-* Improving README files
-* Writing tutorials
-* Translating documentation
+- Improving README files
+- Writing tutorials
+- Translating documentation
 
 ---
 
@@ -140,18 +140,20 @@ docs: update documentation
 
 # Code Guidelines
 
-* Keep code simple and readable.
-* Follow existing project patterns.
-* Avoid unnecessary dependencies.
-* Test your changes before submitting.
-* Write clear commit messages.
+- Keep code simple and readable.
+- Follow existing project patterns.
+- Avoid unnecessary dependencies.
+- Test your changes before submitting.
+- Write clear commit messages.
 
 ---
 
 # Community
 
-Every contribution matters 
+Every contribution matters
 
 Thank you for helping make GlowSnap better!
 
-````
+```
+
+```
