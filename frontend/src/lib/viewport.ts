@@ -24,7 +24,10 @@ export function clampPan(next: Pan, p: ViewportParams): Pan {
   } else {
     const maxPx = p.stageWidth - centerOffsetX - p.offsetX * p.zoom;
     const minPx = -centerOffsetX - (p.offsetX + p.contentWidth) * p.zoom;
-    px = Math.min(Math.max(next.x, Math.min(minPx, maxPx)), Math.max(minPx, maxPx));
+    px = Math.min(
+      Math.max(next.x, Math.min(minPx, maxPx)),
+      Math.max(minPx, maxPx),
+    );
   }
 
   if (p.contentHeight * p.zoom <= p.stageHeight) {
@@ -32,7 +35,10 @@ export function clampPan(next: Pan, p: ViewportParams): Pan {
   } else {
     const maxPy = p.stageHeight - centerOffsetY - p.offsetY * p.zoom;
     const minPy = -centerOffsetY - (p.offsetY + p.contentHeight) * p.zoom;
-    py = Math.min(Math.max(next.y, Math.min(minPy, maxPy)), Math.max(minPy, maxPy));
+    py = Math.min(
+      Math.max(next.y, Math.min(minPy, maxPy)),
+      Math.max(minPy, maxPy),
+    );
   }
 
   return { x: px, y: py };
@@ -46,8 +52,14 @@ export function clampPanSoft(next: Pan, p: ViewportParams): Pan {
   const maxPy = p.stageHeight - centerOffsetY - p.offsetY * p.zoom;
   const minPy = -centerOffsetY - (p.offsetY + p.contentHeight) * p.zoom;
   return {
-    x: Math.min(Math.max(next.x, Math.min(minPx, maxPx)), Math.max(minPx, maxPx)),
-    y: Math.min(Math.max(next.y, Math.min(minPy, maxPy)), Math.max(minPy, maxPy)),
+    x: Math.min(
+      Math.max(next.x, Math.min(minPx, maxPx)),
+      Math.max(minPx, maxPx),
+    ),
+    y: Math.min(
+      Math.max(next.y, Math.min(minPy, maxPy)),
+      Math.max(minPy, maxPy),
+    ),
   };
 }
 

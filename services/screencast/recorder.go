@@ -15,6 +15,7 @@ type RecordingOptions struct {
 	MicDevice     string
 	CaptureSystem bool
 	SystemDevice  string
+	Quality       string
 }
 
 type Recorder interface {
@@ -204,11 +205,13 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 		return nil, fmt.Errorf("output path is required")
 	}
 
+	videoBitrate, audioBitrate := qualityBitrates(opts.Quality)
+
 	args := []string{
 		"-e",
 		"pipewiresrc", fmt.Sprintf("path=%d", videoNode),
 		"!", "videoconvert",
-		"!", "openh264enc",
+		"!", "openh264enc", fmt.Sprintf("bitrate=%d", videoBitrate),
 		"!", "h264parse",
 		"!", "queue", "max-size-time=2000000000",
 		"!", "mp4mux", "name=mux",
@@ -230,7 +233,7 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 			"!", "audioconvert",
 			"!", "audioresample",
 			"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
-			"!", "avenc_aac", "bitrate=128000",
+			"!", "avenc_aac", fmt.Sprintf("bitrate=%d", audioBitrate),
 			"!", "aacparse",
 			"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
 			"!", "mux.audio_0")
@@ -244,7 +247,7 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 					"!", "audioresample",
 					"!", "audiomixer", "name=mix", "start-time-selection=zero", "alignment-threshold=40000000",
 					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
-					"!", "avenc_aac", "bitrate=128000",
+					"!", "avenc_aac", fmt.Sprintf("bitrate=%d", audioBitrate),
 					"!", "aacparse",
 					"!", "queue", "max-size-time=2000000000", "max-size-buffers=0", "max-size-bytes=0",
 					"!", "mux.audio_0")
@@ -260,4 +263,15 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 	}
 
 	return args, nil
+}
+
+func qualityBitrates(q string) (video int, audio int) {
+	switch q {
+	case "high":
+		return 5000000, 192000
+	case "low":
+		return 800000, 96000
+	default:
+		return 2000000, 128000
+	}
 }

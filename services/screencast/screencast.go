@@ -5,6 +5,8 @@ import (
 	"os"
 	"time"
 
+	"glowsnap/services/settings"
+
 	"github.com/godbus/dbus/v5"
 )
 
@@ -148,7 +150,7 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 		return "", err
 	}
 
-	opts := RecordingOptions{OutputPath: outPath}
+	opts := RecordingOptions{OutputPath: outPath, Quality: settings.Load().Recording.Quality}
 
 	if micDevice == "" {
 		micDevice = DefaultMicrophone()

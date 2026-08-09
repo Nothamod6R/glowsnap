@@ -135,7 +135,6 @@ func TestMonitorCaptureStartNotifiesWhenFileGrows(t *testing.T) {
 
 	select {
 	case <-notified:
-		// success
 	case <-time.After(2 * time.Second):
 		t.Fatal("expected start notification once the output file began growing")
 	}
@@ -171,6 +170,5 @@ func TestMonitorCaptureStartSuppressedWhenNotRecording(t *testing.T) {
 	case <-notified:
 		t.Fatal("start notification should be suppressed when recording is no longer active")
 	case <-time.After(300 * time.Millisecond):
-		// success
 	}
 }

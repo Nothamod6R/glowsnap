@@ -1,10 +1,29 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { ArrowLeft, Image as ImageIcon, RefreshCw, X, Search, Star } from 'lucide-react';
-import { StudioProps, Screenshot } from '@/types/types';
-import { ListScreenshots, GetScreenshotsBaseURL, RenameScreenshot, DeleteScreenshot } from '../../wailsjs/go/main/App';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import Editor from '@/components/editor/Editor';
-import { Button } from './ui/button';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
+import {
+  ArrowLeft,
+  Image as ImageIcon,
+  RefreshCw,
+  X,
+  Search,
+  Star,
+} from "lucide-react";
+import { StudioProps, Screenshot } from "@/types/types";
+import {
+  ListScreenshots,
+  GetScreenshotsBaseURL,
+  RenameScreenshot,
+  DeleteScreenshot,
+  GetSettings,
+} from "../../wailsjs/go/main/App";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import Editor from "@/components/editor/Editor";
+import { Button } from "./ui/button";
 
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState(value);
@@ -17,12 +36,12 @@ function useDebounce<T>(value: T, delay: number): T {
 
 const IMAGES_PER_PAGE = 50;
 
-const SUPPORTED_IMAGE_EXTS = ['.png', '.jpg', '.jpeg', '.webp', '.bmp'];
+const SUPPORTED_IMAGE_EXTS = [".png", ".jpg", ".jpeg", ".webp", ".bmp"];
 function withSupportedExtension(name: string, originalName: string): string {
   const lower = name.toLowerCase();
-  if (SUPPORTED_IMAGE_EXTS.some(ext => lower.endsWith(ext))) return name;
-  const dot = originalName.lastIndexOf('.');
-  const ext = dot >= 0 ? originalName.slice(dot) : '.png';
+  if (SUPPORTED_IMAGE_EXTS.some((ext) => lower.endsWith(ext))) return name;
+  const dot = originalName.lastIndexOf(".");
+  const ext = dot >= 0 ? originalName.slice(dot) : ".png";
   return name + ext;
 }
 
@@ -35,8 +54,11 @@ function formatSize(bytes: number): string {
 function formatDate(unixSeconds: number): string {
   const d = new Date(unixSeconds * 1000);
   return d.toLocaleString(undefined, {
-    year: 'numeric', month: 'short', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -44,34 +66,41 @@ function dateGroupLabel(unixSeconds: number): string {
   const d = new Date(unixSeconds * 1000);
   const today = new Date();
   const sameDay = (a: Date, b: Date) =>
-    a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-  if (sameDay(d, today)) return 'Today';
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+  if (sameDay(d, today)) return "Today";
   const yest = new Date(today);
   yest.setDate(today.getDate() - 1);
-  if (sameDay(d, yest)) return 'Yesterday';
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  if (sameDay(d, yest)) return "Yesterday";
+  return d.toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 export default function Studio({ onBackToPalette }: StudioProps) {
-
   const [images, setImages] = useState<Screenshot[]>([]);
-  const [baseUrl, setBaseUrl] = useState('');
+  const [baseUrl, setBaseUrl] = useState("");
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState<Screenshot | null>(null);
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest' | 'az' | 'za'>('newest');
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "az" | "za">(
+    "newest",
+  );
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
   const [renamingImage, setRenamingImage] = useState<string | null>(null);
-  const [renameValue, setRenameValue] = useState('');
+  const [renameValue, setRenameValue] = useState("");
   const [page, setPage] = useState(1);
 
   const imageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const lastOpenedImage = useRef<string | null>(null);
   const renamingRef = useRef(false);
   useEffect(() => {
-    const stored = localStorage.getItem('glowsnap-favorites');
+    const stored = localStorage.getItem("glowsnap-favorites");
     if (stored) {
       try {
         const parsed = JSON.parse(stored) as string[];
@@ -81,7 +110,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('glowsnap-favorites', JSON.stringify([...favorites]));
+    localStorage.setItem("glowsnap-favorites", JSON.stringify([...favorites]));
   }, [favorites]);
 
   const loadImages = async () => {
@@ -92,7 +121,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
       setBaseUrl(url);
       setImages(files ?? []);
     } catch (err) {
-      console.error('Failed to load screenshots:', err);
+      console.error("Failed to load screenshots:", err);
     } finally {
       setLoading(false);
     }
@@ -101,10 +130,16 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   const syncImages = useCallback(async () => {
     try {
       const files = await ListScreenshots();
-      console.log('[rename-dbg] ListScreenshots() returned', JSON.stringify(files));
+      console.log(
+        "[rename-dbg] ListScreenshots() returned",
+        JSON.stringify(files),
+      );
       setImages(files ?? []);
     } catch (err) {
-      console.error('[rename-dbg] Failed to reload screenshots after rename:', err);
+      console.error(
+        "[rename-dbg] Failed to reload screenshots after rename:",
+        err,
+      );
     }
   }, []);
 
@@ -117,14 +152,14 @@ export default function Studio({ onBackToPalette }: StudioProps) {
       const ref = imageRefs.current[lastOpenedImage.current];
       if (ref) {
         setTimeout(() => {
-          ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          ref.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 50);
       }
     }
   }, [selectedImage]);
 
   const toggleFavorite = useCallback((fileName: string) => {
-    setFavorites(prev => {
+    setFavorites((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(fileName)) newSet.delete(fileName);
       else newSet.add(fileName);
@@ -132,89 +167,125 @@ export default function Studio({ onBackToPalette }: StudioProps) {
     });
   }, []);
 
-  const handleRename = useCallback(async (oldName: string, newNameInput: string) => {
-    const rawName = newNameInput.trim();
+  const handleRename = useCallback(
+    async (oldName: string, newNameInput: string) => {
+      const rawName = newNameInput.trim();
 
-    if (!rawName) {
-      console.log('[rename-dbg] cancel (empty input) old=', oldName);
-      setRenameValue('');
-      setRenamingImage(null);
-      return;
-    }
+      if (!rawName) {
+        console.log("[rename-dbg] cancel (empty input) old=", oldName);
+        setRenameValue("");
+        setRenamingImage(null);
+        return;
+      }
 
-    const newName = withSupportedExtension(rawName, oldName);
+      const newName = withSupportedExtension(rawName, oldName);
 
-    if (newName === oldName) {
-      console.log('[rename-dbg] cancel (unchanged) old=', oldName, 'new=', newName);
-      setRenameValue('');
-      setRenamingImage(null);
-      return;
-    }
+      if (newName === oldName) {
+        console.log(
+          "[rename-dbg] cancel (unchanged) old=",
+          oldName,
+          "new=",
+          newName,
+        );
+        setRenameValue("");
+        setRenamingImage(null);
+        return;
+      }
 
-    if (renamingRef.current) {
-      console.log('[rename-dbg] duplicate call suppressed (renamingRef) old=', oldName, 'new=', newName);
-      return;
-    }
-    renamingRef.current = true;
+      if (renamingRef.current) {
+        console.log(
+          "[rename-dbg] duplicate call suppressed (renamingRef) old=",
+          oldName,
+          "new=",
+          newName,
+        );
+        return;
+      }
+      renamingRef.current = true;
 
-    console.log('[rename-dbg] RenameScreenshot(', JSON.stringify(oldName), '->', JSON.stringify(newName), ') [raw=', JSON.stringify(rawName), ']');
-    try {
-      await RenameScreenshot(oldName, newName);
-      console.log('[rename-dbg] RenameScreenshot resolved OK (backend error = none)');
+      console.log(
+        "[rename-dbg] RenameScreenshot(",
+        JSON.stringify(oldName),
+        "->",
+        JSON.stringify(newName),
+        ") [raw=",
+        JSON.stringify(rawName),
+        "]",
+      );
+      try {
+        await RenameScreenshot(oldName, newName);
+        console.log(
+          "[rename-dbg] RenameScreenshot resolved OK (backend error = none)",
+        );
 
-      setFavorites(prev => {
-        if (!prev.has(oldName)) return prev;
-        const newSet = new Set(prev);
-        newSet.delete(oldName);
-        newSet.add(newName);
-        console.log('[rename-dbg] favorites migrated', JSON.stringify([...prev]), '->', JSON.stringify([...newSet]));
-        return newSet;
-      });
-      await syncImages();
-    } catch (err) {
-      console.error('[rename-dbg] Rename failed:', err);
-    } finally {
-      setRenameValue('');
-      setRenamingImage(null);
-    }
-  }, [syncImages]);
+        setFavorites((prev) => {
+          if (!prev.has(oldName)) return prev;
+          const newSet = new Set(prev);
+          newSet.delete(oldName);
+          newSet.add(newName);
+          console.log(
+            "[rename-dbg] favorites migrated",
+            JSON.stringify([...prev]),
+            "->",
+            JSON.stringify([...newSet]),
+          );
+          return newSet;
+        });
+        await syncImages();
+      } catch (err) {
+        console.error("[rename-dbg] Rename failed:", err);
+      } finally {
+        setRenameValue("");
+        setRenamingImage(null);
+      }
+    },
+    [syncImages],
+  );
 
-  const handleDelete = useCallback(async (fileName: string) => {
-    try {
-      await DeleteScreenshot(fileName);
-      setFavorites(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(fileName);
-        return newSet;
-      });
-      await syncImages();
-    } catch (err) {
-      console.error('[rename-dbg] Delete failed:', err);
-    }
-  }, [syncImages]);
+  const handleDelete = useCallback(
+    async (fileName: string) => {
+      try {
+        const cfg = await GetSettings();
+        const shouldConfirm = cfg.general?.confirmDelete ?? true;
+        if (shouldConfirm && !window.confirm(`Delete ${fileName}?`)) {
+          return;
+        }
+        await DeleteScreenshot(fileName);
+        setFavorites((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(fileName);
+          return newSet;
+        });
+        await syncImages();
+      } catch (err) {
+        console.error("[rename-dbg] Delete failed:", err);
+      }
+    },
+    [syncImages],
+  );
   const processedImages = useMemo(() => {
     let filtered = [...images];
 
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      filtered = filtered.filter(s => s.name.toLowerCase().includes(q));
+      filtered = filtered.filter((s) => s.name.toLowerCase().includes(q));
     }
 
     if (showFavoritesOnly) {
-      filtered = filtered.filter(s => favorites.has(s.name));
+      filtered = filtered.filter((s) => favorites.has(s.name));
     }
 
     switch (sortOrder) {
-      case 'newest':
+      case "newest":
         filtered.sort((a, b) => b.date - a.date);
         break;
-      case 'oldest':
+      case "oldest":
         filtered.sort((a, b) => a.date - b.date);
         break;
-      case 'az':
+      case "az":
         filtered.sort((a, b) => a.name.localeCompare(b.name));
         break;
-      case 'za':
+      case "za":
         filtered.sort((a, b) => b.name.localeCompare(a.name));
         break;
     }
@@ -226,10 +297,28 @@ export default function Studio({ onBackToPalette }: StudioProps) {
   const currentPageImages = processedImages.slice(0, page * IMAGES_PER_PAGE);
 
   useEffect(() => {
-    console.log('[rename-dbg] render state: images=', JSON.stringify(images),
-      'filtered(', debouncedSearch, ',', sortOrder, ',fav=', showFavoritesOnly, ')=', JSON.stringify(processedImages),
-      'page1=', JSON.stringify(currentPageImages));
-  }, [images, processedImages, currentPageImages, debouncedSearch, sortOrder, showFavoritesOnly]);
+    console.log(
+      "[rename-dbg] render state: images=",
+      JSON.stringify(images),
+      "filtered(",
+      debouncedSearch,
+      ",",
+      sortOrder,
+      ",fav=",
+      showFavoritesOnly,
+      ")=",
+      JSON.stringify(processedImages),
+      "page1=",
+      JSON.stringify(currentPageImages),
+    );
+  }, [
+    images,
+    processedImages,
+    currentPageImages,
+    debouncedSearch,
+    sortOrder,
+    showFavoritesOnly,
+  ]);
 
   useEffect(() => {
     setPage(1);
@@ -260,16 +349,21 @@ export default function Studio({ onBackToPalette }: StudioProps) {
             <ArrowLeft size={14} />
             <span>Palette</span>
           </button>
-          <h1 className="text-sm font-semibold text-white/90">GlowSnap Studio</h1>
+          <h1 className="text-sm font-semibold text-white/90">
+            GlowSnap Studio
+          </h1>
         </div>
 
         <div className="flex items-center gap-3 ml-auto">
           <div className="relative">
-            <Search size={14} className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40" />
+            <Search
+              size={14}
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-white/40"
+            />
             <input
               type="text"
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
               className="w-40 h-8 pl-7 pr-2 text-xs bg-white/5 border border-white/10 rounded-lg focus:outline-none focus:border-white/30 text-white/80"
             />
@@ -278,7 +372,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
           <div className="relative w-32">
             <select
               value={sortOrder}
-              onChange={e => setSortOrder(e.target.value as any)}
+              onChange={(e) => setSortOrder(e.target.value as any)}
               className="w-full h-8 pl-2 pr-8 text-xs bg-white/5 border border-white/10 rounded-lg text-white/80 focus:outline-none focus:border-white/30 appearance-none cursor-pointer"
             >
               <option value="newest" className="bg-black">
@@ -303,13 +397,17 @@ export default function Studio({ onBackToPalette }: StudioProps) {
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="m19 9-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m19 9-7 7-7-7"
+              />
             </svg>
           </div>
 
           <button
             onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
-            className={`p-2 rounded-lg ${showFavoritesOnly ? 'bg-yellow-500/20 text-yellow-400' : 'bg-white/5 text-white/60'} hover:bg-white/10`}
+            className={`p-2 rounded-lg ${showFavoritesOnly ? "bg-yellow-500/20 text-yellow-400" : "bg-white/5 text-white/60"} hover:bg-white/10`}
             title="Show favorites only"
           >
             <Star size={14} />
@@ -319,7 +417,7 @@ export default function Studio({ onBackToPalette }: StudioProps) {
             onClick={loadImages}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium hover:bg-white/10 transition-colors"
           >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             <span>Refresh</span>
           </button>
         </div>
@@ -333,7 +431,9 @@ export default function Studio({ onBackToPalette }: StudioProps) {
         ) : processedImages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full border-2 border-dashed border-white/10 rounded-2xl p-6 text-center text-white/40">
             <ImageIcon size={48} className="mb-3 stroke-1" />
-            <p className="text-sm">No screenshots yet. Capture your first screen!</p>
+            <p className="text-sm">
+              No screenshots yet. Capture your first screen!
+            </p>
           </div>
         ) : (
           <>
@@ -341,7 +441,9 @@ export default function Studio({ onBackToPalette }: StudioProps) {
               {currentPageImages.map((file) => (
                 <div
                   key={file.name}
-                  ref={(el) => { imageRefs.current[file.name] = el; }}
+                  ref={(el) => {
+                    imageRefs.current[file.name] = el;
+                  }}
                   className="relative group bg-white/5 rounded-xl overflow-hidden border border-white/5 hover:border-white/20 transition-all duration-200 cursor-pointer"
                 >
                   <img
@@ -356,9 +458,12 @@ export default function Studio({ onBackToPalette }: StudioProps) {
                       <input
                         autoFocus
                         value={renameValue}
-                        onChange={e => setRenameValue(e.target.value)}
+                        onChange={(e) => setRenameValue(e.target.value)}
                         onBlur={() => handleRename(file.name, renameValue)}
-                        onKeyDown={e => e.key === 'Enter' && handleRename(file.name, renameValue)}
+                        onKeyDown={(e) =>
+                          e.key === "Enter" &&
+                          handleRename(file.name, renameValue)
+                        }
                         className="bg-white/10 rounded text-xs px-1 w-full outline-none mb-1"
                       />
                     ) : (
@@ -375,33 +480,48 @@ export default function Studio({ onBackToPalette }: StudioProps) {
                       </span>
                     )}
                     <div className="flex items-center justify-between mt-1">
-                      <span className="text-[10px] text-white/40 truncate" title={formatDate(file.date)}>
+                      <span
+                        className="text-[10px] text-white/40 truncate"
+                        title={formatDate(file.date)}
+                      >
                         {formatDate(file.date)}
                       </span>
                       <div className="flex gap-1 shrink-0">
                         <button
-                          onClick={(e) => { e.stopPropagation(); toggleFavorite(file.name); }}
-                          className={`text-xs ${favorites.has(file.name) ? 'text-yellow-400' : 'text-white/30 hover:text-yellow-400'}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(file.name);
+                          }}
+                          className={`text-xs ${favorites.has(file.name) ? "text-yellow-400" : "text-white/30 hover:text-yellow-400"}`}
                         >
                           <Star size={15} />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(file.name); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(file.name);
+                          }}
                           className="text-xs text-red-400 hover:text-red-300"
                         >
                           <X size={15} />
                         </button>
                       </div>
                     </div>
-                    <span className="text-[10px] text-white/30">{formatSize(file.size)}</span>
+                    <span className="text-[10px] text-white/30">
+                      {formatSize(file.size)}
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
             {page < totalPages && (
               <div className="flex justify-center mt-4">
-                <Button variant="outline" onClick={() => setPage(prev => prev + 1)}>
-                  Load More ({processedImages.length - currentPageImages.length} remaining)
+                <Button
+                  variant="outline"
+                  onClick={() => setPage((prev) => prev + 1)}
+                >
+                  Load More ({processedImages.length - currentPageImages.length}{" "}
+                  remaining)
                 </Button>
               </div>
             )}

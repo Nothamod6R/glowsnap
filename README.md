@@ -1,5 +1,4 @@
-#  GlowSnap
-
+# GlowSnap
 
 <p align="center">
   <img src="./packaging/io.github.libreglow.glowsnap.png" alt="GlowSnap Logo" width="128">
@@ -21,8 +20,7 @@
   <img src="./docs/images/banner.png" alt="GlowSnap Banner">
 </p>
 
-
-##  About
+## About
 
 GlowSnap is an open-source Linux productivity tool designed to make screenshots more powerful and beautiful.
 
@@ -30,31 +28,31 @@ It helps you capture your screen, organize your screenshots, and turn them into 
 
 Built with simplicity and performance in mind, GlowSnap aims to bring a premium screenshot workflow to Linux.
 
-
 Turn raw code and screenshots into polished, professional assets in one click. Perfect for content creators, developers, and testers on Linux.
 <p align="center">
   <img src="./docs/images/res.png" alt="GlowSnap">
 </p>
 
-
-##  Features
+## Features
 
 ### Screenshot Studio
--  Full screen screenshots
--  Area selection capture
--  Screenshot gallery
--  Full-screen image viewer
+
+- Full screen screenshots
+- Area selection capture
+- Screenshot gallery
+- Full-screen image viewer
 
 ### Visual Editor
--  Free drawing
--  Arrows and shapes
--  Text editing
--  Custom colors and opacity
--  Crop tools
+
+- Free drawing
+- Arrows and shapes
+- Text editing
+- Custom colors and opacity
+- Crop tools
 
 ---
 
-##  Screenshots
+## Screenshots
 
 <p align="center">
   <img src="./docs/images/studio.png" width="800" alt="GlowSnap Studio">
@@ -94,14 +92,17 @@ Coming soon on Flathub
 ## Roadmap
 
 ### v1.1.0
-- [X] Add screencast ( BETA )
+
+- [x] Add screencast ( BETA )
 - [ ] Add settings
 
 ### v1.1.1
+
 - [ ] Add more fonts
 - [ ] Add blur effect to the editor
 
 ### Future
+
 - Screenshot
 - Advanced image editor
 - Productivity tools ecosystem
@@ -109,7 +110,7 @@ Coming soon on Flathub
 
 ---
 
-##  Contributing
+## Contributing
 
 Contributions are welcome!
 
@@ -123,7 +124,7 @@ CONTRIBUTING.md
 
 ---
 
-##  License
+## License
 
 GlowSnap is licensed under the MIT License.
 
@@ -131,7 +132,7 @@ You are free to use, modify, and distribute this software.
 
 ---
 
-##  Vision
+## Vision
 
 GlowSnap is not only a screenshot tool.
 

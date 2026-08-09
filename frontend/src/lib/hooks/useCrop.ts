@@ -1,7 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef } from "react";
 
 export function useCrop() {
-  const [cropRect, setCropRect] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+  const [cropRect, setCropRect] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
   const startPosRef = useRef<{ x: number; y: number } | null>(null);
 
   const startCrop = (pos: { x: number; y: number }) => {
@@ -26,7 +31,7 @@ export function useCrop() {
 
   const applyCrop = () => {
     setCropRect(null);
-    return cropRect; 
+    return cropRect;
   };
 
   const cancelCrop = () => {

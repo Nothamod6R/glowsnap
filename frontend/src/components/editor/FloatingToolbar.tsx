@@ -1,5 +1,5 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useRef, useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Trash2,
   Copy,
@@ -17,10 +17,10 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-} from 'lucide-react';
-import { Slider } from '@/components/ui/slider';
-import { Toggle } from '@/components/ui/toggle';
-import { ShapeConfig } from '@/types/types';
+} from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Toggle } from "@/components/ui/toggle";
+import { ShapeConfig } from "@/types/types";
 
 interface FloatingToolbarProps {
   selectedShape: ShapeConfig | null;
@@ -48,8 +48,8 @@ interface FloatingToolbarProps {
   setIsUnderline: (u: boolean) => void;
   isStrikethrough: boolean;
   setIsStrikethrough: (s: boolean) => void;
-  textAlign: 'left' | 'center' | 'right';
-  setTextAlign: (a: 'left' | 'center' | 'right') => void;
+  textAlign: "left" | "center" | "right";
+  setTextAlign: (a: "left" | "center" | "right") => void;
   lineHeight: number;
   setLineHeight: (l: number) => void;
   letterSpacing: number;
@@ -58,9 +58,14 @@ interface FloatingToolbarProps {
   setFillEnabled: (v: boolean) => void;
 }
 
-const clamp = (val: number, min: number, max: number) => Math.min(Math.max(val, min), max);
+const clamp = (val: number, min: number, max: number) =>
+  Math.min(Math.max(val, min), max);
 
-const ALIGN_ORDER: Array<'left' | 'center' | 'right'> = ['left', 'center', 'right'];
+const ALIGN_ORDER: Array<"left" | "center" | "right"> = [
+  "left",
+  "center",
+  "right",
+];
 const ALIGN_ICONS = {
   left: AlignLeft,
   center: AlignCenter,
@@ -68,7 +73,7 @@ const ALIGN_ICONS = {
 } as const;
 
 const numberInputClass =
-  'text-[10px] text-white/60 w-8 text-right tabular-nums bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-white/30 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none';
+  "text-[10px] text-white/60 w-8 text-right tabular-nums bg-transparent border-none focus:outline-none focus:ring-1 focus:ring-white/30 rounded [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none";
 
 export default function FloatingToolbar({
   selectedShape,
@@ -177,7 +182,7 @@ export default function FloatingToolbar({
     setFillEnabled(newFillEnabled);
     onUpdateShape(selectedShape.id, {
       fillEnabled: newFillEnabled,
-      fill: newFillEnabled ? color : 'transparent',
+      fill: newFillEnabled ? color : "transparent",
     });
   };
 
@@ -189,13 +194,16 @@ export default function FloatingToolbar({
     onUpdateShape(selectedShape.id, { align: next });
   };
 
-  const isRectOrCircle = selectedShape?.type === 'rect' || selectedShape?.type === 'circle';
-  const isText = selectedShape?.type === 'text' || selectedShape?.type === 'number';
+  const isRectOrCircle =
+    selectedShape?.type === "rect" || selectedShape?.type === "circle";
+  const isText =
+    selectedShape?.type === "text" || selectedShape?.type === "number";
 
   const currentOpacity = selectedShape?.opacity ?? 1;
   const currentFontSize = selectedShape?.fontSize ?? 24;
   const currentLineHeight = selectedShape?.lineHeight ?? lineHeight ?? 1;
-  const currentLetterSpacing = selectedShape?.letterSpacing ?? letterSpacing ?? 0;
+  const currentLetterSpacing =
+    selectedShape?.letterSpacing ?? letterSpacing ?? 0;
   const currentRotation = selectedShape?.rotation ?? 0;
 
   return (
@@ -206,271 +214,296 @@ export default function FloatingToolbar({
           initial={{ opacity: 0, y: -10, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -10, scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.8 }}
+          transition={{
+            type: "spring",
+            stiffness: 400,
+            damping: 30,
+            mass: 0.8,
+          }}
           className="absolute z-50"
           style={{
             left: position.x + 60,
             top: position.y - 160,
-            pointerEvents: 'auto',
+            pointerEvents: "auto",
           }}
         >
           <div className="-translate-x-1/2">
             <div className="flex items-center gap-1.5 backdrop-blur-xl bg-neutral-900/90 border-white/10 rounded-xl mt-[3vh] shadow-2xl shadow-black/50">
-            <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1.5 py-1">
-              <Palette size={12} className="text-white/50 shrink-0" />
-              <input
-                type="color"
-                value={color}
-                onChange={e => setColor(e.target.value)}
-                className="w-5 h-5 rounded border border-white/10 bg-transparent cursor-pointer"
-              />
+              <div className="flex items-center gap-1 bg-white/5 rounded-lg px-1.5 py-1">
+                <Palette size={12} className="text-white/50 shrink-0" />
+                <input
+                  type="color"
+                  value={color}
+                  onChange={(e) => setColor(e.target.value)}
+                  className="w-5 h-5 rounded border border-white/10 bg-transparent cursor-pointer"
+                />
+              </div>
+
+              {isRectOrCircle && (
+                <>
+                  <div className="w-px h-6 bg-white/10" />
+                  <button
+                    onClick={handleFillToggle}
+                    className={`p-1.5 rounded-lg transition-colors ${
+                      fillEnabled
+                        ? "bg-white/20 text-white"
+                        : "bg-white/5 text-white/60 hover:text-white"
+                    }`}
+                    title={fillEnabled ? "Fill enabled" : "No fill"}
+                  >
+                    <PaintBucket size={12} />
+                  </button>
+                </>
+              )}
+
+              {isText && (
+                <>
+                  <div className="w-px h-6 bg-white/10" />
+
+                  <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
+                    <Toggle
+                      pressed={isBold}
+                      onPressedChange={setIsBold}
+                      className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                      title="Bold"
+                    >
+                      <Bold size={12} />
+                    </Toggle>
+                    <Toggle
+                      pressed={isItalic}
+                      onPressedChange={setIsItalic}
+                      className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                      title="Italic"
+                    >
+                      <Italic size={12} />
+                    </Toggle>
+                    <Toggle
+                      pressed={isUnderline}
+                      onPressedChange={setIsUnderline}
+                      className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                      title="Underline"
+                    >
+                      <Underline size={12} />
+                    </Toggle>
+                    <Toggle
+                      pressed={isStrikethrough}
+                      onPressedChange={setIsStrikethrough}
+                      className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
+                      title="Strikethrough"
+                    >
+                      <Strikethrough size={12} />
+                    </Toggle>
+                    {(() => {
+                      const AlignIcon = ALIGN_ICONS[textAlign];
+                      const currentIndex = ALIGN_ORDER.indexOf(textAlign);
+                      const next =
+                        ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
+                      const label =
+                        textAlign.charAt(0).toUpperCase() + textAlign.slice(1);
+                      return (
+                        <button
+                          onClick={handleAlignCycle}
+                          className="bg-white/5 hover:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6 flex items-center justify-center transition-colors"
+                          title={`Align ${label} (click for ${next})`}
+                        >
+                          <AlignIcon size={12} />
+                        </button>
+                      );
+                    })()}
+                  </div>
+
+                  <div className="w-px h-6 bg-white/10" />
+
+                  <div className="bg-white/5 rounded-lg px-1.5 py-1">
+                    <select
+                      value={fontFamily}
+                      onChange={(e) => setFontFamily(e.target.value)}
+                      className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
+                    >
+                      {["Inter", "Arial", "Courier New", "Georgia"].map((f) => (
+                        <option
+                          key={f}
+                          value={f}
+                          className="bg-gray-900 text-white"
+                        >
+                          {f}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="w-px h-6 bg-white/10" />
+
+                  <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                    <CaseSensitive
+                      size={12}
+                      className="text-white/50 shrink-0"
+                    />
+                    <Slider
+                      value={[currentFontSize]}
+                      min={8}
+                      max={120}
+                      onValueChange={handleFontSizeChange}
+                      className="w-16 h-4"
+                    />
+                    <input
+                      type="number"
+                      value={currentFontSize}
+                      min={8}
+                      max={120}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val)) handleFontSizeChange(val);
+                      }}
+                      onBlur={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val))
+                          handleFontSizeChange(clamp(val, 8, 120));
+                      }}
+                      className={numberInputClass}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                    <WrapText size={12} className="text-white/50 shrink-0" />
+                    <Slider
+                      value={[currentLineHeight]}
+                      min={0}
+                      max={3}
+                      step={0.1}
+                      onValueChange={handleLineHeightChange}
+                      className="w-16 h-4"
+                    />
+                    <input
+                      type="number"
+                      value={currentLineHeight}
+                      min={0}
+                      max={3}
+                      step={0.1}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val)) handleLineHeightChange(val);
+                      }}
+                      onBlur={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val))
+                          handleLineHeightChange(clamp(val, 0, 3));
+                      }}
+                      className={numberInputClass}
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                    <MoveHorizontal
+                      size={12}
+                      className="text-white/50 shrink-0"
+                    />
+                    <Slider
+                      value={[currentLetterSpacing]}
+                      min={-10}
+                      max={20}
+                      step={0.5}
+                      onValueChange={handleLetterSpacingChange}
+                      className="w-16 h-4"
+                    />
+                    <input
+                      type="number"
+                      value={currentLetterSpacing}
+                      min={-10}
+                      max={20}
+                      step={0.5}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val)) handleLetterSpacingChange(val);
+                      }}
+                      onBlur={(e) => {
+                        const val = Number(e.target.value);
+                        if (!isNaN(val))
+                          handleLetterSpacingChange(clamp(val, -10, 20));
+                      }}
+                      className={numberInputClass}
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="w-px h-6 bg-white/10" />
+
+              <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                <Layers size={12} className="text-white/50 shrink-0" />
+                <Slider
+                  value={[Math.round(currentOpacity * 100)]}
+                  min={10}
+                  max={100}
+                  onValueChange={handleOpacityChange}
+                  className="w-16 h-4"
+                />
+                <input
+                  type="number"
+                  value={Math.round(currentOpacity * 100)}
+                  min={10}
+                  max={100}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (!isNaN(val)) handleOpacityChange(val);
+                  }}
+                  onBlur={(e) => {
+                    const val = Number(e.target.value);
+                    if (!isNaN(val)) handleOpacityChange(clamp(val, 10, 100));
+                  }}
+                  className={numberInputClass}
+                />
+                <span className="text-[10px] text-white/60">%</span>
+              </div>
+
+              <div className="w-px h-6 bg-white/10" />
+
+              <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
+                <RotateCw size={12} className="text-white/50 shrink-0" />
+                <Slider
+                  value={[currentRotation]}
+                  min={-180}
+                  max={180}
+                  onValueChange={handleRotationChange}
+                  className="w-16 h-4"
+                />
+                <input
+                  type="number"
+                  value={Number(currentRotation).toFixed(1)}
+                  min={-180}
+                  max={180}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    if (!isNaN(val)) handleRotationChange(val);
+                  }}
+                  onBlur={(e) => {
+                    const val = Number(e.target.value);
+                    if (!isNaN(val))
+                      handleRotationChange(clamp(val, -180, 180));
+                  }}
+                  className={numberInputClass}
+                />
+                <span className="text-[10px] text-white/60">°</span>
+              </div>
+
+              <div className="w-px h-6 bg-white/10" />
+
+              <button
+                onClick={handleDuplicate}
+                className="p-1.5 bg-white/5 rounded-lg text-white/60 hover:text-white transition-colors"
+                title="Duplicate"
+              >
+                <Copy size={14} />
+              </button>
+
+              <button
+                onClick={handleDelete}
+                className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-colors"
+                title="Delete"
+              >
+                <Trash2 size={14} />
+              </button>
             </div>
-
-            {isRectOrCircle && (
-              <>
-                <div className="w-px h-6 bg-white/10" />
-                <button
-                  onClick={handleFillToggle}
-                  className={`p-1.5 rounded-lg transition-colors ${
-                    fillEnabled ? 'bg-white/20 text-white' : 'bg-white/5 text-white/60 hover:text-white'
-                  }`}
-                  title={fillEnabled ? 'Fill enabled' : 'No fill'}
-                >
-                  <PaintBucket size={12} />
-                </button>
-              </>
-            )}
-
-            {isText && (
-              <>
-                <div className="w-px h-6 bg-white/10" />
-
-                <div className="flex items-center gap-0.5 bg-white/5 rounded-lg p-0.5">
-                  <Toggle
-                    pressed={isBold}
-                    onPressedChange={setIsBold}
-                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                    title="Bold"
-                  >
-                    <Bold size={12} />
-                  </Toggle>
-                  <Toggle
-                    pressed={isItalic}
-                    onPressedChange={setIsItalic}
-                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                    title="Italic"
-                  >
-                    <Italic size={12} />
-                  </Toggle>
-                  <Toggle
-                    pressed={isUnderline}
-                    onPressedChange={setIsUnderline}
-                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                    title="Underline"
-                  >
-                    <Underline size={12} />
-                  </Toggle>
-                  <Toggle
-                    pressed={isStrikethrough}
-                    onPressedChange={setIsStrikethrough}
-                    className="data-[state=on]:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6"
-                    title="Strikethrough"
-                  >
-                    <Strikethrough size={12} />
-                  </Toggle>
-                  {(() => {
-                    const AlignIcon = ALIGN_ICONS[textAlign];
-                    const currentIndex = ALIGN_ORDER.indexOf(textAlign);
-                    const next = ALIGN_ORDER[(currentIndex + 1) % ALIGN_ORDER.length];
-                    const label = textAlign.charAt(0).toUpperCase() + textAlign.slice(1);
-                    return (
-                      <button
-                        onClick={handleAlignCycle}
-                        className="bg-white/5 hover:bg-white/20 text-white/60 hover:text-white rounded p-1 h-6 w-6 flex items-center justify-center transition-colors"
-                        title={`Align ${label} (click for ${next})`}
-                      >
-                        <AlignIcon size={12} />
-                      </button>
-                    );
-                  })()}
-                </div>
-
-                <div className="w-px h-6 bg-white/10" />
-
-                <div className="bg-white/5 rounded-lg px-1.5 py-1">
-                  <select
-                    value={fontFamily}
-                    onChange={e => setFontFamily(e.target.value)}
-                    className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
-                  >
-                    {['Inter', 'Arial', 'Courier New', 'Georgia'].map(f => (
-                      <option key={f} value={f} className="bg-gray-900 text-white">{f}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="w-px h-6 bg-white/10" />
-
-                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <CaseSensitive size={12} className="text-white/50 shrink-0" />
-                  <Slider
-                    value={[currentFontSize]}
-                    min={8}
-                    max={120}
-                    onValueChange={handleFontSizeChange}
-                    className="w-16 h-4"
-                  />
-                  <input
-                    type="number"
-                    value={currentFontSize}
-                    min={8}
-                    max={120}
-                    onChange={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleFontSizeChange(val);
-                    }}
-                    onBlur={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleFontSizeChange(clamp(val, 8, 120));
-                    }}
-                    className={numberInputClass}
-                  />
-                </div>
-
-                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <WrapText size={12} className="text-white/50 shrink-0" />
-                  <Slider
-                    value={[currentLineHeight]}
-                    min={0}
-                    max={3}
-                    step={0.1}
-                    onValueChange={handleLineHeightChange}
-                    className="w-16 h-4"
-                  />
-                  <input
-                    type="number"
-                    value={currentLineHeight}
-                    min={0}
-                    max={3}
-                    step={0.1}
-                    onChange={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleLineHeightChange(val);
-                    }}
-                    onBlur={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleLineHeightChange(clamp(val, 0, 3));
-                    }}
-                    className={numberInputClass}
-                  />
-                </div>
-
-                <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-                  <MoveHorizontal size={12} className="text-white/50 shrink-0" />
-                  <Slider
-                    value={[currentLetterSpacing]}
-                    min={-10}
-                    max={20}
-                    step={0.5}
-                    onValueChange={handleLetterSpacingChange}
-                    className="w-16 h-4"
-                  />
-                  <input
-                    type="number"
-                    value={currentLetterSpacing}
-                    min={-10}
-                    max={20}
-                    step={0.5}
-                    onChange={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleLetterSpacingChange(val);
-                    }}
-                    onBlur={e => {
-                      const val = Number(e.target.value);
-                      if (!isNaN(val)) handleLetterSpacingChange(clamp(val, -10, 20));
-                    }}
-                    className={numberInputClass}
-                  />
-                </div>
-              </>
-            )}
-
-            <div className="w-px h-6 bg-white/10" />
-
-            <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-              <Layers size={12} className="text-white/50 shrink-0" />
-              <Slider
-                value={[Math.round(currentOpacity * 100)]}
-                min={10}
-                max={100}
-                onValueChange={handleOpacityChange}
-                className="w-16 h-4"
-              />
-              <input
-                type="number"
-                value={Math.round(currentOpacity * 100)}
-                min={10}
-                max={100}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  if (!isNaN(val)) handleOpacityChange(val);
-                }}
-                onBlur={e => {
-                  const val = Number(e.target.value);
-                  if (!isNaN(val)) handleOpacityChange(clamp(val, 10, 100));
-                }}
-                className={numberInputClass}
-              />
-              <span className="text-[10px] text-white/60">%</span>
-            </div>
-
-            <div className="w-px h-6 bg-white/10" />
-
-            <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
-              <RotateCw size={12} className="text-white/50 shrink-0" />
-              <Slider
-                value={[currentRotation]}
-                min={-180}
-                max={180}
-                onValueChange={handleRotationChange}
-                className="w-16 h-4"
-              />
-              <input
-                type="number"
-                value={Number(currentRotation).toFixed(1)}
-                min={-180}
-                max={180}
-                onChange={e => {
-                  const val = Number(e.target.value);
-                  if (!isNaN(val)) handleRotationChange(val);
-                }}
-                onBlur={e => {
-                  const val = Number(e.target.value);
-                  if (!isNaN(val)) handleRotationChange(clamp(val, -180, 180));
-                }}
-                className={numberInputClass}
-              />
-              <span className="text-[10px] text-white/60">°</span>
-            </div>
-
-            <div className="w-px h-6 bg-white/10" />
-
-            <button
-              onClick={handleDuplicate}
-              className="p-1.5 bg-white/5 rounded-lg text-white/60 hover:text-white transition-colors"
-              title="Duplicate"
-            >
-              <Copy size={14} />
-            </button>
-
-            <button
-              onClick={handleDelete}
-              className="p-1.5 hover:bg-red-500/20 rounded-lg text-red-400 hover:text-red-300 transition-colors"
-              title="Delete"
-            >
-              <Trash2 size={14} />
-            </button>
-          </div>
           </div>
         </motion.div>
       )}

@@ -8,11 +8,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime/debug"
 	"sync"
 	"time"
 
 	"glowsnap/services/screencast"
 	"glowsnap/services/screenshot"
+	"glowsnap/services/settings"
 
 	"github.com/godbus/dbus/v5"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -26,6 +28,7 @@ type App struct {
 	screenCastService *screencast.ScreenCastService
 	httpServer        *http.Server
 	screenshotsURL    string
+	screenshotsDir    string
 	serverMu          sync.Mutex
 }
 
@@ -47,23 +50,26 @@ func (a *App) startup(ctx context.Context) {
 	a.screenCastService = screencast.NewScreenCastService(conn)
 	a.screenCastService.SetOnRecordingEnd(func() {
 		runtime.EventsEmit(a.ctx, "recording-ended")
+		if settings.Load().Recording.NotifyOnRecordingEnd {
+			runtime.SendNotification(a.ctx, runtime.NotificationOptions{
+				Title: "GlowSnap",
+				Body:  "Recording saved.",
+			})
+		}
 	})
 	a.screenCastService.SetOnRecordingStart(func() {
 		runtime.EventsEmit(a.ctx, "recording-started")
 	})
 
-	home, _ := os.UserHomeDir()
-	screenshotsDir := filepath.Join(home, "Pictures", "Screenshots")
-	if _, err := os.Stat(screenshotsDir); os.IsNotExist(err) {
-		runtime.LogWarning(ctx, "Screenshots directory not found, creating it.")
-		os.MkdirAll(screenshotsDir, 0755)
+	a.screenshotsDir = settings.Load().ScreenshotSaveDir()
+	if err := os.MkdirAll(a.screenshotsDir, 0755); err != nil {
+		runtime.LogError(ctx, "Failed to create screenshots directory: "+err.Error())
 	}
 
-	fs := http.FileServer(http.Dir(screenshotsDir))
 	mux := http.NewServeMux()
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
-		fs.ServeHTTP(w, r)
+		http.FileServer(http.Dir(a.screenshotsDir)).ServeHTTP(w, r)
 	}))
 
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
@@ -113,17 +119,19 @@ func (a *App) ResizeToSettings() {
 	runtime.WindowCenter(a.ctx)
 }
 
+func (a *App) ResizeToPreferences() {
+	runtime.WindowSetSize(a.ctx, 520, 640)
+	runtime.WindowCenter(a.ctx)
+}
+
 func (a *App) TakeScreenshot() {
 	if a.screenshotService == nil {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-	path, err := a.screenshotService.CaptureFullScreen()
-	if err != nil {
-		runtime.LogError(a.ctx, "Screenshot failed: "+err.Error())
-		return
-	}
-	runtime.LogInfo(a.ctx, "Screenshot saved: "+path)
+	a.captureAndHandle("Screenshot", func() (string, error) {
+		return a.screenshotService.CaptureFullScreen()
+	})
 }
 
 func (a *App) TakeAreaScreenshot() {
@@ -131,12 +139,43 @@ func (a *App) TakeAreaScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-	path, err := a.screenshotService.CaptureArea()
+	a.captureAndHandle("Area screenshot", func() (string, error) {
+		return a.screenshotService.CaptureArea()
+	})
+}
+
+func (a *App) captureAndHandle(label string, capture func() (string, error)) {
+	cfg := settings.Load()
+
+	if cfg.Screenshot.DelaySeconds > 0 {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("Capturing %s in %ds", label, cfg.Screenshot.DelaySeconds))
+		time.Sleep(time.Duration(cfg.Screenshot.DelaySeconds) * time.Second)
+	}
+
+	path, err := capture()
 	if err != nil {
-		runtime.LogError(a.ctx, "Area screenshot failed: "+err.Error())
+		runtime.LogError(a.ctx, label+" failed: "+err.Error())
 		return
 	}
-	runtime.LogInfo(a.ctx, "Area screenshot saved: "+path)
+	runtime.LogInfo(a.ctx, label+" saved: "+path)
+
+	if cfg.Screenshot.OpenAfterCapture {
+		if err := exec.Command("xdg-open", path).Start(); err != nil {
+			a.verboseLogf("failed to open screenshot: %v", err)
+		}
+	}
+	if cfg.Screenshot.NotifyOnCapture {
+		runtime.SendNotification(a.ctx, runtime.NotificationOptions{
+			Title: "GlowSnap",
+			Body:  label + " saved.",
+		})
+	}
+}
+
+func (a *App) verboseLogf(format string, args ...interface{}) {
+	if settings.Load().Advanced.VerboseLogging {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("[verbose] "+format, args...))
+	}
 }
 
 func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, micDevice string) (string, error) {
@@ -205,11 +244,60 @@ func (a *App) GetSystemAudioSupported() screencast.SystemAudioInfo {
 }
 
 func (a *App) GetSavedMicrophone() string {
-	return screencast.LoadSettings().Microphone
+	return screencast.LoadSettings().Recording.Microphone
 }
 
 func (a *App) SaveMicrophone(name string) error {
 	return screencast.SaveMicrophone(name)
+}
+
+func (a *App) GetSettings() settings.Settings {
+	return settings.Load()
+}
+
+func (a *App) UpdateSettings(s settings.Settings) settings.Settings {
+	if err := settings.Save(s); err != nil {
+		runtime.LogError(a.ctx, "Failed to save settings: "+err.Error())
+		return settings.Load()
+	}
+	saved := settings.Load()
+	a.refreshScreenshotsDir(saved)
+	return saved
+}
+
+func (a *App) ResetSettings() settings.Settings {
+	def := settings.ResetToDefaults()
+	a.refreshScreenshotsDir(def)
+	return def
+}
+
+func (a *App) refreshScreenshotsDir(s settings.Settings) {
+	if a == nil {
+		return
+	}
+	dir := s.ScreenshotSaveDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		runtime.LogError(a.ctx, "Failed to create screenshots directory: "+err.Error())
+		return
+	}
+	a.screenshotsDir = dir
+}
+
+func (a *App) SelectDirectory(title string) (string, error) {
+	path, err := runtime.OpenDirectoryDialog(a.ctx, runtime.OpenDialogOptions{
+		Title: title,
+	})
+	if err != nil {
+		return "", err
+	}
+	return path, nil
+}
+
+func (a *App) GetAppVersion() string {
+	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
+		return bi.Main.Version
+	}
+	return "dev"
 }
 
 func (a *App) GetHomeDir() string {
@@ -238,11 +326,10 @@ func birthTime(path string) (int64, string) {
 }
 
 func (a *App) ListScreenshots() ([]ScreenshotInfo, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
+	dir := settings.Load().ScreenshotSaveDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return nil, err
 	}
-	dir := filepath.Join(home, "Pictures", "Screenshots")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -323,21 +410,17 @@ func (a *App) ResizeToStudio() {
 }
 
 func (a *App) RenameScreenshot(oldName, newName string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
+	dir := settings.Load().ScreenshotSaveDir()
+	if err := os.MkdirAll(dir, 0755); err != nil {
 		return err
 	}
-	dir := filepath.Join(home, "Pictures", "Screenshots")
 	oldPath := filepath.Join(dir, oldName)
 	newPath := filepath.Join(dir, newName)
 	return os.Rename(oldPath, newPath)
 }
 
 func (a *App) DeleteScreenshot(fileName string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return err
-	}
-	path := filepath.Join(home, "Pictures", "Screenshots", fileName)
+	dir := settings.Load().ScreenshotSaveDir()
+	path := filepath.Join(dir, fileName)
 	return os.Remove(path)
 }

@@ -1,9 +1,20 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Pause, Play, Square, X, Mic, Volume2 } from 'lucide-react';
-import { RecordingBarProps } from '@/types/types';
+import React, { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
+import { Pause, Play, Square, X, Mic, Volume2 } from "lucide-react";
+import { RecordingBarProps } from "@/types/types";
 
-export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPaused, started, micEnabled, systemEnabled, onToggleMic, onToggleSystem }: RecordingBarProps) {
+export default function RecordingBar({
+  onStop,
+  onPause,
+  onResume,
+  onCancel,
+  isPaused,
+  started,
+  micEnabled,
+  systemEnabled,
+  onToggleMic,
+  onToggleSystem,
+}: RecordingBarProps) {
   const [seconds, setSeconds] = useState(0);
   const [micOn, setMicOn] = useState(micEnabled);
   const [systemOn, setSystemOn] = useState(systemEnabled);
@@ -17,7 +28,7 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
   useEffect(() => {
     timerRef.current = window.setInterval(() => {
       if (startedRef.current && !isPaused) {
-        setSeconds(s => s + 1);
+        setSeconds((s) => s + 1);
       }
     }, 1000);
     return () => {
@@ -28,7 +39,7 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
   const formatTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = secs % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
   const toggleMic = () => {
@@ -52,13 +63,15 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
     >
       <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/30">
         <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-        <span className="text-xs font-mono text-red-400">{formatTime(seconds)}</span>
+        <span className="text-xs font-mono text-red-400">
+          {formatTime(seconds)}
+        </span>
       </div>
 
       <button
         onClick={isPaused ? onResume : onPause}
         className="p-2 rounded-xl hover:bg-white/10 transition-colors"
-        title={isPaused ? 'Resume' : 'Pause'}
+        title={isPaused ? "Resume" : "Pause"}
       >
         {isPaused ? <Play size={16} /> : <Pause size={16} />}
       </button>
@@ -83,16 +96,16 @@ export default function RecordingBar({ onStop, onPause, onResume, onCancel, isPa
 
       <button
         onClick={toggleMic}
-        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${micOn ? 'text-white text-red-400' : 'text-white/35 line-through'}`}
-        title={micOn ? 'Mute microphone' : 'Unmute microphone'}
+        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${micOn ? "text-white text-red-400" : "text-white/35 line-through"}`}
+        title={micOn ? "Mute microphone" : "Unmute microphone"}
       >
         <Mic size={14} />
         <span>Mic</span>
       </button>
       <button
         onClick={toggleSystem}
-        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${systemOn ? 'text-white text-red-400' : 'text-white/35 line-through'}`}
-        title={systemOn ? 'Mute system audio' : 'Unmute system audio'}
+        className={`flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg transition-colors ${systemOn ? "text-white text-red-400" : "text-white/35 line-through"}`}
+        title={systemOn ? "Mute system audio" : "Unmute system audio"}
       >
         <Volume2 size={14} />
         <span>System</span>

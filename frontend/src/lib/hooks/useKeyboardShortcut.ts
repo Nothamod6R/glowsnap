@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect } from "react";
 
-export default function useKeyboardShortcut(keys: { alt?: boolean; ctrl?: boolean; key: string }, callback: () => void) {
+export default function useKeyboardShortcut(
+  keys: { alt?: boolean; ctrl?: boolean; key: string },
+  callback: () => void,
+) {
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (
@@ -12,7 +15,7 @@ export default function useKeyboardShortcut(keys: { alt?: boolean; ctrl?: boolea
         callback();
       }
     };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
   }, [keys, callback]);
 }

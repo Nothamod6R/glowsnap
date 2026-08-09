@@ -11,14 +11,14 @@ the project root themselves. They never modify application source code.
 
 ## Scripts overview
 
-| Script | Purpose |
-| ------ | ------- |
-| `dev.sh`          | Start the Wails development environment (Vite HMR + Go hot reload). |
-| `build.sh`        | Build the production application (`build/bin/glowsnap`). |
-| `build-appimage.sh` | Build the app and package it into a Linux AppImage. |
-| `release.sh`      | Build app + AppImage and collect artifacts under `release/<version>/`. |
-| `clean.sh`        | Remove generated build artifacts and temporary files. |
-| `install-deps.sh` | Detect the OS and report/install required dependencies. |
+| Script              | Purpose                                                                |
+| ------------------- | ---------------------------------------------------------------------- |
+| `dev.sh`            | Start the Wails development environment (Vite HMR + Go hot reload).    |
+| `build.sh`          | Build the production application (`build/bin/glowsnap`).               |
+| `build-appimage.sh` | Build the app and package it into a Linux AppImage.                    |
+| `release.sh`        | Build app + AppImage and collect artifacts under `release/<version>/`. |
+| `clean.sh`          | Remove generated build artifacts and temporary files.                  |
+| `install-deps.sh`   | Detect the OS and report/install required dependencies.                |
 
 ---
 

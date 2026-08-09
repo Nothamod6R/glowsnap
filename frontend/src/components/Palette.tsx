@@ -1,28 +1,46 @@
-import { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Camera, Crop, Type, EyeOff, Video, X } from 'lucide-react';
-import { Button } from './ui/button';
-import ToolButton from './ToolButton';
-import { PALETTE_SHORTCUTS, matchesShortcut, isEditableTarget } from '@/lib/shortcut';
+import { useEffect, useMemo } from "react";
+import { motion } from "framer-motion";
+import { Camera, Crop, Type, EyeOff, Video, X, Settings } from "lucide-react";
+import { Button } from "./ui/button";
+import ToolButton from "./ToolButton";
+import {
+  PALETTE_SHORTCUTS,
+  matchesShortcut,
+  isEditableTarget,
+  applyShortcutOverrides,
+} from "@/lib/shortcut";
 
-export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, onClose, onStartRecording }: any) {
+export default function Palette({
+  onTakeScreenshot,
+  onTakeAreaScreenshot,
+  onSwitchToStudio,
+  onClose,
+  onStartRecording,
+  onOpenSettings,
+  customShortcuts,
+}: any) {
+  const shortcuts = useMemo(
+    () => applyShortcutOverrides(PALETTE_SHORTCUTS, customShortcuts),
+    [customShortcuts],
+  );
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isEditableTarget(e.target)) return;
-      for (const shortcut of PALETTE_SHORTCUTS) {
+      for (const shortcut of shortcuts) {
         if (matchesShortcut(shortcut, e)) {
           e.preventDefault();
           switch (shortcut.action) {
-            case 'full-screen':
+            case "full-screen":
               onTakeScreenshot();
               break;
-            case 'select-area':
+            case "select-area":
               onTakeAreaScreenshot();
               break;
-            case 'record':
+            case "record":
               onStartRecording();
               break;
-            case 'studio':
+            case "studio":
               onSwitchToStudio();
               break;
           }
@@ -30,11 +48,12 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
         }
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio]);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onTakeScreenshot, onTakeAreaScreenshot, onSwitchToStudio, shortcuts]);
 
-  const shortcutFor = (action: string) => PALETTE_SHORTCUTS.find(s => s.action === action)?.keys;
+  const shortcutFor = (action: string) =>
+    shortcuts.find((s) => s.action === action)?.keys;
 
   return (
     <motion.div
@@ -44,9 +63,24 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
       exit={{ opacity: 0, scale: 0.9 }}
       className="flex items-center gap-2 p-2 rounded-2xl backdrop-blur-2xl bg-black shadow-2xl text-white"
     >
-      <ToolButton icon={<Camera size={18} />} label="Full Screen" shortcut={shortcutFor('full-screen')} onClick={onTakeScreenshot} />
-      <ToolButton icon={<Crop size={18} />} label="Select Area" shortcut={shortcutFor('select-area')} onClick={onTakeAreaScreenshot} />
-      <ToolButton icon={<Video size={18} />} label="Record" shortcut={shortcutFor('record')} onClick={onStartRecording} />
+      <ToolButton
+        icon={<Camera size={18} />}
+        label="Full Screen"
+        shortcut={shortcutFor("full-screen")}
+        onClick={onTakeScreenshot}
+      />
+      <ToolButton
+        icon={<Crop size={18} />}
+        label="Select Area"
+        shortcut={shortcutFor("select-area")}
+        onClick={onTakeAreaScreenshot}
+      />
+      <ToolButton
+        icon={<Video size={18} />}
+        label="Record"
+        shortcut={shortcutFor("record")}
+        onClick={onStartRecording}
+      />
       {/* Commented-out buttons intentionally get no shortcut.
       <ToolButton icon={<Type size={18} />} label="OCR Text" />
       <ToolButton icon={<EyeOff size={18} />} label="Smart Blur" /> */}
@@ -55,6 +89,10 @@ export default function Palette({ onTakeScreenshot, onTakeAreaScreenshot, onSwit
 
       <Button onClick={onSwitchToStudio}>
         <span>Studio</span>
+      </Button>
+
+      <Button variant="outline" onClick={onOpenSettings} title="Settings">
+        <Settings size={15} />
       </Button>
 
       {/*<Button variant="outline" onClick={onClose}>
