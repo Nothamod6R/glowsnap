@@ -627,7 +627,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
         <button onClick={onBack} className="flex items-center gap-2 text-sm hover:bg-white/10 px-3 py-1 rounded-lg">
           <X size={16} /> Back
         </button>
-        <Toolbar selectedTool={selectedTool} onToolChange={handleToolChange} isEditingText={!!editingTextId} />
+        <Toolbar selectedTool={selectedTool} onToolChange={handleToolChange} isEditingText={!!editingTextId} customShortcuts={customShortcuts} />
         <div className="flex gap-2">
           <button onClick={handleUndo} className="p-2 hover:bg-white/10 rounded"><Undo2 size={16} /></button>
           <button onClick={handleRedo} className="p-2 hover:bg-white/10 rounded"><Redo2 size={16} /></button>

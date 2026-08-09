@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { EventsOn } from '../wailsjs/runtime/runtime';
 import {
   ResizeToPalette,
@@ -124,6 +124,19 @@ export default function App() {
       active = false;
     };
   }, []);
+
+  const prevModeRef = useRef<WindowMode>(mode);
+  useEffect(() => {
+    const prev = prevModeRef.current;
+    prevModeRef.current = mode;
+    const changedInSettings = prev === 'preferences' || prev === 'settings';
+    const nowInUse = mode === 'palette' || mode === 'studio' || mode === 'recording';
+    if (changedInSettings && nowInUse) {
+      GetSettings()
+        .then((cfg) => setCustomShortcuts(cfg.customShortcuts || {}))
+        .catch(() => {});
+    }
+  }, [mode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
