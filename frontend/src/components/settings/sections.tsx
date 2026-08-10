@@ -131,11 +131,9 @@ interface RecordingSectionProps extends SectionProps {
 }
 
 const QUALITY_OPTIONS = [
-  { value: "sd", label: "Standard Definition (480p)" },
-  { value: "hd", label: "High Definition (720p)" },
-  { value: "fhd", label: "Full HD (1080p)" },
-  { value: "qhd", label: "Quad HD (1440p)" },
-  { value: "uhd", label: "Ultra HD (4K)" },
+  { value: "low", label: "Low (smaller file)" },
+  { value: "medium", label: "Medium (balanced)" },
+  { value: "high", label: "High (best quality)" },
 ];
 
 export function RecordingSection({
@@ -162,7 +160,7 @@ export function RecordingSection({
       </SettingRow>
       <SettingRow
         label="Quality"
-        description="Output resolution for recordings."
+        description="Trade-off between file size and visual quality for new recordings."
       >
         <Select
           value={rc.quality}

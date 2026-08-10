@@ -1,5 +1,5 @@
 import React from "react";
-import { FolderOpen, ChevronLeft, ChevronRight } from "lucide-react";
+import { FolderOpen, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 
 export function SectionHeader({
   title,
@@ -78,18 +78,24 @@ interface SelectProps {
 
 export function Select({ value, onChange, options, disabled }: SelectProps) {
   return (
-    <select
-      value={value}
-      disabled={disabled}
-      onChange={(e) => onChange(e.target.value)}
-      className="bg-white/10 hover:bg-white/15 text-xs text-white/90 rounded-lg px-2 py-1.5 border border-white/10 outline-none disabled:opacity-40 cursor-pointer"
-    >
-      {options.map((o) => (
-        <option key={o.value} value={o.value} className="bg-black text-white">
-          {o.label}
-        </option>
-      ))}
-    </select>
+    <div className="relative w-full">
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full h-8 pl-2 pr-8 text-xs bg-white/5 border border-white/10 rounded-lg text-white/80 focus:outline-none focus:border-white/30 appearance-none cursor-pointer disabled:opacity-40"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+      <ChevronDown
+        size={14}
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-white/50"
+      />
+    </div>
   );
 }
 
