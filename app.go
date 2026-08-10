@@ -159,6 +159,9 @@ func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 	}
 	runtime.LogInfo(a.ctx, label+" saved: "+path)
 
+	if cfg.Screenshot.CopyToClipboard {
+		a.copyFileToClipboard(path)
+	}
 	if cfg.Screenshot.OpenAfterCapture {
 		if err := exec.Command("xdg-open", path).Start(); err != nil {
 			a.verboseLogf("failed to open screenshot: %v", err)
@@ -170,6 +173,33 @@ func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 			Body:  label + " saved.",
 		})
 	}
+}
+
+func (a *App) copyFileToClipboard(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		a.verboseLogf("clipboard: failed to open %s: %v", path, err)
+		return
+	}
+	defer f.Close()
+
+	for _, args := range [][]string{
+		{"wl-copy", "--type", "image/png"},
+		{"xclip", "-selection", "clipboard", "-t", "image/png"},
+		{"xsel", "--clipboard", "--input", "--mimetype", "image/png"},
+	} {
+		if _, err := exec.LookPath(args[0]); err != nil {
+			continue
+		}
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin = f
+		if err := cmd.Run(); err != nil {
+			a.verboseLogf("clipboard copy failed (%s): %v", args[0], err)
+			continue
+		}
+		return
+	}
+	a.verboseLogf("clipboard: no supported clipboard tool found")
 }
 
 func (a *App) verboseLogf(format string, args ...interface{}) {
