@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -20,6 +19,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sys/unix"
 )
+
+var appVersion = "dev"
 
 type App struct {
 	ctx               context.Context
@@ -328,10 +329,7 @@ func (a *App) SelectDirectory(title string) (string, error) {
 }
 
 func (a *App) GetAppVersion() string {
-	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
-		return bi.Main.Version
-	}
-	return "dev"
+	return appVersion
 }
 
 func (a *App) GetHomeDir() string {

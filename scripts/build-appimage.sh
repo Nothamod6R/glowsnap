@@ -42,7 +42,7 @@ if [ -n "$VERSION" ]; then
     VERSION="${VERSION#v}"
 fi
 
-"$SCRIPT_DIR/build.sh"
+VERSION="$VERSION" "$SCRIPT_DIR/build.sh"
 
 echo "Creating AppDir folder structure..."
 rm -rf "$BUILD_DIR"
