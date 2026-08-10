@@ -41,9 +41,6 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 		"handle_token": dbus.MakeVariant(fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())),
 		"interactive":  dbus.MakeVariant(interactive),
 	}
-	if cfg.Screenshot.CopyToClipboard {
-		options["copy_to_clipboard"] = dbus.MakeVariant(true)
-	}
 
 	var handle dbus.ObjectPath
 	err := portalObj.Call("org.freedesktop.portal.Screenshot.Screenshot", 0, "", options).Store(&handle)

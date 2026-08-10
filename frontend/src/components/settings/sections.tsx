@@ -468,9 +468,7 @@ export function AboutSection({
       <SectionHeader title="About Glowsnap" />
       <div className="flex items-center gap-2.5">
         <div className="w-8 h-8 rounded-xl bg-red-500/20 flex items-center justify-center text-red-400">
-          <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
-            <path d="M12 2L3 7v10c0 4.5 5.5 9 9 9s9-4.5 9-9V7l-9-5z" />
-          </svg>
+          <img src="/assets/appicon.png" alt="GlowSnap logo" />
         </div>
         <div>
           <div className="text-xs font-medium">Glowsnap</div>

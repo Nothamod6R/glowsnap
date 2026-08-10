@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime/debug"
 	"sync"
 	"time"
 
@@ -20,6 +19,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/runtime"
 	"golang.org/x/sys/unix"
 )
+
+var appVersion = "dev"
 
 type App struct {
 	ctx               context.Context
@@ -159,6 +160,9 @@ func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 	}
 	runtime.LogInfo(a.ctx, label+" saved: "+path)
 
+	if cfg.Screenshot.CopyToClipboard {
+		a.copyFileToClipboard(path)
+	}
 	if cfg.Screenshot.OpenAfterCapture {
 		if err := exec.Command("xdg-open", path).Start(); err != nil {
 			a.verboseLogf("failed to open screenshot: %v", err)
@@ -172,10 +176,41 @@ func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 	}
 }
 
+func (a *App) copyFileToClipboard(path string) {
+	f, err := os.Open(path)
+	if err != nil {
+		a.verboseLogf("clipboard: failed to open %s: %v", path, err)
+		return
+	}
+	defer f.Close()
+
+	for _, args := range [][]string{
+		{"wl-copy", "--type", "image/png"},
+		{"xclip", "-selection", "clipboard", "-t", "image/png"},
+		{"xsel", "--clipboard", "--input", "--mimetype", "image/png"},
+	} {
+		if _, err := exec.LookPath(args[0]); err != nil {
+			continue
+		}
+		cmd := exec.Command(args[0], args[1:]...)
+		cmd.Stdin = f
+		if err := cmd.Run(); err != nil {
+			a.verboseLogf("clipboard copy failed (%s): %v", args[0], err)
+			continue
+		}
+		return
+	}
+	a.verboseLogf("clipboard: no supported clipboard tool found")
+}
+
 func (a *App) verboseLogf(format string, args ...interface{}) {
 	if settings.Load().Advanced.VerboseLogging {
 		runtime.LogInfo(a.ctx, fmt.Sprintf("[verbose] "+format, args...))
 	}
+}
+
+func (a *App) SaveRecordingDefaults(micEnabled, systemEnabled bool) error {
+	return screencast.SaveRecordingDefaults(micEnabled, systemEnabled)
 }
 
 func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, micDevice string) (string, error) {
@@ -294,10 +329,7 @@ func (a *App) SelectDirectory(title string) (string, error) {
 }
 
 func (a *App) GetAppVersion() string {
-	if bi, ok := debug.ReadBuildInfo(); ok && bi.Main.Version != "" && bi.Main.Version != "(devel)" {
-		return bi.Main.Version
-	}
-	return "dev"
+	return appVersion
 }
 
 func (a *App) GetHomeDir() string {

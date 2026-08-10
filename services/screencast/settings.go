@@ -16,6 +16,13 @@ func SaveMicrophone(name string) error {
 	return settings.Save(s)
 }
 
+func SaveRecordingDefaults(micEnabled, systemEnabled bool) error {
+	s := settings.Load()
+	s.Recording.MicEnabledByDefault = micEnabled
+	s.Recording.SystemEnabledByDefault = systemEnabled
+	return settings.Save(s)
+}
+
 func (s *ScreenCastService) GetSavedMicrophone() string {
 	return settings.Load().Recording.Microphone
 }

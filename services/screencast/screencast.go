@@ -169,11 +169,11 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 		return "", err
 	}
 
-	if opts.CaptureMic && !captureMic {
-		_ = setSourceMute(opts.MicDevice, true)
+	if opts.CaptureMic {
+		_ = setSourceMute(opts.MicDevice, !captureMic)
 	}
-	if opts.CaptureSystem && !captureSystem {
-		_ = setSourceMute(opts.SystemDevice, true)
+	if opts.CaptureSystem {
+		_ = setSourceMute(opts.SystemDevice, !captureSystem)
 	}
 
 	s.lock()

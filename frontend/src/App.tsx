@@ -13,6 +13,7 @@ import {
   StopRecording,
   CancelRecording,
   SaveMicrophone,
+  SaveRecordingDefaults,
   SetMicEnabled,
   SetSystemEnabled,
   GetSettings,
@@ -84,6 +85,7 @@ export default function App() {
     if (micOn && micDevice) {
       await SaveMicrophone(micDevice);
     }
+    await SaveRecordingDefaults(micOn, systemOn);
     await StartRecording(micOn, systemOn, micDevice);
     setRecStarted(false);
     setIsPaused(false);

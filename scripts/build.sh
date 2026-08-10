@@ -19,6 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$ROOT_DIR"
 
+VERSION="${VERSION:-dev}"
+VERSION="${VERSION#v}"
+
 if [ ! -d "frontend" ]; then
     echo "ERROR: 'frontend' directory not found under $ROOT_DIR" >&2
     exit 1
@@ -32,7 +35,10 @@ if ! command -v wails >/dev/null 2>&1; then
     exit 1
 fi
 echo "Building Wails application (WebKitGTK 4.1)..."
-wails build -tags webkit2_41 -clean
+wails build \
+  -tags webkit2_41 \
+  -clean \
+  -ldflags "-X main.appVersion=$VERSION"
 
 APP_BIN="build/bin/glowsnap"
 if [ ! -f "$APP_BIN" ]; then

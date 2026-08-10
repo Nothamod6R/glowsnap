@@ -90,6 +90,10 @@ export function SaveMicrophone(arg1) {
   return window["go"]["main"]["App"]["SaveMicrophone"](arg1);
 }
 
+export function SaveRecordingDefaults(arg1, arg2) {
+  return window["go"]["main"]["App"]["SaveRecordingDefaults"](arg1, arg2);
+}
+
 export function SelectDirectory(arg1) {
   return window["go"]["main"]["App"]["SelectDirectory"](arg1);
 }
