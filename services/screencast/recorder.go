@@ -205,13 +205,19 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 		return nil, fmt.Errorf("output path is required")
 	}
 
-	videoBitrate, audioBitrate := qualityBitrates(opts.Quality)
+	profile := qualityProfile(opts.Quality)
+	audioBitrate := profile.AudioBitrate
 
 	args := []string{
 		"-e",
 		"pipewiresrc", fmt.Sprintf("path=%d", videoNode),
 		"!", "videoconvert",
-		"!", "openh264enc", fmt.Sprintf("bitrate=%d", videoBitrate),
+		"!", "openh264enc",
+		fmt.Sprintf("bitrate=%d", profile.VideoBitrate),
+		fmt.Sprintf("complexity=%d", profile.Complexity),
+		fmt.Sprintf("qp-min=%d", profile.QPMin),
+		fmt.Sprintf("qp-max=%d", profile.QPMax),
+		fmt.Sprintf("gop-size=%d", profile.GopSize),
 		"!", "h264parse",
 		"!", "queue", "max-size-time=2000000000",
 		"!", "mp4mux", "name=mux",
@@ -265,13 +271,22 @@ func buildPipelineArgs(videoNode uint32, opts RecordingOptions) ([]string, error
 	return args, nil
 }
 
-func qualityBitrates(q string) (video int, audio int) {
+type encodingProfile struct {
+	VideoBitrate int
+	AudioBitrate int
+	Complexity   int
+	QPMin        int
+	QPMax        int
+	GopSize      int
+}
+
+func qualityProfile(q string) encodingProfile {
 	switch q {
-	case "high":
-		return 5000000, 192000
 	case "low":
-		return 800000, 96000
+		return encodingProfile{VideoBitrate: 800000, AudioBitrate: 96000, Complexity: 0, QPMin: 32, QPMax: 48, GopSize: 60}
+	case "high":
+		return encodingProfile{VideoBitrate: 6000000, AudioBitrate: 192000, Complexity: 2, QPMin: 16, QPMax: 38, GopSize: 60}
 	default:
-		return 2000000, 128000
+		return encodingProfile{VideoBitrate: 2000000, AudioBitrate: 128000, Complexity: 1, QPMin: 24, QPMax: 44, GopSize: 60}
 	}
 }
