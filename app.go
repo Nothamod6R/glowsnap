@@ -208,6 +208,10 @@ func (a *App) verboseLogf(format string, args ...interface{}) {
 	}
 }
 
+func (a *App) SaveRecordingDefaults(micEnabled, systemEnabled bool) error {
+	return screencast.SaveRecordingDefaults(micEnabled, systemEnabled)
+}
+
 func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, micDevice string) (string, error) {
 	if a.screenCastService == nil {
 		return "", fmt.Errorf("recording service not initialized")

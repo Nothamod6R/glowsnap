@@ -48,6 +48,8 @@ export function SaveFileDialog(arg1:string):Promise<string>;
 
 export function SaveMicrophone(arg1:string):Promise<void>;
 
+export function SaveRecordingDefaults(arg1:boolean,arg2:boolean):Promise<void>;
+
 export function SelectDirectory(arg1:string):Promise<string>;
 
 export function SetMicEnabled(arg1:boolean):Promise<void>;
