@@ -2,6 +2,9 @@ package screenshot
 
 import (
 	"fmt"
+	"image"
+	"image/draw"
+	"image/png"
 	"io"
 	"net/url"
 	"os"
@@ -146,4 +149,49 @@ func buildScreenshotName(pattern string) string {
 
 func (s *Service) CaptureArea() (string, error) {
 	return s.commonCapture(true)
+}
+
+func (s *Service) CropRegion(path string, x, y, width, height int) error {
+	if width <= 0 || height <= 0 {
+		return fmt.Errorf("invalid crop region: %dx%d at (%d,%d)", width, height, x, y)
+	}
+
+	src, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open image for cropping: %w", err)
+	}
+	defer src.Close()
+
+	img, _, err := image.Decode(src)
+	if err != nil {
+		return fmt.Errorf("failed to decode image for cropping: %w", err)
+	}
+
+	bounds := img.Bounds()
+	rect := image.Rect(x, y, x+width, y+height).Intersect(bounds)
+	if rect.Empty() {
+		return fmt.Errorf("crop region is outside the image bounds")
+	}
+
+	var cropped image.Image
+	if sub, ok := img.(interface {
+		SubImage(r image.Rectangle) image.Image
+	}); ok {
+		cropped = sub.SubImage(rect)
+	} else {
+		dst := image.NewRGBA(rect)
+		draw.Draw(dst, dst.Bounds(), img, rect.Min, draw.Src)
+		cropped = dst
+	}
+
+	dst, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create cropped image file: %w", err)
+	}
+	defer dst.Close()
+
+	if err := png.Encode(dst, cropped); err != nil {
+		return fmt.Errorf("failed to encode cropped image: %w", err)
+	}
+	return nil
 }

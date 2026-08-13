@@ -31,6 +31,9 @@ type App struct {
 	screenshotsURL    string
 	screenshotsDir    string
 	serverMu          sync.Mutex
+
+	overlayMu          sync.Mutex
+	pendingOverlayPath string
 }
 
 func NewApp() *App {
@@ -111,6 +114,8 @@ func (a *App) OpenToolsPalette() {
 }
 
 func (a *App) ResizeToPalette() {
+	runtime.WindowUnfullscreen(a.ctx)
+	runtime.WindowShow(a.ctx)
 	runtime.WindowSetSize(a.ctx, 520, 100)
 	runtime.WindowCenter(a.ctx)
 }
@@ -145,6 +150,69 @@ func (a *App) TakeAreaScreenshot() {
 	})
 }
 
+func (a *App) StartPaletteAreaCapture() (string, error) {
+	if a.screenshotService == nil {
+		return "", fmt.Errorf("screenshot service not initialized")
+	}
+
+	cfg := settings.Load()
+	if cfg.Screenshot.DelaySeconds > 0 {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("Capturing area screenshot in %ds", cfg.Screenshot.DelaySeconds))
+		time.Sleep(time.Duration(cfg.Screenshot.DelaySeconds) * time.Second)
+	}
+
+	runtime.WindowHide(a.ctx)
+
+	path, err := a.screenshotService.CaptureFullScreen()
+	if err != nil {
+		runtime.WindowShow(a.ctx)
+		runtime.LogError(a.ctx, "Palette area capture failed: "+err.Error())
+		return "", err
+	}
+
+	a.overlayMu.Lock()
+	a.pendingOverlayPath = path
+	a.overlayMu.Unlock()
+
+	return a.screenshotsURL + "/" + filepath.Base(path), nil
+}
+func (a *App) CompletePaletteAreaScreenshot(x, y, width, height int) error {
+	path, ok := a.takePendingOverlayPath()
+	if !ok {
+		return fmt.Errorf("no pending area capture")
+	}
+
+	if err := a.screenshotService.CropRegion(path, x, y, width, height); err != nil {
+		runtime.LogError(a.ctx, "Area screenshot crop failed: "+err.Error())
+		return err
+	}
+
+	a.postProcessCapture(path, "Area screenshot", settings.Load())
+	return nil
+}
+
+func (a *App) CancelPaletteAreaCapture() error {
+	path, ok := a.takePendingOverlayPath()
+	if !ok {
+		return nil
+	}
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+func (a *App) takePendingOverlayPath() (string, bool) {
+	a.overlayMu.Lock()
+	defer a.overlayMu.Unlock()
+	path := a.pendingOverlayPath
+	if path == "" {
+		return "", false
+	}
+	a.pendingOverlayPath = ""
+	return path, true
+}
+
 func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 	cfg := settings.Load()
 
@@ -158,6 +226,10 @@ func (a *App) captureAndHandle(label string, capture func() (string, error)) {
 		runtime.LogError(a.ctx, label+" failed: "+err.Error())
 		return
 	}
+	a.postProcessCapture(path, label, cfg)
+}
+
+func (a *App) postProcessCapture(path, label string, cfg settings.Settings) {
 	runtime.LogInfo(a.ctx, label+" saved: "+path)
 
 	if cfg.Screenshot.CopyToClipboard {
