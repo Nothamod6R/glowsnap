@@ -18,13 +18,14 @@ type General struct {
 }
 
 type Screenshot struct {
-	SaveDir          string `json:"saveDir"`
-	FilenamePattern  string `json:"filenamePattern"`
-	DelaySeconds     int    `json:"delaySeconds"`
-	CopyToClipboard  bool   `json:"copyToClipboard"`
-	OpenAfterCapture bool   `json:"openAfterCapture"`
-	NotifyOnCapture  bool   `json:"notifyOnCapture"`
-	ConfirmSelection bool   `json:"confirmSelection"`
+	SaveDir                string `json:"saveDir"`
+	FilenamePattern        string `json:"filenamePattern"`
+	DelaySeconds           int    `json:"delaySeconds"`
+	CopyToClipboard        bool   `json:"copyToClipboard"`
+	OpenAfterCapture       bool   `json:"openAfterCapture"`
+	NotifyOnCapture        bool   `json:"notifyOnCapture"`
+	ConfirmSelection       bool   `json:"confirmSelection"`
+	HidePanelBeforeCapture bool   `json:"hidePanelBeforeCapture"`
 }
 
 type Recording struct {
@@ -94,9 +95,10 @@ func Defaults() Settings {
 	return Settings{
 		General: General{ConfirmDelete: true},
 		Screenshot: Screenshot{
-			SaveDir:          DefaultScreenshotSaveDir(),
-			FilenamePattern:  "screenshot_{date}",
-			ConfirmSelection: true,
+			SaveDir:                DefaultScreenshotSaveDir(),
+			FilenamePattern:        "screenshot_{date}",
+			ConfirmSelection:       true,
+			HidePanelBeforeCapture: true,
 		},
 		Recording: Recording{
 			SaveDir:                DefaultRecordingSaveDir(),
@@ -264,6 +266,9 @@ func mergeDefaults(def Settings, stored *Settings, data []byte) {
 	}
 	if !present("screenshot", "confirmSelection") {
 		stored.Screenshot.ConfirmSelection = def.Screenshot.ConfirmSelection
+	}
+	if !present("screenshot", "hidePanelBeforeCapture") {
+		stored.Screenshot.HidePanelBeforeCapture = def.Screenshot.HidePanelBeforeCapture
 	}
 
 	if !present("recording", "saveDir") {

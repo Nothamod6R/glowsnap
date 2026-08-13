@@ -96,6 +96,17 @@ export function ScreenshotSection({
         />
       </SettingRow>
       <SettingRow
+        label="Hide panel before screenshot"
+        description="Briefly hide the current panel before capturing the screenshot."
+      >
+        <Toggle
+          checked={sh.hidePanelBeforeCapture}
+          onChange={(v) =>
+            updateGroup("screenshot", { hidePanelBeforeCapture: v })
+          }
+        />
+      </SettingRow>
+      <SettingRow
         label="Confirm screenshot selection"
         description="Require pressing Enter to capture the selected area. Press Esc to cancel."
       >
