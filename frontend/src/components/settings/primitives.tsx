@@ -1,5 +1,10 @@
 import React from "react";
-import { FolderOpen, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
+import {
+  FolderOpen,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+} from "lucide-react";
 
 export function SectionHeader({
   title,
