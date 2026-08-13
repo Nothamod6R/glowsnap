@@ -23,7 +23,26 @@ export interface ToolButtonProps {
 }
 
 export type WindowMode =
-  "palette" | "studio" | "closed" | "recording" | "settings" | "preferences";
+  | "palette"
+  | "studio"
+  | "closed"
+  | "recording"
+  | "settings"
+  | "preferences"
+  | "overlay";
+
+export interface OverlayRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface OverlayProps {
+  imageUrl: string;
+  onComplete: (rect: OverlayRect) => void;
+  onCancel: () => void;
+}
 
 export interface SettingsPanelProps {
   onBack: () => void;
