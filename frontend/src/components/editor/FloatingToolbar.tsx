@@ -21,6 +21,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Toggle } from "@/components/ui/toggle";
 import { ShapeConfig } from "@/types/types";
+import FontPicker from "./FontPicker";
 
 interface FloatingToolbarProps {
   selectedShape: ShapeConfig | null;
@@ -315,21 +316,12 @@ export default function FloatingToolbar({
                   <div className="w-px h-6 bg-white/10" />
 
                   <div className="bg-white/5 rounded-lg px-1.5 py-1">
-                    <select
+                    <FontPicker
                       value={fontFamily}
-                      onChange={(e) => setFontFamily(e.target.value)}
-                      className="bg-transparent text-[10px] text-white/90 border border-white/10 rounded px-1 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer w-16"
-                    >
-                      {["Inter", "Arial", "Courier New", "Georgia"].map((f) => (
-                        <option
-                          key={f}
-                          value={f}
-                          className="bg-gray-900 text-white"
-                        >
-                          {f}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setFontFamily}
+                      selectClassName="text-[10px] px-1 py-0.5"
+                      optionClassName="bg-gray-900 text-white"
+                    />
                   </div>
 
                   <div className="w-px h-6 bg-white/10" />

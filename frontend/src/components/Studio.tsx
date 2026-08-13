@@ -23,6 +23,7 @@ import {
 } from "../../wailsjs/go/main/App";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Editor from "@/components/editor/Editor";
+import { CustomFontsProvider } from "@/lib/customFonts";
 import { Button } from "./ui/button";
 
 function useDebounce<T>(value: T, delay: number): T {
@@ -335,7 +336,11 @@ export default function Studio({ onBackToPalette }: StudioProps) {
 
   if (selectedImage) {
     const imageUrl = `${baseUrl}/${encodeURIComponent(selectedImage.name)}`;
-    return <Editor imageUrl={imageUrl} onBack={handleBackToGallery} />;
+    return (
+      <CustomFontsProvider>
+        <Editor imageUrl={imageUrl} onBack={handleBackToGallery} />
+      </CustomFontsProvider>
+    );
   }
 
   return (

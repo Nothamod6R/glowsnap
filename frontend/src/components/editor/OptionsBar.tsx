@@ -20,6 +20,7 @@ import {
 import { Slider } from "@/components/ui/slider";
 import { Toggle } from "@/components/ui/toggle";
 import { Tool } from "@/types/types";
+import FontPicker from "./FontPicker";
 
 interface OptionsBarProps {
   selectedTool: Tool;
@@ -253,17 +254,12 @@ export default function OptionsBar({
 
           <div className="flex items-center gap-1.5 bg-white/5 rounded-lg px-2 py-1">
             <Type size={13} className="text-white/50" />
-            <select
+            <FontPicker
               value={fontFamily}
-              onChange={(e) => setFontFamily(e.target.value)}
-              className="bg-transparent text-xs text-white/90 border border-white/10 rounded px-1.5 py-0.5 focus:outline-none focus:border-white/30 appearance-none cursor-pointer"
-            >
-              {["Inter", "Arial", "Courier New", "Georgia"].map((f) => (
-                <option key={f} value={f} className="bg-gray-800 text-white">
-                  {f}
-                </option>
-              ))}
-            </select>
+              onChange={setFontFamily}
+              selectClassName="text-xs px-1.5 py-0.5"
+              optionClassName="bg-gray-800 text-white"
+            />
           </div>
 
           <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
