@@ -22,6 +22,8 @@ import (
 
 var appVersion = "dev"
 
+const panelHideDelay = 150 * time.Millisecond
+
 type App struct {
 	ctx               context.Context
 	dbusConn          *dbus.Conn
@@ -135,9 +137,29 @@ func (a *App) TakeScreenshot() {
 		runtime.LogError(a.ctx, "Screenshot service not initialized")
 		return
 	}
-	a.captureAndHandle("Screenshot", func() (string, error) {
-		return a.screenshotService.CaptureFullScreen()
-	})
+	cfg := settings.Load()
+
+	if cfg.Screenshot.DelaySeconds > 0 {
+		runtime.LogInfo(a.ctx, fmt.Sprintf("Capturing Screenshot in %ds", cfg.Screenshot.DelaySeconds))
+		time.Sleep(time.Duration(cfg.Screenshot.DelaySeconds) * time.Second)
+	}
+
+	hidden := false
+	if cfg.Screenshot.HidePanelBeforeCapture {
+		runtime.WindowHide(a.ctx)
+		hidden = true
+		time.Sleep(panelHideDelay)
+	}
+
+	path, err := a.screenshotService.CaptureFullScreen()
+	if hidden {
+		runtime.WindowShow(a.ctx)
+	}
+	if err != nil {
+		runtime.LogError(a.ctx, "Screenshot failed: "+err.Error())
+		return
+	}
+	a.postProcessCapture(path, "Screenshot", cfg)
 }
 
 func (a *App) TakeAreaScreenshot() {
