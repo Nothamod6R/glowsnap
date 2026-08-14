@@ -24,7 +24,6 @@ type Screenshot struct {
 	CopyToClipboard        bool   `json:"copyToClipboard"`
 	OpenAfterCapture       bool   `json:"openAfterCapture"`
 	NotifyOnCapture        bool   `json:"notifyOnCapture"`
-	ConfirmSelection       bool   `json:"confirmSelection"`
 	HidePanelBeforeCapture bool   `json:"hidePanelBeforeCapture"`
 }
 
@@ -97,7 +96,6 @@ func Defaults() Settings {
 		Screenshot: Screenshot{
 			SaveDir:                DefaultScreenshotSaveDir(),
 			FilenamePattern:        "screenshot_{date}",
-			ConfirmSelection:       true,
 			HidePanelBeforeCapture: true,
 		},
 		Recording: Recording{
@@ -263,9 +261,6 @@ func mergeDefaults(def Settings, stored *Settings, data []byte) {
 	}
 	if !present("screenshot", "notifyOnCapture") {
 		stored.Screenshot.NotifyOnCapture = def.Screenshot.NotifyOnCapture
-	}
-	if !present("screenshot", "confirmSelection") {
-		stored.Screenshot.ConfirmSelection = def.Screenshot.ConfirmSelection
 	}
 	if !present("screenshot", "hidePanelBeforeCapture") {
 		stored.Screenshot.HidePanelBeforeCapture = def.Screenshot.HidePanelBeforeCapture

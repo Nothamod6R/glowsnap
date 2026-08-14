@@ -137,7 +137,6 @@ export namespace settings {
 	    copyToClipboard: boolean;
 	    openAfterCapture: boolean;
 	    notifyOnCapture: boolean;
-	    confirmSelection: boolean;
 	    hidePanelBeforeCapture: boolean;
 	
 	    static createFrom(source: any = {}) {
@@ -152,7 +151,6 @@ export namespace settings {
 	        this.copyToClipboard = source["copyToClipboard"];
 	        this.openAfterCapture = source["openAfterCapture"];
 	        this.notifyOnCapture = source["notifyOnCapture"];
-	        this.confirmSelection = source["confirmSelection"];
 	        this.hidePanelBeforeCapture = source["hidePanelBeforeCapture"];
 	    }
 	}
