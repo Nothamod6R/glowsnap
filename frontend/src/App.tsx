@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   EventsOn,
   WindowFullscreen,
   WindowShow,
+  LogInfo,
 } from "../wailsjs/runtime/runtime";
 import {
   ResizeToPalette,
@@ -51,10 +52,10 @@ export default function App() {
   >({});
   const [overlayImageUrl, setOverlayImageUrl] = useState<string | null>(null);
 
-  const switchToPalette = () => {
+  const switchToPalette = useCallback(() => {
     setMode("palette");
     ResizeToPalette();
-  };
+  }, []);
 
   const switchToStudio = () => {
     setMode("studio");
@@ -86,23 +87,26 @@ export default function App() {
     }
   };
 
-  const handleOverlayComplete = async (rect: OverlayRect) => {
-    try {
-      await CompletePaletteAreaScreenshot(
-        rect.x,
-        rect.y,
-        rect.width,
-        rect.height,
-      );
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setOverlayImageUrl(null);
-      switchToPalette();
-    }
-  };
+  const handleOverlayComplete = useCallback(
+    async (rect: OverlayRect) => {
+      try {
+        await CompletePaletteAreaScreenshot(
+          rect.x,
+          rect.y,
+          rect.width,
+          rect.height,
+        );
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setOverlayImageUrl(null);
+        switchToPalette();
+      }
+    },
+    [switchToPalette],
+  );
 
-  const handleOverlayCancel = async () => {
+  const handleOverlayCancel = useCallback(async () => {
     try {
       await CancelPaletteAreaCapture();
     } catch (err) {
@@ -111,7 +115,7 @@ export default function App() {
       setOverlayImageUrl(null);
       switchToPalette();
     }
-  };
+  }, [switchToPalette]);
 
   const openRecordingSettings = () => {
     setMode("settings");
@@ -207,8 +211,15 @@ export default function App() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (mode === "overlay") {
+        if (e.key === "Escape") {
+          e.preventDefault();
+          handleOverlayCancel();
+        }
+        return;
+      }
+
       if (isEditableTarget(e.target)) return;
-      if (mode === "overlay") return;
       const shortcuts = applyShortcutOverrides(APP_SHORTCUTS, customShortcuts);
       for (const shortcut of shortcuts) {
         if (matchesShortcut(shortcut, e)) {
@@ -224,7 +235,7 @@ export default function App() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [switchToPalette, customShortcuts, mode]);
+  }, [switchToPalette, customShortcuts, mode, handleOverlayCancel]);
 
   useEffect(() => {
     const unsub = EventsOn("toggle-palette", switchToPalette);
@@ -292,7 +303,6 @@ export default function App() {
           <Overlay
             imageUrl={overlayImageUrl}
             onComplete={handleOverlayComplete}
-            onCancel={handleOverlayCancel}
           />
         )}
       </AnimatePresence>

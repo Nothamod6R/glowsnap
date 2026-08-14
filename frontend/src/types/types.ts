@@ -41,7 +41,6 @@ export interface OverlayRect {
 export interface OverlayProps {
   imageUrl: string;
   onComplete: (rect: OverlayRect) => void;
-  onCancel: () => void;
 }
 
 export interface SettingsPanelProps {

@@ -27,7 +27,6 @@ const toRect = (a: Point, b: Point): Rect => {
 export default function Overlay({
   imageUrl,
   onComplete,
-  onCancel,
 }: OverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dragStart, setDragStart] = useState<Point | null>(null);
@@ -68,11 +67,6 @@ export default function Overlay({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onCancel();
-        return;
-      }
       if (e.key === "Enter") {
         e.preventDefault();
         const imgRect = selection ? toImageRect(selection) : null;
@@ -81,7 +75,7 @@ export default function Overlay({
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selection, toImageRect, onComplete, onCancel]);
+  }, [selection, toImageRect, onComplete]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
