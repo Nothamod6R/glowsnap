@@ -14,7 +14,7 @@
     "@tailwindcss/postcss": "^4.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.43.0",
+    "framer-motion": "^13.1.0",
     "konva": "^10.3.0",
     "lucide-react": "^1.27.0",
     "path": "^0.12.7",
