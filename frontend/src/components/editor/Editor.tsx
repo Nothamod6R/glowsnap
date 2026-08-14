@@ -388,7 +388,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
               letterSpacing: selectedStyle.letterSpacing,
               textDecoration: nextTextDecoration,
             },
-            false,
+            true,
           );
         }
       }
@@ -414,7 +414,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
       if (shape) {
         if (shape.type === "text" || shape.type === "number") {
           if (shape.fill !== selectedStyle.color) {
-            updateShape(selectedId, { fill: selectedStyle.color }, false);
+            updateShape(selectedId, { fill: selectedStyle.color }, true);
           }
         } else {
           const attrs: Partial<ShapeConfig> = {};
@@ -433,7 +433,7 @@ export default function Editor({ imageUrl, onBack }: EditorProps) {
             if (shape.fill !== nextFill) attrs.fill = nextFill;
           }
           if (Object.keys(attrs).length > 0) {
-            updateShape(selectedId, attrs, false);
+            updateShape(selectedId, attrs, true);
           }
         }
       }
