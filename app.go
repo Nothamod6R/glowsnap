@@ -183,11 +183,18 @@ func (a *App) StartPaletteAreaCapture() (string, error) {
 		time.Sleep(time.Duration(cfg.Screenshot.DelaySeconds) * time.Second)
 	}
 
-	runtime.WindowHide(a.ctx)
+	hidden := false
+	if cfg.Screenshot.HidePanelBeforeCapture {
+		runtime.WindowHide(a.ctx)
+		hidden = true
+		time.Sleep(panelHideDelay)
+	}
 
 	path, err := a.screenshotService.CaptureFullScreen()
-	if err != nil {
+	if hidden {
 		runtime.WindowShow(a.ctx)
+	}
+	if err != nil {
 		runtime.LogError(a.ctx, "Palette area capture failed: "+err.Error())
 		return "", err
 	}

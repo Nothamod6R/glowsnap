@@ -10,7 +10,6 @@ import {
   ResizeToSettings,
   ResizeToPreferences,
   TakeScreenshot,
-  TakeAreaScreenshot,
   StartPaletteAreaCapture,
   CompletePaletteAreaScreenshot,
   CancelPaletteAreaCapture,
@@ -75,23 +74,6 @@ export default function App() {
     }
   };
   const handleTakeAreaScreenshot = async () => {
-    let useOverlay = true;
-    try {
-      const cfg = await GetSettings();
-      useOverlay = cfg.screenshot.confirmSelection !== false;
-    } catch {
-      useOverlay = true;
-    }
-
-    if (!useOverlay) {
-      try {
-        await TakeAreaScreenshot();
-      } catch (err) {
-        console.error(err);
-      }
-      return;
-    }
-
     try {
       const url = await StartPaletteAreaCapture();
       setOverlayImageUrl(url);

@@ -107,15 +107,6 @@ export function ScreenshotSection({
         />
       </SettingRow>
       <SettingRow
-        label="Confirm screenshot selection"
-        description="Require pressing Enter to capture the selected area. Press Esc to cancel."
-      >
-        <Toggle
-          checked={sh.confirmSelection}
-          onChange={(v) => updateGroup("screenshot", { confirmSelection: v })}
-        />
-      </SettingRow>
-      <SettingRow
         label="Copy to clipboard"
         description="Also copy the capture to the clipboard."
       >
