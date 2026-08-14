@@ -138,7 +138,7 @@ export default function Overlay({
 
       {activeRect && (
         <div
-          className="absolute border-2 border-sky-400 bg-sky-400/20 pointer-events-none"
+          className="absolute border-2 border-red-500 bg-red-500/20 pointer-events-none"
           style={{
             left: activeRect.x,
             top: activeRect.y,
@@ -146,7 +146,7 @@ export default function Overlay({
             height: activeRect.height,
           }}
         >
-          <span className="absolute top-0 left-0 -translate-y-full bg-sky-500/90 text-white text-[11px] font-medium px-1.5 py-0.5 rounded-sm whitespace-nowrap">
+          <span className="absolute top-0 left-0 -translate-y-full bg-red-500/90 text-white text-[11px] font-medium px-1.5 py-0.5 rounded-sm whitespace-nowrap">
             {activeRect.width} × {activeRect.height}
           </span>
         </div>
@@ -155,14 +155,14 @@ export default function Overlay({
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none rounded-lg bg-black/70 px-3 py-1.5 text-white/90 text-xs flex items-center gap-3 whitespace-nowrap">
         {selection ? (
           <>
-            <span className="text-emerald-300">Selection ready</span>
+            <span className="text-red-500">Selection ready</span>
             <span className="text-white/40">|</span>
             <span>
-              <kbd className="text-sky-300">Enter</kbd> capture
+              <kbd className="text-red-500">Enter</kbd> capture
             </span>
             <span className="text-white/40">|</span>
             <span>
-              <kbd className="text-sky-300">Esc</kbd> cancel
+              <kbd className="text-red-500">Esc</kbd> cancel
             </span>
           </>
         ) : (
@@ -170,7 +170,7 @@ export default function Overlay({
             <span>Drag to select an area</span>
             <span className="text-white/40">|</span>
             <span>
-              <kbd className="text-sky-300">Esc</kbd> cancel
+              <kbd className="text-red-500">Esc</kbd> cancel
             </span>
           </>
         )}
