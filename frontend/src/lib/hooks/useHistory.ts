@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import { ShapeConfig } from "@/types/types";
+import { cloneShape } from "@/lib/utils";
 
 export function useHistory() {
   const [history, setHistory] = useState<ShapeConfig[][]>([]);
@@ -10,7 +11,7 @@ export function useHistory() {
   const saveHistory = useCallback((shapes: ShapeConfig[]) => {
     const current = historyRef.current;
     const newHistory = current.history.slice(0, current.index + 1);
-    newHistory.push(shapes.map((s) => ({ ...s })));
+    newHistory.push(shapes.map((s) => cloneShape(s)));
     current.history = newHistory;
     current.index = newHistory.length - 1;
     setHistory(newHistory);
@@ -23,7 +24,7 @@ export function useHistory() {
       current.index -= 1;
       setHistoryIndex(current.index);
       setHistory(current.history);
-      return current.history[current.index].map((s) => ({ ...s }));
+      return current.history[current.index].map((s) => cloneShape(s));
     }
     return null;
   }, []);
@@ -34,7 +35,7 @@ export function useHistory() {
       current.index += 1;
       setHistoryIndex(current.index);
       setHistory(current.history);
-      return current.history[current.index].map((s) => ({ ...s }));
+      return current.history[current.index].map((s) => cloneShape(s));
     }
     return null;
   }, []);
