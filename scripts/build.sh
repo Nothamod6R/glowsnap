@@ -38,6 +38,7 @@ echo "Building Wails application (WebKitGTK 4.1)..."
 wails build \
   -tags webkit2_41 \
   -clean \
+  -trimpath \
   -ldflags "-X main.appVersion=$VERSION"
 
 APP_BIN="build/bin/glowsnap"
