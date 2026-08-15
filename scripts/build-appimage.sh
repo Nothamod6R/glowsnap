@@ -59,6 +59,14 @@ else
     echo "Warning: Application icon not found in build directory!" >&2
 fi
 
+echo "Copying hicolor icon theme..."
+if [ -d "build/icons/hicolor" ]; then
+    mkdir -p "$BUILD_DIR/usr/share/icons"
+    cp -r "build/icons/hicolor" "$BUILD_DIR/usr/share/icons/hicolor"
+else
+    echo "Warning: hicolor icon theme not found in build/icons/hicolor!" >&2
+fi
+
 echo "Creating AppRun script..."
 cat << 'EOF' > "$BUILD_DIR/AppRun"
 #!/bin/sh
@@ -70,17 +78,29 @@ EOF
 chmod +x "$BUILD_DIR/AppRun"
 
 echo "Creating .desktop file..."
-{
-    echo "[Desktop Entry]"
-    echo "Name=Glowsnap"
+if [ -f "build/glowsnap.desktop" ]; then
+    cp "build/glowsnap.desktop" "$BUILD_DIR/$APP_NAME.desktop"
     if [ -n "$VERSION" ]; then
-        echo "X-AppImage-Version=$VERSION"
+        if grep -q '^X-AppImage-Version=' "$BUILD_DIR/$APP_NAME.desktop"; then
+            sed -i "s/^X-AppImage-Version=.*/X-AppImage-Version=$VERSION/" "$BUILD_DIR/$APP_NAME.desktop"
+        else
+            printf 'X-AppImage-Version=%s\n' "$VERSION" >> "$BUILD_DIR/$APP_NAME.desktop"
+        fi
     fi
-    echo "Exec=$APP_NAME"
-    echo "Icon=$APP_NAME"
-    echo "Type=Application"
-    echo "Categories=Utility;"
-} > "$BUILD_DIR/$APP_NAME.desktop"
+else
+    echo "Warning: build/glowsnap.desktop not found; generating minimal entry." >&2
+    {
+        echo "[Desktop Entry]"
+        echo "Name=Glowsnap"
+        if [ -n "$VERSION" ]; then
+            echo "X-AppImage-Version=$VERSION"
+        fi
+        echo "Exec=$APP_NAME"
+        echo "Icon=$APP_NAME"
+        echo "Type=Application"
+        echo "Categories=Utility;"
+    } > "$BUILD_DIR/$APP_NAME.desktop"
+fi
 
 echo "Downloading appimagetool if not present..."
 if [ ! -f "$APPIMAGETOOL" ]; then

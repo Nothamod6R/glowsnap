@@ -22,7 +22,7 @@ import (
 
 var appVersion = "dev"
 
-const panelHideDelay = 150 * time.Millisecond
+const panelHideDelay = 250 * time.Millisecond
 
 type App struct {
 	ctx               context.Context

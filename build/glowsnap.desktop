@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Glowsnap
+Comment=Screenshot and screen recording tool
+Exec=glowsnap
+Icon=glowsnap
+Terminal=false
+Type=Application
+Categories=Graphics;Utility;
+StartupNotify=true
+StartupWMClass=glowsnap

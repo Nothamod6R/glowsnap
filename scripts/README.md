@@ -17,6 +17,7 @@ the project root themselves. They never modify application source code.
 | `build.sh`          | Build the production application (`build/bin/glowsnap`).               |
 | `build-appimage.sh` | Build the app and package it into a Linux AppImage.                    |
 | `release.sh`        | Build app + AppImage and collect artifacts under `release/<version>/`. |
+| `install.sh`        | Install binary + `.desktop` + hicolor icons into the desktop env.      |
 | `clean.sh`          | Remove generated build artifacts and temporary files.                  |
 | `install-deps.sh`   | Detect the OS and report/install required dependencies.                |
 
@@ -54,6 +55,44 @@ Delegates the app build to `build.sh`, then packages the binary, icon and a
 generated `.desktop` file into an AppImage in `build/AppImage/`. When `VERSION`
 is set the artifact is named `Glowsnap-<VERSION>-<RELEASE_TYPE>-x86_64.AppImage`
 and the version is written into the `.desktop` entry.
+
+The AppImage is built from the repository's `build/glowsnap.desktop` entry and
+`build/icons/hicolor` icon theme, so the packaged layout is:
+
+```
+glowsnap.AppDir/
+├── AppRun
+├── glowsnap.desktop     (Icon=glowsnap, StartupWMClass=glowsnap)
+├── glowsnap.png         (512px, used by the AppImage runtime)
+└── usr/
+    └── share/
+        └── icons/
+            └── hicolor/
+                ├── 16x16/apps/glowsnap.png
+                ├── 32x32/apps/glowsnap.png
+                ├── ...
+                └── 512x512/apps/glowsnap.png
+```
+
+### Install into the desktop environment
+
+```bash
+./scripts/build.sh
+./scripts/install.sh                       # user-local (~/.local)
+sudo PREFIX=/usr/local ./scripts/install.sh  # system-wide
+```
+
+Installs the binary, `glowsnap.desktop` and the hicolor icon theme so desktop
+environments (KDE Plasma, GNOME, ...) show the correct icon in the taskbar and
+application launcher and associate the running window with the `glowsnap.desktop`
+entry.
+
+The script never touches icon caches. If newly installed icons are not picked up,
+refresh the cache manually (or log out and back in), e.g.:
+
+```bash
+gtk-update-icon-cache -f ~/.local/share/icons/hicolor
+```
 
 ### Prepare a local release
 

@@ -12,11 +12,14 @@ import (
 //go:embed all:frontend/dist
 var assets embed.FS
 
+//go:embed build/appicon.png
+var icon []byte
+
 func main() {
 	app := NewApp()
 
 	err := wails.Run(&options.App{
-		Title:  "GlowSnap",
+		Title:  "Glowsnap",
 		Width:  520,
 		Height: 100,
 
@@ -29,6 +32,8 @@ func main() {
 		Linux: &linux.Options{
 			WindowIsTranslucent: true,
 			WebviewGpuPolicy:    linux.WebviewGpuPolicyAlways,
+			Icon:                icon,
+			ProgramName:         "glowsnap",
 		},
 		OnStartup: app.startup,
 		Bind: []interface{}{
