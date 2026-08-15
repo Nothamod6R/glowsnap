@@ -13,7 +13,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/platform-Linux-blue">
   <img src="https://img.shields.io/badge/license-MIT-green">
-  <img src="https://img.shields.io/badge/status-early%20development-orange">
+  <img src="https://img.shields.io/badge/status-Stable%20-blue">
 </p>
 
 <p align="center">
