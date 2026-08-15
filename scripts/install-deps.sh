@@ -33,9 +33,9 @@ echo "Detected OS: $OS"
 [ -n "$DISTRO" ] && echo "Detected distro: $DISTRO"
 echo
 
-APT_PACKAGES=(build-essential libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf)
-DNF_PACKAGES=(gcc-c++ pkgconf-pkg-config glib2-devel gtk3-devel webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel patchelf)
-PACMAN_PACKAGES=(base-devel gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg patchelf)
+APT_PACKAGES=(build-essential libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libwayland-dev patchelf)
+DNF_PACKAGES=(gcc-c++ pkgconf-pkg-config glib2-devel gtk3-devel webkit2gtk4.1-devel libappindicator-gtk3-devel librsvg2-devel wayland-devel patchelf)
+PACMAN_PACKAGES=(base-devel gtk3 webkit2gtk-4.1 libappindicator-gtk3 librsvg wayland patchelf)
 
 PKGS=()
 INSTALL_CMD=""

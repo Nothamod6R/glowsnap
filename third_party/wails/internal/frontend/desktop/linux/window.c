@@ -890,93 +890,10 @@ void InstallF12Hotkey(void *window)
     gtk_accel_group_connect(accel_group, GDK_KEY_F12, GDK_CONTROL_MASK | GDK_SHIFT_MASK, GTK_ACCEL_VISIBLE, closure);
 }
 
-typedef struct WailsWaylandDecoration
-{
-    struct wl_display *display;
-    struct zxdg_decoration_manager_v1 *manager;
-    struct xdg_toplevel *toplevel;
-    struct zxdg_toplevel_decoration_v1 *decoration;
-} WailsWaylandDecoration;
-
-typedef struct WailsDecorationBind
-{
-    struct zxdg_decoration_manager_v1 *manager;
-} WailsDecorationBind;
-
-static void decorationHandleGlobal(void *data, struct wl_registry *registry,
-                                   uint32_t name, const char *interface,
-                                   uint32_t version)
-{
-    WailsDecorationBind *bind = data;
-    if (bind->manager == NULL && strcmp(interface, "zxdg_decoration_manager_v1") == 0)
-    {
-        uint32_t bindVersion = version < 2 ? version : 2;
-        bind->manager = wl_registry_bind(registry, name, &zxdg_decoration_manager_v1_interface, bindVersion);
-    }
-}
-
-static void decorationHandleRemove(void *data, struct wl_registry *registry,
-                                   uint32_t name)
-{
-}
-
-static const struct wl_registry_listener decorationRegistryListener = {
-    decorationHandleGlobal,
-    decorationHandleRemove,
-};
-
-static void decorationHandleConfigure(void *data, struct zxdg_toplevel_decoration_v1 *decoration,
-                                      uint32_t mode)
-{
-}
-
-static const struct zxdg_toplevel_decoration_v1_listener decorationListener = {
-    decorationHandleConfigure,
-};
-
-static struct zxdg_decoration_manager_v1 *decorationBindManager(GdkDisplay *display)
-{
-    struct wl_display *wlDisplay;
-    struct wl_registry *registry;
-    WailsDecorationBind *bind;
-    struct zxdg_decoration_manager_v1 *manager;
-
-    wlDisplay = gdk_wayland_display_get_wl_display(display);
-    if (wlDisplay == NULL)
-    {
-        return NULL;
-    }
-
-    bind = g_new0(WailsDecorationBind, 1);
-    registry = wl_display_get_registry(wlDisplay);
-    if (registry == NULL)
-    {
-        g_free(bind);
-        return NULL;
-    }
-
-    wl_registry_add_listener(registry, &decorationRegistryListener, bind);
-    wl_display_roundtrip(wlDisplay);
-    wl_registry_destroy(registry);
-
-    manager = bind->manager;
-    g_free(bind);
-
-    return manager;
-}
-
 static void decorationReconcile(GtkWindow *window)
 {
-    WailsWaylandDecoration *dec;
     GdkWindow *gdkWindow;
     GdkDisplay *display;
-    struct xdg_toplevel *toplevel;
-
-    dec = g_object_get_data(G_OBJECT(window), "wails-wayland-decoration");
-    if (dec == NULL)
-    {
-        return;
-    }
 
     gdkWindow = gtk_widget_get_window(GTK_WIDGET(window));
     if (gdkWindow == NULL)
@@ -990,52 +907,14 @@ static void decorationReconcile(GtkWindow *window)
         return;
     }
 
-    toplevel = gdk_wayland_window_get_xdg_toplevel(gdkWindow);
-    if (toplevel == NULL)
-    {
-        return;
-    }
-
-    if (toplevel == dec->toplevel && dec->decoration != NULL)
-    {
-        return;
-    }
-
-    if (dec->decoration != NULL)
-    {
-        wl_proxy_destroy((struct wl_proxy *)dec->decoration);
-        dec->decoration = NULL;
-    }
-    dec->toplevel = toplevel;
-
-    if (dec->manager == NULL)
-    {
-        dec->manager = decorationBindManager(display);
-        if (dec->manager == NULL)
-        {
-            return;
-        }
-        dec->display = gdk_wayland_display_get_wl_display(display);
-    }
-
-    if (zxdg_decoration_manager_v1_get_version(dec->manager) < 2)
-    {
-        return;
-    }
-
-    dec->decoration = zxdg_decoration_manager_v1_get_toplevel_decoration(dec->manager, toplevel);
-    if (dec->decoration == NULL)
-    {
-        return;
-    }
-
-    zxdg_toplevel_decoration_v1_add_listener(dec->decoration, &decorationListener, window);
-    zxdg_toplevel_decoration_v1_set_mode(dec->decoration, ZXDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE);
-
-    if (dec->display != NULL)
-    {
-        wl_display_flush(dec->display);
-    }
+    // Request client-side decorations from the Wayland compositor (e.g. KDE
+    // Plasma on Wayland) so the frameless window is not given a server-side
+    // title bar. GDK's exported gdk_wayland_window_announce_csd() API is
+    // present on both Ubuntu and Fedora GTK3 builds, unlike the internal
+    // gdk_wayland_window_get_xdg_toplevel() symbol which Ubuntu's GTK3 does
+    // not ship (causing the CI link failure). It is the portable form of the
+    // KDE/Wayland window decoration fix.
+    gdk_wayland_window_announce_csd(gdkWindow);
 }
 
 static void decorationOnMap(GtkWidget *widget, gpointer data)
@@ -1043,29 +922,9 @@ static void decorationOnMap(GtkWidget *widget, gpointer data)
     decorationReconcile(GTK_WINDOW(widget));
 }
 
-static void decorationCleanup(GtkWidget *widget, gpointer data)
-{
-    WailsWaylandDecoration *dec = g_object_get_data(G_OBJECT(widget), "wails-wayland-decoration");
-    if (dec == NULL)
-    {
-        return;
-    }
-    if (dec->decoration != NULL)
-    {
-        wl_proxy_destroy((struct wl_proxy *)dec->decoration);
-    }
-    if (dec->manager != NULL)
-    {
-        wl_proxy_destroy((struct wl_proxy *)dec->manager);
-    }
-    g_object_set_data(G_OBJECT(widget), "wails-wayland-decoration", NULL);
-    g_free(dec);
-}
-
 void SetWindowFrameless(GtkWindow *window)
 {
     GdkDisplay *display;
-    WailsWaylandDecoration *dec;
 
     if (!GTK_IS_WINDOW(window))
     {
@@ -1083,10 +942,8 @@ void SetWindowFrameless(GtkWindow *window)
         return;
     }
 
-    dec = g_new0(WailsWaylandDecoration, 1);
-    g_object_set_data(G_OBJECT(window), "wails-wayland-decoration", dec);
+    g_object_set_data(G_OBJECT(window), "wails-wayland-decoration", GUINT_TO_POINTER(1));
     g_signal_connect(window, "map", G_CALLBACK(decorationOnMap), NULL);
-    g_signal_connect(window, "destroy", G_CALLBACK(decorationCleanup), NULL);
 
     decorationReconcile(window);
 }
