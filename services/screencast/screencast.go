@@ -398,7 +398,7 @@ func (s *ScreenCastService) selectSources(portal dbus.BusObject, sessionHandle d
 	token := fmt.Sprintf("glowsnap_sel_%d", time.Now().UnixNano())
 	selectOptions := map[string]dbus.Variant{
 		"handle_token": dbus.MakeVariant(token),
-		"types":        dbus.MakeVariant(uint32(1)),
+		"types":        dbus.MakeVariant(uint32(1 | 2)),
 		"multiple":     dbus.MakeVariant(false),
 	}
 
