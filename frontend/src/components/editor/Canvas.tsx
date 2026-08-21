@@ -1021,6 +1021,7 @@ const Canvas = forwardRef<Konva.Stage, CanvasProps>(
           return (
             <Arrow
               {...commonProps}
+              fill={shape.stroke || shape.fill}
               points={shape.points!}
               x={cx}
               y={cy}
