@@ -191,6 +191,15 @@ export function RecordingSection({
         />
       </SettingRow>
       <SettingRow
+        label="Show mouse cursor"
+        description="Include the mouse pointer in screen recordings."
+      >
+        <Toggle
+          checked={rc.showMouseByDefault}
+          onChange={(v) => updateGroup("recording", { showMouseByDefault: v })}
+        />
+      </SettingRow>
+      <SettingRow
         label="Notify when recording ends"
         description="Show a notification when a recording finishes."
       >

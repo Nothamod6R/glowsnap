@@ -1,12 +1,12 @@
-import {writable} from 'svelte/store';
+import { writable } from "svelte/store";
 
 /** Overlay */
 export const overlayVisible = writable(false);
 
 export function showOverlay() {
-    overlayVisible.set(true);
+  overlayVisible.set(true);
 }
 
 export function hideOverlay() {
-    overlayVisible.set(false);
+  overlayVisible.set(false);
 }

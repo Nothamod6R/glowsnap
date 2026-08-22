@@ -16,10 +16,11 @@ func SaveMicrophone(name string) error {
 	return settings.Save(s)
 }
 
-func SaveRecordingDefaults(micEnabled, systemEnabled bool) error {
+func SaveRecordingDefaults(micEnabled, systemEnabled, showMouse bool) error {
 	s := settings.Load()
 	s.Recording.MicEnabledByDefault = micEnabled
 	s.Recording.SystemEnabledByDefault = systemEnabled
+	s.Recording.ShowMouseByDefault = showMouse
 	return settings.Save(s)
 }
 

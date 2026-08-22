@@ -76,6 +76,7 @@ export interface RecordingSettingsProps {
   onStart: (
     micOn: boolean,
     systemOn: boolean,
+    showMouse: boolean,
     micDevice: string,
   ) => Promise<void>;
 }

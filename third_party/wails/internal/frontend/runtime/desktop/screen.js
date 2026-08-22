@@ -10,9 +10,7 @@ The electron alternative for Go
 
 /* jshint esversion: 9 */
 
-
-import {Call} from "./calls";
-
+import { Call } from "./calls";
 
 /**
  * Gets the all screens. Call this anew each time you want to refresh data from the underlying windowing system.
@@ -21,5 +19,5 @@ import {Call} from "./calls";
  * @return {Promise<{Screen[]}>} The screens
  */
 export function ScreenGetAll() {
-    return Call(":wails:ScreenGetAll");
+  return Call(":wails:ScreenGetAll");
 }
