@@ -25,6 +25,7 @@ type Screenshot struct {
 	OpenAfterCapture       bool   `json:"openAfterCapture"`
 	NotifyOnCapture        bool   `json:"notifyOnCapture"`
 	HidePanelBeforeCapture bool   `json:"hidePanelBeforeCapture"`
+	ShowMouseByDefault     bool   `json:"showMouseByDefault"`
 }
 
 type Recording struct {
@@ -98,6 +99,7 @@ func Defaults() Settings {
 			SaveDir:                DefaultScreenshotSaveDir(),
 			FilenamePattern:        "screenshot_{date}",
 			HidePanelBeforeCapture: true,
+			ShowMouseByDefault:     true,
 		},
 		Recording: Recording{
 			SaveDir:                DefaultRecordingSaveDir(),
@@ -266,6 +268,9 @@ func mergeDefaults(def Settings, stored *Settings, data []byte) {
 	}
 	if !present("screenshot", "hidePanelBeforeCapture") {
 		stored.Screenshot.HidePanelBeforeCapture = def.Screenshot.HidePanelBeforeCapture
+	}
+	if !present("screenshot", "showMouseByDefault") {
+		stored.Screenshot.ShowMouseByDefault = def.Screenshot.ShowMouseByDefault
 	}
 
 	if !present("recording", "saveDir") {

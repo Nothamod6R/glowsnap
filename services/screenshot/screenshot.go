@@ -41,8 +41,9 @@ func (s *Service) commonCapture(interactive bool) (string, error) {
 
 	portalObj := s.conn.Object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
 	options := map[string]dbus.Variant{
-		"handle_token": dbus.MakeVariant(fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())),
-		"interactive":  dbus.MakeVariant(interactive),
+		"handle_token":   dbus.MakeVariant(fmt.Sprintf("glowsnap_%d", time.Now().UnixNano())),
+		"interactive":    dbus.MakeVariant(interactive),
+		"include_cursor": dbus.MakeVariant(cfg.Screenshot.ShowMouseByDefault),
 	}
 
 	var handle dbus.ObjectPath

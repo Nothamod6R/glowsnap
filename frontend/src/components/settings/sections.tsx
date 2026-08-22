@@ -107,6 +107,15 @@ export function ScreenshotSection({
         />
       </SettingRow>
       <SettingRow
+        label="Show mouse cursor"
+        description="Include the mouse pointer in screenshots."
+      >
+        <Toggle
+          checked={sh.showMouseByDefault}
+          onChange={(v) => updateGroup("screenshot", { showMouseByDefault: v })}
+        />
+      </SettingRow>
+      <SettingRow
         label="Copy to clipboard"
         description="Also copy the capture to the clipboard."
       >
