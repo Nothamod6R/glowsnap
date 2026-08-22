@@ -1,0 +1,24 @@
+# Git / VCS metadata
+.git
+
+# Frontend: node_modules and generated dist are produced inside the build
+frontend/node_modules
+frontend/dist
+
+# Go build outputs
+build/bin
+build/AppImage
+
+# AppImage tooling and artifacts (root-level appimagetool binary, built outputs)
+appimagetool-*.AppImage
+*.AppImage
+glowsnap.AppDir
+AppDir/
+squashfs-root/
+
+# Local release artifacts
+release/
+
+# NOTE: third_party/ is intentionally NOT excluded here. go.mod uses a local
+# `replace github.com/wailsapp/wails/v2 => ./third_party/wails` directive, so
+# those sources must remain in the Docker build context.

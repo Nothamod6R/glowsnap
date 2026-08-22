@@ -78,6 +78,65 @@ Coming soon on Flathub
 
 ---
 
+## Building with Docker
+
+GlowSnap ships a [multi-stage `Dockerfile`](./Dockerfile) that provides a fully
+reproducible Linux build environment. It installs the native toolchain (Go,
+Node, Wails/WebKitGTK 4.1 system libraries) inside an isolated container, builds
+the frontend, runs the test suite, and compiles the final binary.
+
+This container is **strictly for building and testing** — it does not run the
+GUI and does not forward X11/Wayland, DBus, or audio.
+
+> **Prerequisite:** the build uses BuildKit, which is enabled by default in
+> modern Docker. On older Docker versions set `DOCKER_BUILDKIT=1`.
+
+### Build the binary (and run the tests)
+
+The tests run as part of the build. The default final stage (`artifacts`) is a
+minimal image containing only the compiled binary at `/glowsnap`:
+
+```bash
+docker build -t glowsnap:build .
+```
+
+### Export only the binary
+
+Explicitly target the `artifacts` stage and write the binary to `./out`:
+
+```bash
+docker build --target artifacts -o out/ .
+./out/glowsnap --version
+```
+
+### Run the test suite inside the container
+
+Tag the runnable `builder` stage (it contains the Go toolchain and source, and
+its working directory is `/build`), then run the tests exactly as CI does:
+
+```bash
+docker build --target builder -t glowsnap:builder .
+docker run --rm glowsnap:builder go test -tags webkit2_41 ./...
+```
+
+### Build with a custom version string
+
+The injected version defaults to `dev`. Pass a release version with an `ARG`:
+
+```bash
+docker build --build-arg VERSION=1.1.0 -t glowsnap:build .
+```
+
+### Portability note
+
+The resulting binary is a **reproducible Linux build**, but it is **not a
+universally portable binary across all Linux distributions**. GlowSnap links
+dynamically against GTK/WebKitGTK and other system libraries that must be
+present on the target machine at runtime. For a self-contained, distribution
+independent artifact, use the AppImage packaging (see `scripts/build-appimage.sh`).
+
+---
+
 ## Built With
 
 - **Go** — Backend and native system integration
