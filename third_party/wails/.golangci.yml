@@ -16,8 +16,7 @@ run:
 
   allow-parallel-runners: false
 
-  go: '1.21'
-
+  go: "1.21"
 
 output:
   # Runner output format
@@ -37,7 +36,6 @@ output:
 
   # Sort results
   sort-results: true
-
 
 # Specific linter configs
 linters-settings:

@@ -17,30 +17,30 @@ The electron alternative for Go
  * @class Listener
  */
 class Listener {
-    /**
-     * Creates an instance of Listener.
-     * @param {string} eventName
-     * @param {function} callback
-     * @param {number} maxCallbacks
-     * @memberof Listener
-     */
-    constructor(eventName, callback, maxCallbacks) {
-        this.eventName = eventName;
-        // Default of -1 means infinite
-        this.maxCallbacks = maxCallbacks || -1;
-        // Callback invokes the callback with the given data
-        // Returns true if this listener should be destroyed
-        this.Callback = (data) => {
-            callback.apply(null, data);
-            // If maxCallbacks is infinite, return false (do not destroy)
-            if (this.maxCallbacks === -1) {
-                return false;
-            }
-            // Decrement maxCallbacks. Return true if now 0, otherwise false
-            this.maxCallbacks -= 1;
-            return this.maxCallbacks === 0;
-        };
-    }
+  /**
+   * Creates an instance of Listener.
+   * @param {string} eventName
+   * @param {function} callback
+   * @param {number} maxCallbacks
+   * @memberof Listener
+   */
+  constructor(eventName, callback, maxCallbacks) {
+    this.eventName = eventName;
+    // Default of -1 means infinite
+    this.maxCallbacks = maxCallbacks || -1;
+    // Callback invokes the callback with the given data
+    // Returns true if this listener should be destroyed
+    this.Callback = (data) => {
+      callback.apply(null, data);
+      // If maxCallbacks is infinite, return false (do not destroy)
+      if (this.maxCallbacks === -1) {
+        return false;
+      }
+      // Decrement maxCallbacks. Return true if now 0, otherwise false
+      this.maxCallbacks -= 1;
+      return this.maxCallbacks === 0;
+    };
+  }
 }
 
 export const eventListeners = {};
@@ -55,10 +55,10 @@ export const eventListeners = {};
  * @returns {function} A function to cancel the listener
  */
 export function EventsOnMultiple(eventName, callback, maxCallbacks) {
-    eventListeners[eventName] = eventListeners[eventName] || [];
-    const thisListener = new Listener(eventName, callback, maxCallbacks);
-    eventListeners[eventName].push(thisListener);
-    return () => listenerOff(thisListener);
+  eventListeners[eventName] = eventListeners[eventName] || [];
+  const thisListener = new Listener(eventName, callback, maxCallbacks);
+  eventListeners[eventName].push(thisListener);
+  return () => listenerOff(thisListener);
 }
 
 /**
@@ -70,7 +70,7 @@ export function EventsOnMultiple(eventName, callback, maxCallbacks) {
  * @returns {function} A function to cancel the listener
  */
 export function EventsOn(eventName, callback) {
-    return EventsOnMultiple(eventName, callback, -1);
+  return EventsOnMultiple(eventName, callback, -1);
 }
 
 /**
@@ -82,37 +82,35 @@ export function EventsOn(eventName, callback) {
  * @returns {function} A function to cancel the listener
  */
 export function EventsOnce(eventName, callback) {
-    return EventsOnMultiple(eventName, callback, 1);
+  return EventsOnMultiple(eventName, callback, 1);
 }
 
 function notifyListeners(eventData) {
+  // Get the event name
+  let eventName = eventData.name;
 
-    // Get the event name
-    let eventName = eventData.name;
+  // Dispatch to a snapshot: callbacks may add or remove listeners while
+  // we iterate.
+  const snapshot = eventListeners[eventName]?.slice() || [];
 
-    // Dispatch to a snapshot: callbacks may add or remove listeners while
-    // we iterate.
-    const snapshot = eventListeners[eventName]?.slice() || [];
+  for (let count = snapshot.length - 1; count >= 0; count -= 1) {
+    // Get next listener
+    const listener = snapshot[count];
 
-    for (let count = snapshot.length - 1; count >= 0; count -= 1) {
+    let data = eventData.data;
 
-        // Get next listener
-        const listener = snapshot[count];
-
-        let data = eventData.data;
-
-        // Do the callback
-        const destroy = listener.Callback(data);
-        if (destroy) {
-            // Remove the expired listener from the live list, not the
-            // snapshot: writing the snapshot back (the old behaviour)
-            // undid any subscription change made inside a callback —
-            // listeners removed via EventsOff during dispatch were
-            // resurrected and listeners added during dispatch were
-            // dropped (#4393).
-            listenerOff(listener);
-        }
+    // Do the callback
+    const destroy = listener.Callback(data);
+    if (destroy) {
+      // Remove the expired listener from the live list, not the
+      // snapshot: writing the snapshot back (the old behaviour)
+      // undid any subscription change made inside a callback —
+      // listeners removed via EventsOff during dispatch were
+      // resurrected and listeners added during dispatch were
+      // dropped (#4393).
+      listenerOff(listener);
     }
+  }
 }
 
 /**
@@ -123,15 +121,15 @@ function notifyListeners(eventData) {
 
  */
 export function EventsNotify(notifyMessage) {
-    // Parse the message
-    let message;
-    try {
-        message = JSON.parse(notifyMessage);
-    } catch (e) {
-        const error = 'Invalid JSON passed to Notify: ' + notifyMessage;
-        throw new Error(error);
-    }
-    notifyListeners(message);
+  // Parse the message
+  let message;
+  try {
+    message = JSON.parse(notifyMessage);
+  } catch (e) {
+    const error = "Invalid JSON passed to Notify: " + notifyMessage;
+    throw new Error(error);
+  }
+  notifyListeners(message);
 }
 
 /**
@@ -141,25 +139,24 @@ export function EventsNotify(notifyMessage) {
  * @param {string} eventName
  */
 export function EventsEmit(eventName) {
+  const payload = {
+    name: eventName,
+    data: [].slice.apply(arguments).slice(1),
+  };
 
-    const payload = {
-        name: eventName,
-        data: [].slice.apply(arguments).slice(1),
-    };
+  // Notify JS listeners
+  notifyListeners(payload);
 
-    // Notify JS listeners
-    notifyListeners(payload);
-
-    // Notify Go listeners
-    window.WailsInvoke('EE' + JSON.stringify(payload));
+  // Notify Go listeners
+  window.WailsInvoke("EE" + JSON.stringify(payload));
 }
 
 function removeListener(eventName) {
-    // Remove local listeners
-    delete eventListeners[eventName];
+  // Remove local listeners
+  delete eventListeners[eventName];
 
-    // Notify Go listeners
-    window.WailsInvoke('EX' + eventName);
+  // Notify Go listeners
+  window.WailsInvoke("EX" + eventName);
 }
 
 /**
@@ -170,23 +167,23 @@ function removeListener(eventName) {
  * @param  {...string} additionalEventNames
  */
 export function EventsOff(eventName, ...additionalEventNames) {
-    removeListener(eventName)
+  removeListener(eventName);
 
-    if (additionalEventNames.length > 0) {
-        additionalEventNames.forEach(eventName => {
-            removeListener(eventName)
-        })
-    }
+  if (additionalEventNames.length > 0) {
+    additionalEventNames.forEach((eventName) => {
+      removeListener(eventName);
+    });
+  }
 }
 
 /**
  * Off unregisters all event listeners previously registered with On
  */
- export function EventsOffAll() {
-    const eventNames = Object.keys(eventListeners);
-    eventNames.forEach(eventName => {
-        removeListener(eventName)
-    })
+export function EventsOffAll() {
+  const eventNames = Object.keys(eventListeners);
+  eventNames.forEach((eventName) => {
+    removeListener(eventName);
+  });
 }
 
 /**
@@ -194,15 +191,17 @@ export function EventsOff(eventName, ...additionalEventNames) {
  *
  * @param {Listener} listener
  */
- function listenerOff(listener) {
-    const eventName = listener.eventName;
-    if (eventListeners[eventName] === undefined) return;
+function listenerOff(listener) {
+  const eventName = listener.eventName;
+  if (eventListeners[eventName] === undefined) return;
 
-    // Remove local listener
-    eventListeners[eventName] = eventListeners[eventName].filter(l => l !== listener);
+  // Remove local listener
+  eventListeners[eventName] = eventListeners[eventName].filter(
+    (l) => l !== listener,
+  );
 
-    // Clean up if there are no event listeners left
-    if (eventListeners[eventName].length === 0) {
-        removeListener(eventName);
-    }
+  // Clean up if there are no event listeners left
+  if (eventListeners[eventName].length === 0) {
+    removeListener(eventName);
+  }
 }

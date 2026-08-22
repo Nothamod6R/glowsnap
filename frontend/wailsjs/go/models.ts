@@ -113,6 +113,7 @@ export namespace settings {
 	    microphone: string;
 	    micEnabledByDefault: boolean;
 	    systemEnabledByDefault: boolean;
+	    showMouseByDefault: boolean;
 	    quality: string;
 	    notifyOnRecordingEnd: boolean;
 	
@@ -126,6 +127,7 @@ export namespace settings {
 	        this.microphone = source["microphone"];
 	        this.micEnabledByDefault = source["micEnabledByDefault"];
 	        this.systemEnabledByDefault = source["systemEnabledByDefault"];
+	        this.showMouseByDefault = source["showMouseByDefault"];
 	        this.quality = source["quality"];
 	        this.notifyOnRecordingEnd = source["notifyOnRecordingEnd"];
 	    }
@@ -138,6 +140,7 @@ export namespace settings {
 	    openAfterCapture: boolean;
 	    notifyOnCapture: boolean;
 	    hidePanelBeforeCapture: boolean;
+	    showMouseByDefault: boolean;
 	
 	    static createFrom(source: any = {}) {
 	        return new Screenshot(source);
@@ -152,6 +155,7 @@ export namespace settings {
 	        this.openAfterCapture = source["openAfterCapture"];
 	        this.notifyOnCapture = source["notifyOnCapture"];
 	        this.hidePanelBeforeCapture = source["hidePanelBeforeCapture"];
+	        this.showMouseByDefault = source["showMouseByDefault"];
 	    }
 	}
 	export class Shortcuts {

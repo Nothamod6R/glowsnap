@@ -125,13 +125,14 @@ export default function App() {
   const handleStartFromSettings = async (
     micOn: boolean,
     systemOn: boolean,
+    showMouse: boolean,
     micDevice: string,
   ) => {
     if (micOn && micDevice) {
       await SaveMicrophone(micDevice);
     }
-    await SaveRecordingDefaults(micOn, systemOn);
-    await StartRecording(micOn, systemOn, micDevice);
+    await SaveRecordingDefaults(micOn, systemOn, showMouse);
+    await StartRecording(micOn, systemOn, showMouse, micDevice);
     setRecStarted(false);
     setIsPaused(false);
     setRecMicEnabled(micOn);

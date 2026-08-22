@@ -9,7 +9,7 @@ The electron alternative for Go
 */
 /* jshint esversion: 9 */
 
-import {Call} from "./calls";
+import { Call } from "./calls";
 
 /**
  * Initialize the notification service for the application.
@@ -20,7 +20,7 @@ import {Call} from "./calls";
  * @return {Promise<void>}
  */
 export function InitializeNotifications() {
-    return Call(":wails:InitializeNotifications");
+  return Call(":wails:InitializeNotifications");
 }
 
 /**
@@ -32,7 +32,7 @@ export function InitializeNotifications() {
  * @return {Promise<void>}
  */
 export function CleanupNotifications() {
-    return Call(":wails:CleanupNotifications");
+  return Call(":wails:CleanupNotifications");
 }
 
 /**
@@ -42,7 +42,7 @@ export function CleanupNotifications() {
  * @return {Promise<boolean>} True if notifications are available, false otherwise
  */
 export function IsNotificationAvailable() {
-    return Call(":wails:IsNotificationAvailable");
+  return Call(":wails:IsNotificationAvailable");
 }
 
 /**
@@ -54,7 +54,7 @@ export function IsNotificationAvailable() {
  * @return {Promise<boolean>} True if authorization was granted, false otherwise
  */
 export function RequestNotificationAuthorization() {
-    return Call(":wails:RequestNotificationAuthorization");
+  return Call(":wails:RequestNotificationAuthorization");
 }
 
 /**
@@ -66,7 +66,7 @@ export function RequestNotificationAuthorization() {
  * @return {Promise<boolean>} True if authorized, false otherwise
  */
 export function CheckNotificationAuthorization() {
-    return Call(":wails:CheckNotificationAuthorization");
+  return Call(":wails:CheckNotificationAuthorization");
 }
 
 /**
@@ -84,7 +84,7 @@ export function CheckNotificationAuthorization() {
  * @return {Promise<void>}
  */
 export function SendNotification(options) {
-    return Call(":wails:SendNotification", [options]);
+  return Call(":wails:SendNotification", [options]);
 }
 
 /**
@@ -104,7 +104,7 @@ export function SendNotification(options) {
  * @return {Promise<void>}
  */
 export function SendNotificationWithActions(options) {
-    return Call(":wails:SendNotificationWithActions", [options]);
+  return Call(":wails:SendNotificationWithActions", [options]);
 }
 
 /**
@@ -125,7 +125,7 @@ export function SendNotificationWithActions(options) {
  * @return {Promise<void>}
  */
 export function RegisterNotificationCategory(category) {
-    return Call(":wails:RegisterNotificationCategory", [category]);
+  return Call(":wails:RegisterNotificationCategory", [category]);
 }
 
 /**
@@ -136,7 +136,7 @@ export function RegisterNotificationCategory(category) {
  * @return {Promise<void>}
  */
 export function RemoveNotificationCategory(categoryId) {
-    return Call(":wails:RemoveNotificationCategory", [categoryId]);
+  return Call(":wails:RemoveNotificationCategory", [categoryId]);
 }
 
 /**
@@ -147,7 +147,7 @@ export function RemoveNotificationCategory(categoryId) {
  * @return {Promise<void>}
  */
 export function RemoveAllPendingNotifications() {
-    return Call(":wails:RemoveAllPendingNotifications");
+  return Call(":wails:RemoveAllPendingNotifications");
 }
 
 /**
@@ -159,7 +159,7 @@ export function RemoveAllPendingNotifications() {
  * @return {Promise<void>}
  */
 export function RemovePendingNotification(identifier) {
-    return Call(":wails:RemovePendingNotification", [identifier]);
+  return Call(":wails:RemovePendingNotification", [identifier]);
 }
 
 /**
@@ -170,7 +170,7 @@ export function RemovePendingNotification(identifier) {
  * @return {Promise<void>}
  */
 export function RemoveAllDeliveredNotifications() {
-    return Call(":wails:RemoveAllDeliveredNotifications");
+  return Call(":wails:RemoveAllDeliveredNotifications");
 }
 
 /**
@@ -182,7 +182,7 @@ export function RemoveAllDeliveredNotifications() {
  * @return {Promise<void>}
  */
 export function RemoveDeliveredNotification(identifier) {
-    return Call(":wails:RemoveDeliveredNotification", [identifier]);
+  return Call(":wails:RemoveDeliveredNotification", [identifier]);
 }
 
 /**
@@ -195,6 +195,5 @@ export function RemoveDeliveredNotification(identifier) {
  * @return {Promise<void>}
  */
 export function RemoveNotification(identifier) {
-    return Call(":wails:RemoveNotification", [identifier]);
+  return Call(":wails:RemoveNotification", [identifier]);
 }
-

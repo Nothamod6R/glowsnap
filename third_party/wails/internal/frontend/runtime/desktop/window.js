@@ -10,27 +10,26 @@ The electron alternative for Go
 
 /* jshint esversion: 9 */
 
-
-import {Call} from "./calls";
+import { Call } from "./calls";
 
 export function WindowReload() {
-    window.location.reload();
+  window.location.reload();
 }
 
 export function WindowReloadApp() {
-    window.WailsInvoke('WR');
+  window.WailsInvoke("WR");
 }
 
 export function WindowSetSystemDefaultTheme() {
-    window.WailsInvoke('WASDT');
+  window.WailsInvoke("WASDT");
 }
 
 export function WindowSetLightTheme() {
-    window.WailsInvoke('WALT');
+  window.WailsInvoke("WALT");
 }
 
 export function WindowSetDarkTheme() {
-    window.WailsInvoke('WADT');
+  window.WailsInvoke("WADT");
 }
 
 /**
@@ -39,7 +38,7 @@ export function WindowSetDarkTheme() {
  * @export
  */
 export function WindowCenter() {
-    window.WailsInvoke('Wc');
+  window.WailsInvoke("Wc");
 }
 
 /**
@@ -49,7 +48,7 @@ export function WindowCenter() {
  * @export
  */
 export function WindowSetTitle(title) {
-    window.WailsInvoke('WT' + title);
+  window.WailsInvoke("WT" + title);
 }
 
 /**
@@ -58,7 +57,7 @@ export function WindowSetTitle(title) {
  * @export
  */
 export function WindowFullscreen() {
-    window.WailsInvoke('WF');
+  window.WailsInvoke("WF");
 }
 
 /**
@@ -67,7 +66,7 @@ export function WindowFullscreen() {
  * @export
  */
 export function WindowUnfullscreen() {
-    window.WailsInvoke('Wf');
+  window.WailsInvoke("Wf");
 }
 
 /**
@@ -77,7 +76,7 @@ export function WindowUnfullscreen() {
  * @return {Promise<boolean>} The state of the window
  */
 export function WindowIsFullscreen() {
-    return Call(":wails:WindowIsFullscreen");
+  return Call(":wails:WindowIsFullscreen");
 }
 
 /**
@@ -88,7 +87,7 @@ export function WindowIsFullscreen() {
  * @param {number} height
  */
 export function WindowSetSize(width, height) {
-    window.WailsInvoke('Ws:' + width + ':' + height);
+  window.WailsInvoke("Ws:" + width + ":" + height);
 }
 
 /**
@@ -99,7 +98,7 @@ export function WindowSetSize(width, height) {
 
  */
 export function WindowGetSize() {
-    return Call(":wails:WindowGetSize");
+  return Call(":wails:WindowGetSize");
 }
 
 /**
@@ -110,7 +109,7 @@ export function WindowGetSize() {
  * @param {number} height
  */
 export function WindowSetMaxSize(width, height) {
-    window.WailsInvoke('WZ:' + width + ':' + height);
+  window.WailsInvoke("WZ:" + width + ":" + height);
 }
 
 /**
@@ -121,10 +120,8 @@ export function WindowSetMaxSize(width, height) {
  * @param {number} height
  */
 export function WindowSetMinSize(width, height) {
-    window.WailsInvoke('Wz:' + width + ':' + height);
+  window.WailsInvoke("Wz:" + width + ":" + height);
 }
-
-
 
 /**
  * Set the window AlwaysOnTop or not on top
@@ -132,12 +129,8 @@ export function WindowSetMinSize(width, height) {
  * @export
  */
 export function WindowSetAlwaysOnTop(b) {
-
-    window.WailsInvoke('WATP:' + (b ? '1' : '0'));
+  window.WailsInvoke("WATP:" + (b ? "1" : "0"));
 }
-
-
-
 
 /**
  * Set the Position of the window
@@ -147,7 +140,7 @@ export function WindowSetAlwaysOnTop(b) {
  * @param {number} y
  */
 export function WindowSetPosition(x, y) {
-    window.WailsInvoke('Wp:' + x + ':' + y);
+  window.WailsInvoke("Wp:" + x + ":" + y);
 }
 
 /**
@@ -157,7 +150,7 @@ export function WindowSetPosition(x, y) {
  * @return {Promise<{x: number, y: number}>} The position of the window
  */
 export function WindowGetPosition() {
-    return Call(":wails:WindowGetPos");
+  return Call(":wails:WindowGetPos");
 }
 
 /**
@@ -166,7 +159,7 @@ export function WindowGetPosition() {
  * @export
  */
 export function WindowHide() {
-    window.WailsInvoke('WH');
+  window.WailsInvoke("WH");
 }
 
 /**
@@ -175,7 +168,7 @@ export function WindowHide() {
  * @export
  */
 export function WindowShow() {
-    window.WailsInvoke('WS');
+  window.WailsInvoke("WS");
 }
 
 /**
@@ -184,7 +177,7 @@ export function WindowShow() {
  * @export
  */
 export function WindowMaximise() {
-    window.WailsInvoke('WM');
+  window.WailsInvoke("WM");
 }
 
 /**
@@ -193,7 +186,7 @@ export function WindowMaximise() {
  * @export
  */
 export function WindowToggleMaximise() {
-    window.WailsInvoke('Wt');
+  window.WailsInvoke("Wt");
 }
 
 /**
@@ -202,7 +195,7 @@ export function WindowToggleMaximise() {
  * @export
  */
 export function WindowUnmaximise() {
-    window.WailsInvoke('WU');
+  window.WailsInvoke("WU");
 }
 
 /**
@@ -212,7 +205,7 @@ export function WindowUnmaximise() {
  * @return {Promise<boolean>} The state of the window
  */
 export function WindowIsMaximised() {
-    return Call(":wails:WindowIsMaximised");
+  return Call(":wails:WindowIsMaximised");
 }
 
 /**
@@ -221,7 +214,7 @@ export function WindowIsMaximised() {
  * @export
  */
 export function WindowMinimise() {
-    window.WailsInvoke('Wm');
+  window.WailsInvoke("Wm");
 }
 
 /**
@@ -230,7 +223,7 @@ export function WindowMinimise() {
  * @export
  */
 export function WindowUnminimise() {
-    window.WailsInvoke('Wu');
+  window.WailsInvoke("Wu");
 }
 
 /**
@@ -240,7 +233,7 @@ export function WindowUnminimise() {
  * @return {Promise<boolean>} The state of the window
  */
 export function WindowIsMinimised() {
-    return Call(":wails:WindowIsMinimised");
+  return Call(":wails:WindowIsMinimised");
 }
 
 /**
@@ -250,7 +243,7 @@ export function WindowIsMinimised() {
  * @return {Promise<boolean>} The state of the window
  */
 export function WindowIsNormal() {
-    return Call(":wails:WindowIsNormal");
+  return Call(":wails:WindowIsNormal");
 }
 
 /**
@@ -263,7 +256,6 @@ export function WindowIsNormal() {
  * @param {number} A Alpha
  */
 export function WindowSetBackgroundColour(R, G, B, A) {
-    let rgba = JSON.stringify({r: R || 0, g: G || 0, b: B || 0, a: A || 255});
-    window.WailsInvoke('Wr:' + rgba);
+  let rgba = JSON.stringify({ r: R || 0, g: G || 0, b: B || 0, a: A || 255 });
+  window.WailsInvoke("Wr:" + rgba);
 }
-

@@ -310,15 +310,15 @@ func (a *App) verboseLogf(format string, args ...interface{}) {
 	}
 }
 
-func (a *App) SaveRecordingDefaults(micEnabled, systemEnabled bool) error {
-	return screencast.SaveRecordingDefaults(micEnabled, systemEnabled)
+func (a *App) SaveRecordingDefaults(micEnabled, systemEnabled, showMouse bool) error {
+	return screencast.SaveRecordingDefaults(micEnabled, systemEnabled, showMouse)
 }
 
-func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, micDevice string) (string, error) {
+func (a *App) StartRecording(captureMic bool, captureSystemAudio bool, showMouse bool, micDevice string) (string, error) {
 	if a.screenCastService == nil {
 		return "", fmt.Errorf("recording service not initialized")
 	}
-	return a.screenCastService.StartRecording(captureMic, captureSystemAudio, micDevice)
+	return a.screenCastService.StartRecording(captureMic, captureSystemAudio, showMouse, micDevice)
 }
 
 func (a *App) PauseRecording() error {

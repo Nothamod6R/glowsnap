@@ -71,11 +71,7 @@ export default function Overlay({ imageUrl, onComplete }: OverlayProps) {
     const rect = containerRef.current?.getBoundingClientRect();
     const left = rect?.left ?? 0;
     const top = rect?.top ?? 0;
-    return clampPoint(
-      { x: clientX - left, y: clientY - top },
-      innerW,
-      innerH,
-    );
+    return clampPoint({ x: clientX - left, y: clientY - top }, innerW, innerH);
   };
 
   useEffect(() => {
@@ -152,7 +148,10 @@ export default function Overlay({ imageUrl, onComplete }: OverlayProps) {
       e.stopPropagation();
       const anchor: Point =
         handle === "tl"
-          ? { x: selection.x + selection.width, y: selection.y + selection.height }
+          ? {
+              x: selection.x + selection.width,
+              y: selection.y + selection.height,
+            }
           : handle === "tr"
             ? { x: selection.x, y: selection.y + selection.height }
             : handle === "bl"
@@ -161,8 +160,7 @@ export default function Overlay({ imageUrl, onComplete }: OverlayProps) {
       setMode({ type: "resizing", handle, anchor });
     };
 
-  const activeRect =
-    mode.type === "drawing" ? selection ?? null : selection;
+  const activeRect = mode.type === "drawing" ? (selection ?? null) : selection;
 
   const handles: { id: HandleId; x: number; y: number; cursor: string }[] =
     activeRect

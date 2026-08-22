@@ -17,10 +17,9 @@ The electron alternative for Go
  * @param {string} message
  */
 function sendLogMessage(level, message) {
-
-	// Log Message format:
-	// l[type][message]
-	window.WailsInvoke('L' + level + message);
+  // Log Message format:
+  // l[type][message]
+  window.WailsInvoke("L" + level + message);
 }
 
 /**
@@ -30,7 +29,7 @@ function sendLogMessage(level, message) {
  * @param {string} message
  */
 export function LogTrace(message) {
-	sendLogMessage('T', message);
+  sendLogMessage("T", message);
 }
 
 /**
@@ -40,7 +39,7 @@ export function LogTrace(message) {
  * @param {string} message
  */
 export function LogPrint(message) {
-	sendLogMessage('P', message);
+  sendLogMessage("P", message);
 }
 
 /**
@@ -50,7 +49,7 @@ export function LogPrint(message) {
  * @param {string} message
  */
 export function LogDebug(message) {
-	sendLogMessage('D', message);
+  sendLogMessage("D", message);
 }
 
 /**
@@ -60,7 +59,7 @@ export function LogDebug(message) {
  * @param {string} message
  */
 export function LogInfo(message) {
-	sendLogMessage('I', message);
+  sendLogMessage("I", message);
 }
 
 /**
@@ -70,7 +69,7 @@ export function LogInfo(message) {
  * @param {string} message
  */
 export function LogWarning(message) {
-	sendLogMessage('W', message);
+  sendLogMessage("W", message);
 }
 
 /**
@@ -80,7 +79,7 @@ export function LogWarning(message) {
  * @param {string} message
  */
 export function LogError(message) {
-	sendLogMessage('E', message);
+  sendLogMessage("E", message);
 }
 
 /**
@@ -90,7 +89,7 @@ export function LogError(message) {
  * @param {string} message
  */
 export function LogFatal(message) {
-	sendLogMessage('F', message);
+  sendLogMessage("F", message);
 }
 
 /**
@@ -100,14 +99,14 @@ export function LogFatal(message) {
  * @param {number} loglevel
  */
 export function SetLogLevel(loglevel) {
-	sendLogMessage('S', loglevel);
+  sendLogMessage("S", loglevel);
 }
 
 // Log levels
 export const LogLevel = {
-	TRACE: 1,
-	DEBUG: 2,
-	INFO: 3,
-	WARNING: 4,
-	ERROR: 5,
+  TRACE: 1,
+  DEBUG: 2,
+  INFO: 3,
+  WARNING: 4,
+  ERROR: 5,
 };

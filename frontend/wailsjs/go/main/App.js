@@ -98,8 +98,8 @@ export function SaveMicrophone(arg1) {
   return window['go']['main']['App']['SaveMicrophone'](arg1);
 }
 
-export function SaveRecordingDefaults(arg1, arg2) {
-  return window['go']['main']['App']['SaveRecordingDefaults'](arg1, arg2);
+export function SaveRecordingDefaults(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SaveRecordingDefaults'](arg1, arg2, arg3);
 }
 
 export function SelectDirectory(arg1) {
@@ -118,8 +118,8 @@ export function StartPaletteAreaCapture() {
   return window['go']['main']['App']['StartPaletteAreaCapture']();
 }
 
-export function StartRecording(arg1, arg2, arg3) {
-  return window['go']['main']['App']['StartRecording'](arg1, arg2, arg3);
+export function StartRecording(arg1, arg2, arg3, arg4) {
+  return window['go']['main']['App']['StartRecording'](arg1, arg2, arg3, arg4);
 }
 
 export function StopRecording() {

@@ -10,7 +10,7 @@ The electron alternative for Go
 
 /* jshint esversion: 9 */
 
-import {Call} from "./calls";
+import { Call } from "./calls";
 
 /**
  * Set the Size of the window
@@ -19,7 +19,7 @@ import {Call} from "./calls";
  * @param {string} text
  */
 export function ClipboardSetText(text) {
-    return Call(":wails:ClipboardSetText", [text]);
+  return Call(":wails:ClipboardSetText", [text]);
 }
 
 /**
@@ -30,5 +30,5 @@ export function ClipboardSetText(text) {
 
  */
 export function ClipboardGetText() {
-    return Call(":wails:ClipboardGetText");
+  return Call(":wails:ClipboardGetText");
 }

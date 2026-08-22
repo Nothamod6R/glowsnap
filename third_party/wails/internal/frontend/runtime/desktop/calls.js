@@ -17,8 +17,8 @@ export const callbacks = {};
  * @returns number
  */
 function cryptoRandom() {
-	var array = new Uint32Array(1);
-	return window.crypto.getRandomValues(array)[0];
+  var array = new Uint32Array(1);
+  return window.crypto.getRandomValues(array)[0];
 }
 
 /**
@@ -28,17 +28,16 @@ function cryptoRandom() {
  * @returns number
  */
 function basicRandom() {
-	return Math.random() * 9007199254740991;
+  return Math.random() * 9007199254740991;
 }
 
 // Pick a random number function based on browser capability
 var randomFunc;
 if (window.crypto) {
-	randomFunc = cryptoRandom;
+  randomFunc = cryptoRandom;
 } else {
-	randomFunc = basicRandom;
+  randomFunc = basicRandom;
 }
-
 
 /**
  * Call sends a message to the backend to call the binding with the
@@ -55,99 +54,100 @@ if (window.crypto) {
  * @returns
  */
 export function Call(name, args, timeout) {
+  // Timeout infinite by default
+  if (timeout == null) {
+    timeout = 0;
+  }
 
-	// Timeout infinite by default
-	if (timeout == null) {
-		timeout = 0;
-	}
+  // Create a promise
+  return new Promise(function (resolve, reject) {
+    // Create a unique callbackID
+    var callbackID;
+    do {
+      callbackID = name + "-" + randomFunc();
+    } while (callbacks[callbackID]);
 
-	// Create a promise
-	return new Promise(function (resolve, reject) {
+    var timeoutHandle;
+    // Set timeout
+    if (timeout > 0) {
+      timeoutHandle = setTimeout(function () {
+        reject(
+          Error("Call to " + name + " timed out. Request ID: " + callbackID),
+        );
+      }, timeout);
+    }
 
-		// Create a unique callbackID
-		var callbackID;
-		do {
-			callbackID = name + '-' + randomFunc();
-		} while (callbacks[callbackID]);
+    // Store callback
+    callbacks[callbackID] = {
+      timeoutHandle: timeoutHandle,
+      reject: reject,
+      resolve: resolve,
+    };
 
-		var timeoutHandle;
-		// Set timeout
-		if (timeout > 0) {
-			timeoutHandle = setTimeout(function () {
-				reject(Error('Call to ' + name + ' timed out. Request ID: ' + callbackID));
-			}, timeout);
-		}
+    try {
+      const payload = {
+        name,
+        args,
+        callbackID,
+      };
 
-		// Store callback
-		callbacks[callbackID] = {
-			timeoutHandle: timeoutHandle,
-			reject: reject,
-			resolve: resolve
-		};
-
-		try {
-			const payload = {
-				name,
-				args,
-				callbackID,
-			};
-
-            // Make the call
-            window.WailsInvoke('C' + JSON.stringify(payload));
-        } catch (e) {
-            // eslint-disable-next-line
-            console.error(e);
-        }
-    });
+      // Make the call
+      window.WailsInvoke("C" + JSON.stringify(payload));
+    } catch (e) {
+      // eslint-disable-next-line
+      console.error(e);
+    }
+  });
 }
 
 window.ObfuscatedCall = (id, args, timeout) => {
+  // Timeout infinite by default
+  if (timeout == null) {
+    timeout = 0;
+  }
 
-    // Timeout infinite by default
-    if (timeout == null) {
-        timeout = 0;
+  // Create a promise
+  return new Promise(function (resolve, reject) {
+    // Create a unique callbackID
+    var callbackID;
+    do {
+      callbackID = id + "-" + randomFunc();
+    } while (callbacks[callbackID]);
+
+    var timeoutHandle;
+    // Set timeout
+    if (timeout > 0) {
+      timeoutHandle = setTimeout(function () {
+        reject(
+          Error(
+            "Call to method " + id + " timed out. Request ID: " + callbackID,
+          ),
+        );
+      }, timeout);
     }
 
-    // Create a promise
-    return new Promise(function (resolve, reject) {
+    // Store callback
+    callbacks[callbackID] = {
+      timeoutHandle: timeoutHandle,
+      reject: reject,
+      resolve: resolve,
+    };
 
-        // Create a unique callbackID
-        var callbackID;
-        do {
-            callbackID = id + '-' + randomFunc();
-        } while (callbacks[callbackID]);
+    try {
+      const payload = {
+        id,
+        args,
+        callbackID,
+      };
 
-        var timeoutHandle;
-        // Set timeout
-        if (timeout > 0) {
-            timeoutHandle = setTimeout(function () {
-                reject(Error('Call to method ' + id + ' timed out. Request ID: ' + callbackID));
-            }, timeout);
-        }
-
-        // Store callback
-        callbacks[callbackID] = {
-            timeoutHandle: timeoutHandle,
-            reject: reject,
-            resolve: resolve
-        };
-
-        try {
-            const payload = {
-				id,
-				args,
-				callbackID,
-			};
-
-            // Make the call
-            window.WailsInvoke('c' + JSON.stringify(payload));
-        } catch (e) {
-            // eslint-disable-next-line
-            console.error(e);
-        }
-    });
+      // Make the call
+      window.WailsInvoke("c" + JSON.stringify(payload));
+    } catch (e) {
+      // eslint-disable-next-line
+      console.error(e);
+    }
+  });
 };
-
 
 /**
  * Called by the backend to return data to a previously called
@@ -157,30 +157,31 @@ window.ObfuscatedCall = (id, args, timeout) => {
  * @param {string} incomingMessage
  */
 export function Callback(incomingMessage) {
-	// Parse the message
-	let message;
-	try {
-		message = JSON.parse(incomingMessage);
-	} catch (e) {
-		const error = `Invalid JSON passed to callback: ${e.message}. Message: ${incomingMessage}`;
-		runtime.LogDebug(error);
-		throw new Error(error);
-	}
-	let callbackID = message.callbackid;
-	let callbackData = callbacks[callbackID];
-	if (!callbackData) {
-		const error = `Callback '${callbackID}' not registered!!!`;
-		console.error(error); // eslint-disable-line
-		throw new Error(error);
-	}
-	clearTimeout(callbackData.timeoutHandle);
+  // Parse the message
+  let message;
+  try {
+    message = JSON.parse(incomingMessage);
+  } catch (e) {
+    const error = `Invalid JSON passed to callback: ${e.message}. Message: ${incomingMessage}`;
+    runtime.LogDebug(error);
+    throw new Error(error);
+  }
+  let callbackID = message.callbackid;
+  let callbackData = callbacks[callbackID];
+  if (!callbackData) {
+    const error = `Callback '${callbackID}' not registered!!!`;
+    console.error(error); // eslint-disable-line
+    throw new Error(error);
+  }
+  clearTimeout(callbackData.timeoutHandle);
 
-	delete callbacks[callbackID];
+  delete callbacks[callbackID];
 
-	if (message.error) {
-		const err = message.error instanceof Error ? message.error : new Error(message.error);
-		callbackData.reject(err);
-	} else {
-		callbackData.resolve(message.result);
-	}
+  if (message.error) {
+    const err =
+      message.error instanceof Error ? message.error : new Error(message.error);
+    callbackData.reject(err);
+  } else {
+    callbackData.resolve(message.result);
+  }
 }

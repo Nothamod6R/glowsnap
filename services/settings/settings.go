@@ -25,6 +25,7 @@ type Screenshot struct {
 	OpenAfterCapture       bool   `json:"openAfterCapture"`
 	NotifyOnCapture        bool   `json:"notifyOnCapture"`
 	HidePanelBeforeCapture bool   `json:"hidePanelBeforeCapture"`
+	ShowMouseByDefault     bool   `json:"showMouseByDefault"`
 }
 
 type Recording struct {
@@ -32,6 +33,7 @@ type Recording struct {
 	Microphone             string `json:"microphone"`
 	MicEnabledByDefault    bool   `json:"micEnabledByDefault"`
 	SystemEnabledByDefault bool   `json:"systemEnabledByDefault"`
+	ShowMouseByDefault     bool   `json:"showMouseByDefault"`
 	Quality                string `json:"quality"`
 	NotifyOnRecordingEnd   bool   `json:"notifyOnRecordingEnd"`
 }
@@ -97,11 +99,13 @@ func Defaults() Settings {
 			SaveDir:                DefaultScreenshotSaveDir(),
 			FilenamePattern:        "screenshot_{date}",
 			HidePanelBeforeCapture: true,
+			ShowMouseByDefault:     true,
 		},
 		Recording: Recording{
 			SaveDir:                DefaultRecordingSaveDir(),
 			MicEnabledByDefault:    true,
 			SystemEnabledByDefault: true,
+			ShowMouseByDefault:     true,
 			Quality:                "medium",
 		},
 		Editor: Editor{
@@ -265,6 +269,9 @@ func mergeDefaults(def Settings, stored *Settings, data []byte) {
 	if !present("screenshot", "hidePanelBeforeCapture") {
 		stored.Screenshot.HidePanelBeforeCapture = def.Screenshot.HidePanelBeforeCapture
 	}
+	if !present("screenshot", "showMouseByDefault") {
+		stored.Screenshot.ShowMouseByDefault = def.Screenshot.ShowMouseByDefault
+	}
 
 	if !present("recording", "saveDir") {
 		stored.Recording.SaveDir = def.Recording.SaveDir
@@ -277,6 +284,9 @@ func mergeDefaults(def Settings, stored *Settings, data []byte) {
 	}
 	if !present("recording", "systemEnabledByDefault") {
 		stored.Recording.SystemEnabledByDefault = def.Recording.SystemEnabledByDefault
+	}
+	if !present("recording", "showMouseByDefault") {
+		stored.Recording.ShowMouseByDefault = def.Recording.ShowMouseByDefault
 	}
 	if !present("recording", "quality") {
 		stored.Recording.Quality = def.Recording.Quality

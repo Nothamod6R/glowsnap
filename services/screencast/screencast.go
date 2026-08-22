@@ -111,7 +111,12 @@ func (s *ScreenCastService) SetSystemEnabled(enabled bool) error {
 	return setSourceMute(device, !enabled)
 }
 
-func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDevice string) (string, error) {
+const (
+	cursorModeHidden   uint32 = 1
+	cursorModeEmbedded uint32 = 2
+)
+
+func (s *ScreenCastService) StartRecording(captureMic, captureSystem, showMouse bool, micDevice string) (string, error) {
 	s.lock()
 	if s.recording {
 		s.unlock()
@@ -133,7 +138,7 @@ func (s *ScreenCastService) StartRecording(captureMic, captureSystem bool, micDe
 	}
 	s.sessionHandle = sessionHandle
 
-	if err := s.selectSources(portal, sessionHandle); err != nil {
+	if err := s.selectSources(portal, sessionHandle, showMouse); err != nil {
 		s.closeSession()
 		return "", fmt.Errorf("SelectSources error: %w", err)
 	}
@@ -394,12 +399,15 @@ func (s *ScreenCastService) createSession(portal dbus.BusObject) (dbus.ObjectPat
 	return dbus.ObjectPath(handleStr), nil
 }
 
-func (s *ScreenCastService) selectSources(portal dbus.BusObject, sessionHandle dbus.ObjectPath) error {
+func (s *ScreenCastService) selectSources(portal dbus.BusObject, sessionHandle dbus.ObjectPath, showMouse bool) error {
 	token := fmt.Sprintf("glowsnap_sel_%d", time.Now().UnixNano())
 	selectOptions := map[string]dbus.Variant{
 		"handle_token": dbus.MakeVariant(token),
 		"types":        dbus.MakeVariant(uint32(1 | 2)),
 		"multiple":     dbus.MakeVariant(false),
+	}
+	if mode := s.cursorModeForShow(portal, showMouse); mode != 0 {
+		selectOptions["cursor_mode"] = dbus.MakeVariant(mode)
 	}
 
 	call := portal.Call("org.freedesktop.portal.ScreenCast.SelectSources", 0, sessionHandle, selectOptions)
@@ -463,6 +471,32 @@ func (s *ScreenCastService) startSession(portal dbus.BusObject, sessionHandle db
 		return nil, fmt.Errorf("no 'streams' in Start response")
 	}
 	return parseStreams(streamsVar)
+}
+
+func (s *ScreenCastService) getAvailableCursorModes(portal dbus.BusObject) uint32 {
+	var modes uint32
+	err := portal.Call("org.freedesktop.DBus.Properties.Get", 0,
+		"org.freedesktop.portal.ScreenCast",
+		"AvailableCursorModes",
+	).Store(&modes)
+	if err != nil {
+		return cursorModeHidden | cursorModeEmbedded
+	}
+	return modes
+}
+
+func (s *ScreenCastService) cursorModeForShow(portal dbus.BusObject, showMouse bool) uint32 {
+	available := s.getAvailableCursorModes(portal)
+	if showMouse {
+		if available&cursorModeEmbedded != 0 {
+			return cursorModeEmbedded
+		}
+		return 0
+	}
+	if available&cursorModeHidden != 0 {
+		return cursorModeHidden
+	}
+	return 0
 }
 
 func (s *ScreenCastService) closeSession() {

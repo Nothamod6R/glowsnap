@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Volume2, X, Loader2 } from "lucide-react";
+import { Mic, Volume2, X, Loader2, MousePointer2 } from "lucide-react";
 import {
   ListMicrophones,
   GetSystemAudioSupported,
@@ -69,6 +69,7 @@ export default function RecordingSettings({
   const [mics, setMics] = useState<AudioDevice[]>([]);
   const [micOn, setMicOn] = useState(true);
   const [systemOn, setSystemOn] = useState(true);
+  const [showMouse, setShowMouse] = useState(true);
   const [systemSupported, setSystemSupported] = useState(true);
   const [systemMessage, setSystemMessage] = useState("");
   const [selectedMic, setSelectedMic] = useState("");
@@ -95,6 +96,7 @@ export default function RecordingSettings({
         setVideosDir(dir);
         setMicOn(cfg.recording?.micEnabledByDefault ?? true);
         setSystemOn(cfg.recording?.systemEnabledByDefault ?? true);
+        setShowMouse(cfg.recording?.showMouseByDefault ?? true);
         if (saved && micList.some((m) => m.name === saved)) {
           setSelectedMic(saved);
         } else if (micList.length === 1) {
@@ -121,7 +123,7 @@ export default function RecordingSettings({
     setError("");
     setStarting(true);
     try {
-      await onStart(micOn, effectiveSystemOn, selectedMic);
+      await onStart(micOn, effectiveSystemOn, showMouse, selectedMic);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -209,6 +211,13 @@ export default function RecordingSettings({
                 {systemMessage || "System audio is not supported."}
               </span>
             )}
+
+            <ToggleRow
+              icon={<MousePointer2 size={14} />}
+              label="Show Mouse Cursor"
+              checked={showMouse}
+              onChange={setShowMouse}
+            />
           </div>
 
           <div className="flex flex-col gap-0.5 py-1 border-t border-white/10">
